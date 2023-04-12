@@ -17,12 +17,14 @@ for file in os.listdir(datafolder):
 	f[f.columns[2]] = f[f.columns[2]].cumsum()
 	f[f.columns[2]] = f[f.columns[2]] / f[f.columns[2]].values[0]
 	f[f.columns[0]] = f[f.columns[0]] / f[f.columns[0]].values[0]
+	# get the length of the observation series in years
+	f[f.columns[1]] = f[f.columns[1]] - f[f.columns[1]].values[0]
 	# plot as step functions
 	ax.step(f[f.columns[2]], f[f.columns[0]],'o-', where='post', markersize=2, alpha=0.5)
 	# save unit cost, cumulative production, and name of technology
 	f['Tech'] = file
-	f = f[[f.columns[0], f.columns[2], 'Tech']].copy()
-	f.columns = ['Unit cost','Cumulative production','Tech']
+	f = f[[f.columns[0], f.columns[1], f.columns[2], 'Tech']].copy()
+	f.columns = ['Unit cost','Year','Cumulative production','Tech']
 	# append to dataframe
 	try:
 		df = pd.concat([df, f])
@@ -34,20 +36,45 @@ ax.set_yscale('log', base=10)
 ax.set_ylabel('Unit cost')
 ax.set_xlabel('Cumulative production')
 
-# save dataframe
-df.to_csv('ExpCurves.csv', index=False)
-
 # figure reporting the number of available technologies for number of units produced
 fig, ax = plt.subplots()
 nunits =[1]
 for tech in df['Tech'].unique():
-	nunits.append(df.loc[df['Tech']==tech, df.columns[1]].max())
+	nunits.append(df.loc[df['Tech']==tech, df.columns[2]].max())
 nunits.sort()
 ax.step(nunits,[x for x in range(len(nunits),0,-1)], where='post')
 ax.set_xscale('log', base=10)
 ax.set_ylabel('Number of technologies available')
 ax.set_xlabel('Normalized cumulative production')
+
+# figure reporting the number of available technologies for number of years measured
+fig, ax = plt.subplots()
+nyears =[1]
+for tech in df['Tech'].unique():
+	nyears.append(df.loc[df['Tech']==tech, df.columns[1]].max())
+nyears.sort()
+ax.step(nyears,[x for x in range(len(nunits),0,-1)], where='post')
+# ax.set_xscale('log', base=10)
+ax.set_ylabel('Number of technologies available')
+ax.set_xlabel('Length of experience curve in years')
+
+# figure plotting number of years available against number of units
+fig, ax = plt.subplots()
+nyears =[]
+nunits = []
+for tech in df['Tech'].unique():
+	nunits.append(df.loc[df['Tech']==tech, df.columns[2]].max())
+	nyears.append(df.loc[df['Tech']==tech, df.columns[1]].max())
+ax.scatter(nyears,nunits)
+ax.set_yscale('log', base=10)
+ax.set_ylabel('Total number of units measured')
+ax.set_xlabel('Length of experience curve in years')
 plt.show()
+
+df = df[['Unit cost','Year','Cumulative production','Tech']].copy()
+
+# save dataframe
+df.to_csv('ExpCurves.csv', index=False)
 
 # predict for each technology using only available data 
 for tech in df['Tech'].unique():

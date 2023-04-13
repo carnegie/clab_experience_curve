@@ -10,48 +10,87 @@ class Simulator():
     def __init__(self, df):
         self.df = df
         self.df['Code'] = pd.factorize(self.df['Tech'])[0]
+        # use all available technologies
         self.select_techs()
-        self.gamma = 1.0001
-        self.N = 7e3
+        # set parameter for a general simulation
+        self.gamma = 1.0001 # regulates how many units are to be produced based on current cost
+        self.N = 7e3 # number of units to be produced over the simulation
 
     # this can be used to select different subsets of technologies
-    def select_techs(self):
+    def select_techs(self, N=None):
         # select all techs for now
-        self.techs = df['Tech'].unique()
-        self.techsidx = df['Code'].unique()
+        if N == None:
+            self.techs = df['Tech'].unique()
+            self.techsidx = df['Code'].unique()
+        # select a subset of technologies to be used in the simulation
+        else:
+            subset = df.drop_duplicates(subset='Tech').sample(N).copy()
+            self.techs = df['Tech'].unique()
+            self.techsidx = subset['Code'].unique()
 
-    # stub simple optimization
+    # stub simple optimization: optimize and show results with a single simulation over 50 techs tp produce 800 units
     def optimize(self):
-        res = scipy.optimize.minimize_scalar(self.simCost, method='brent', options={'disp':True})
+        res = scipy.optimize.minimize_scalar(self.simObj, method='brent', options={'disp':True})
         print(res)
         self.gamma = res.x
+        self.N = 8e2
+        self.select_techs(50)
         self.simulate()
         self.plotTraj()
         self.plotPortfolio()
 
-    # stub simulate fixing a parameter and retrieve associated cost
-    def simCost(self, x0):
+    # set value suggested by solver and return the objective after simulating
+    def simObj(self, x0):
         self.gamma = x0
-        return self.getObj()
+        return self.getObjStoch()
 
-    # define objective for optimization
+    # define objective for optimization and how to compute it for the deterministic case
     def getObj(self):
         self.simulate()
         return self.cost
 
+    # define objective for optimization and how to compute it for the stochastic case
+    # it includes stochastic selection of technologies, number of technologies available, and number of units to be produced
+    # in the future it might also include the objective function
+    def getObjStoch(self):
+        # define where to store objective for each simulation and values of units to be produced
+        objs = []
+        Nrange = [1e2, 3e2, 5e2, 8e2, 1e3, 5e3]
+        nTechrange = [df['Tech'].nunique() -30,
+                      int( df['Tech'].nunique() / 3) ]
+        # for each number of units to be produced
+        for N in Nrange:
+            self.N = N
+            # sampling ten times the number and the subset of technologies available 
+            for r in range(10):
+                ntechs = np.random.rand()
+                ntechs = int( ntechs * \
+                    ( nTechrange[0] - nTechrange[1]) + \
+                    nTechrange[1] )
+                self.select_techs(ntechs)
+                # simulate and store objective
+                self.simulate()
+                objs.append(self.cost)
+        print(np.mean(objs), np.var(objs))
+        return np.mean( objs ) # + np.var( objs )
+
     # standard simulation fuction
     def simulate(self):
+        # reset variables to store trajectories
         self.reset()
-        self.portfolio = [self.units.copy()]
+        # until termination conditions is met, make a step
         while (self.flag):
             self.step()
-            self.portfolio.append(self.units.copy())
 
     # standard step ahead
     def step(self):
+        # update information available
         self.collectData()
+        # compute a metric for each technology
         self.techMetric()
+        # derive an action based on the metric
         self.computeActions()
+        # execute the action and update variables
         self.execute()
         self.updateCost()
         self.updateFlag()
@@ -59,19 +98,21 @@ class Simulator():
     # update data points available at each step
     def collectData(self):
         for tidx in self.techsidx:
+            # select for each technology the data that would be available
+            # at a given cumulative production level and store it in obs
             sel = df.loc[df['Code']==tidx].copy()
             sel = sel.loc[sel['Cumulative production'] <= self.units[tidx]]
             self.obs[tidx] = sel[['Cumulative production','Unit cost']].values
 
     # defines the metric used to rank technology (for now last cost)
     def techMetric(self):
-        self.input = np.ones(len(self.techsidx))
+        self.input = np.zeros(len(self.units))
         for tidx in self.techsidx:
             self.input[tidx] = self.obs[tidx][-1][1]
 
     # defines the metric used to rank technology (for now last cost)
     def computeActions(self):
-        self.actions = np.ones(len(self.techsidx))
+        self.actions = np.zeros(len(self.units))
         for tidx in self.techsidx:
             self.actions[tidx] = (1.0 / self.input[tidx])**self.gamma
 
@@ -79,6 +120,8 @@ class Simulator():
     def execute(self): 
         for tidx in self.techsidx:
             self.units[tidx] += self.actions[tidx]
+        # keep track of units over step by reporting each step
+        self.portfolio.append(self.units.copy())
 
     # update the total costs
     def updateCost(self):
@@ -95,32 +138,41 @@ class Simulator():
         self.flag = True
         self.obs = [[] for x in range(df['Tech'].nunique())]
         self.units = np.ones(df['Tech'].nunique())
+        for tidx in range(len(self.units)):
+            if tidx not in self.techsidx:
+                self.units[tidx] = 0.0
         self.cost = 0.0
-        self.portfolio = []
-    
+        self.portfolio = [self.units.copy()]
+
     # plotting experienced experience curve data
     def plotTraj(self):
         fig, ax = plt.subplots()
-        for tidx in self.techsidx:
-            data = np.transpose(self.obs[tidx])
-            ax.step(data[0], data[1], where='post')
+        for tidx in range(len(self.units)):
+            if len(self.obs[tidx]) > 0:
+                data = np.transpose(self.obs[tidx])
+                ax.step(data[0], data[1], where='post')
+            else:
+                ax.step([1,1],[1,1], where='post')
         ax.set_xscale('log', base=10)
         ax.set_yscale('log', base=10)	
         ax.set_ylabel('Unit cost')
         ax.set_xlabel('Cumulative production')
 
-    # plotting cumulat over time
+    # plotting cumulative portfolio over time
     def plotPortfolio(self):
+        # cumulative portfolio
         fig, ax = plt.subplots()
         p = np.transpose(np.array(self.portfolio))
         ax.stackplot(range(len(p[0])), p)
         ax.set_ylabel('Cumulative units produced')
         ax.set_xlabel('Steps')
+        # units produced at each step
         fig, ax = plt.subplots()
         p = np.diff(p)
         ax.stackplot(range(len(p[0])), p)
         ax.set_ylabel('Units produced')
         ax.set_xlabel('Steps')
+        # share of units produced at each step
         fig, ax = plt.subplots()
         p = p/[sum(x) for x in np.transpose(p)] * 100
         ax.stackplot(range(len(p[0])), p)

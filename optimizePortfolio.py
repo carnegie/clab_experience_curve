@@ -11,24 +11,20 @@ class Simulator():
         self.df = df
         self.df['Code'] = pd.factorize(self.df['Tech'])[0]
         self.select_techs()
+        self.gamma = 1.0001
+        self.N = 7e3
 
     # this can be used to select different subsets of technologies
     def select_techs(self):
         # select all techs for now
         self.techs = df['Tech'].unique()
         self.techsidx = df['Code'].unique()
-        self.obs = [[] for x in range(df['Tech'].nunique())]
-        self.units = np.ones(df['Tech'].nunique())
-        self.portfolio = []
-        self.cost = 0.0
-        self.gamma = 0.0
 
     # stub simple optimization
     def optimize(self):
-        res = scipy.optimize.minimize(self.simCost, x0=1.2, method='Powell')
-        # res = scipy.optimize.differential_evolution(self.simCost, bounds=[(1,10)], popsize=10, maxiter=3)
+        res = scipy.optimize.minimize_scalar(self.simCost, method='brent', options={'disp':True})
         print(res)
-        self.gamma = res.x[0]
+        self.gamma = res.x
         self.simulate()
         self.plotTraj()
         self.plotPortfolio()
@@ -36,6 +32,10 @@ class Simulator():
     # stub simulate fixing a parameter and retrieve associated cost
     def simCost(self, x0):
         self.gamma = x0
+        return self.getObj()
+
+    # define objective for optimization
+    def getObj(self):
         self.simulate()
         return self.cost
 
@@ -46,8 +46,6 @@ class Simulator():
         while (self.flag):
             self.step()
             self.portfolio.append(self.units.copy())
-        print(self.cost)
-        print('End of simulation')
 
     # standard step ahead
     def step(self):
@@ -75,10 +73,10 @@ class Simulator():
     def computeActions(self):
         self.actions = np.ones(len(self.techsidx))
         for tidx in self.techsidx:
-            self.actions[tidx] = (1.0 / np.log10(self.input[tidx]+1))**self.gamma
+            self.actions[tidx] = (1.0 / self.input[tidx])**self.gamma
 
     # execute the actions, potentially enforcing constrains
-    def execute(self):            
+    def execute(self): 
         for tidx in self.techsidx:
             self.units[tidx] += self.actions[tidx]
 
@@ -89,15 +87,16 @@ class Simulator():
 
     # check if at the terminating conditions for each simualation
     def updateFlag(self):
-        if sum(self.units) > 10000:
+        if sum(self.units) >= self.N:
             self.flag = False
 
-    # reset variables before each optimization
+    # reset variables before each simulation
     def reset(self):
         self.flag = True
         self.obs = [[] for x in range(df['Tech'].nunique())]
         self.units = np.ones(df['Tech'].nunique())
         self.cost = 0.0
+        self.portfolio = []
     
     # plotting experienced experience curve data
     def plotTraj(self):
@@ -110,12 +109,22 @@ class Simulator():
         ax.set_ylabel('Unit cost')
         ax.set_xlabel('Cumulative production')
 
-    # plotting portfolio over time
+    # plotting cumulat over time
     def plotPortfolio(self):
         fig, ax = plt.subplots()
         p = np.transpose(np.array(self.portfolio))
         ax.stackplot(range(len(p[0])), p)
+        ax.set_ylabel('Cumulative units produced')
+        ax.set_xlabel('Steps')
+        fig, ax = plt.subplots()
+        p = np.diff(p)
+        ax.stackplot(range(len(p[0])), p)
         ax.set_ylabel('Units produced')
+        ax.set_xlabel('Steps')
+        fig, ax = plt.subplots()
+        p = p/[sum(x) for x in np.transpose(p)] * 100
+        ax.stackplot(range(len(p[0])), p)
+        ax.set_ylabel('Share of units produced [%]')
         ax.set_xlabel('Steps')
 
 # read data and create class

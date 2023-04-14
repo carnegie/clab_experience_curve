@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import matplotlib, os
 import scipy
 
+matplotlib.style.use('bmh')
+
 class Simulator():
 
     # initialize class (read data)
@@ -13,8 +15,11 @@ class Simulator():
         # use all available technologies
         self.select_techs()
         # set parameter for a general simulation
-        self.gamma = 1.0001 # regulates how many units are to be produced based on current cost
-        self.N = 7e3 # number of units to be produced over the simulation
+        self.gamma = -2 # regulates how many units are to be produced based on current cost
+        self.aC = 0.02700935 
+        self.astLR = 0.30946333 
+        self.aLR = 0.45834448
+        self.N = 3e3 # number of units to be produced over the simulation
 
     # this can be used to select different subsets of technologies
     def select_techs(self, N=None):
@@ -30,18 +35,30 @@ class Simulator():
 
     # stub simple optimization: optimize and show results with a single simulation over 50 techs tp produce 800 units
     def optimize(self):
-        res = scipy.optimize.minimize_scalar(self.simObj, method='brent', options={'disp':True})
+        # res = scipy.optimize.minimize_scalar(self.simObj, 
+        #                 method='brent', options={'disp':True})
+        # print(res)
+        # self.gamma = res.x
+        res = scipy.optimize.differential_evolution(self.simObj, 
+                        bounds=[[0,1],[0,1],[0,1]], 
+                        disp = True)
         print(res)
-        self.gamma = res.x
+        self.aC = res.x[0]
+        self.astLR = res.x[1]
+        self.aLR = res.x[2]
         self.N = 8e2
-        self.select_techs(50)
+        self.select_techs(30)
         self.simulate()
         self.plotTraj()
         self.plotPortfolio()
 
     # set value suggested by solver and return the objective after simulating
     def simObj(self, x0):
-        self.gamma = x0
+        # self.gamma = x0
+        self.aC = x0[0]
+        self.astLR = x0[1]
+        self.aLR = x0[2]
+        print(x0)
         return self.getObjStoch()
 
     # define objective for optimization and how to compute it for the deterministic case
@@ -55,9 +72,9 @@ class Simulator():
     def getObjStoch(self):
         # define where to store objective for each simulation and values of units to be produced
         objs = []
-        Nrange = [1e2, 3e2, 5e2, 8e2, 1e3, 5e3]
-        nTechrange = [df['Tech'].nunique() -30,
-                      int( df['Tech'].nunique() / 3) ]
+        Nrange = [1e2, 2e2, 3e2, 5e2, 8e2, 1e3, 5e3]
+        nTechrange = [df['Tech'].nunique() - 30,
+                      int( df['Tech'].nunique() / 4) ]
         # for each number of units to be produced
         for N in Nrange:
             self.N = N
@@ -72,7 +89,7 @@ class Simulator():
                 self.simulate()
                 objs.append(self.cost)
         print(np.mean(objs), np.var(objs))
-        return np.mean( objs ) # + np.var( objs )
+        return np.mean( objs ) + np.var( objs )
 
     # standard simulation fuction
     def simulate(self):
@@ -102,24 +119,49 @@ class Simulator():
             # at a given cumulative production level and store it in obs
             sel = df.loc[df['Code']==tidx].copy()
             sel = sel.loc[sel['Cumulative production'] <= self.units[tidx]]
-            self.obs[tidx] = sel[['Cumulative production','Unit cost']].values
+            cols = ['Cumulative production','Unit cost']
+            self.obs[tidx] = sel[cols].values
 
     # defines the metric used to rank technology (for now last cost)
     def techMetric(self):
-        self.input = np.zeros(len(self.units))
+        # multiple inputs
+        self.input = [[] for l in range(len(self.units))]
         for tidx in self.techsidx:
-            self.input[tidx] = self.obs[tidx][-1][1]
+            obt = self.obs[tidx]
+            obt = np.transpose(np.log10(obt))
+            lastCost = obt[1][-1]
+            if len(obt[0]) > 1 :
+                shortTermLR = ( obt[1][-1] - obt[1][-2]) /\
+                                ( obt[0][-1] - obt[0][-2] )
+                LR = np.linalg.pinv(np.transpose([obt[0]]))\
+                    .dot(np.transpose([obt[1],np.ones(len(obt[1]))]))[0][0]
+            else:
+                LR = 0
+                shortTermLR = 0
+            self.input[tidx] = [-lastCost, -shortTermLR, -LR]
+        # self.input = np.zeros(len(self.units))
+        # for tidx in self.techsidx:
+        #     self.input[tidx] = self.obs[tidx][-1][1]
 
     # defines the metric used to rank technology (for now last cost)
     def computeActions(self):
         self.actions = np.zeros(len(self.units))
         for tidx in self.techsidx:
-            self.actions[tidx] = (1.0 / self.input[tidx])**self.gamma
+            self.actions[tidx] = max( self.input[tidx][0] * self.aC,  + \
+                                    self.input[tidx][1] * self.astLR + \
+                                    self.input[tidx][2] * self.aLR, 0 ) 
+        # for tidx in self.techsidx:
+        #     self.actions[tidx] = (self.input[tidx])**self.gamma
 
     # execute the actions, potentially enforcing constrains
     def execute(self): 
+        if np.all(self.actions == self.actions[0]):
+            self.actions = [1 / sum(self.units>0) \
+                            for x in range(len(self.actions))]
+        else:
+            self.actions = self.actions / sum (self.actions)
         for tidx in self.techsidx:
-            self.units[tidx] += self.actions[tidx]
+            self.units[tidx] += self.actions[tidx] * 100
         # keep track of units over step by reporting each step
         self.portfolio.append(self.units.copy())
 
@@ -186,6 +228,7 @@ simulator = Simulator(df)
 simulator.simulate()
 simulator.plotTraj()
 simulator.plotPortfolio()
+plt.show()
 # optimize
 simulator.optimize()
 plt.show()

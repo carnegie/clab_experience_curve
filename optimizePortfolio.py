@@ -16,11 +16,14 @@ class Simulator():
         self.select_techs()
         # set parameter for a general simulation
         self.gamma = -2 # regulates how many units are to be produced based on current cost
-        self.aC = 0.92453032 
-        self.astLR = 0.08152243
-        self.aLR = 0.69743501
-        self.N = 3e3 # number of units to be produced over the simulation
-
+        self.aC = 0.75582862
+        self.astLR = 0.45194541 
+        self.aLR = 0.60583144 
+        self.b = 0.03912682
+        self.N = 1e3
+         # number of units to be produced over the simulation
+#
+# 
     # this can be used to select different subsets of technologies
     def select_techs(self, N=None):
         # select all techs for now
@@ -29,7 +32,8 @@ class Simulator():
             self.techsidx = df['Code'].unique()
         # select a subset of technologies to be used in the simulation
         else:
-            subset = df.drop_duplicates(subset='Tech').sample(N).copy()
+            subset = df.drop_duplicates(subset='Tech')\
+                        .sample(N, random_state = 0).copy()
             self.techs = df['Tech'].unique()
             self.techsidx = subset['Code'].unique()
 
@@ -39,13 +43,16 @@ class Simulator():
         #                 method='brent', options={'disp':True})
         # print(res)
         # self.gamma = res.x
+        # res = scipy.optimize.minimize(self.simObj, [0.1, 0.1, 0.1, 0.1], 
+        #                               method='BFGS', options={'disp':True})
         res = scipy.optimize.differential_evolution(self.simObj, 
-                        bounds=[[0,1],[0,1],[0,1]], 
-                        disp = True)
+                        bounds=[[0,1],[0,1],[0,1],[0.0001,1]], 
+                        disp = True, maxiter = 5)
         print(res)
         self.aC = res.x[0]
         self.astLR = res.x[1]
         self.aLR = res.x[2]
+        self.b = res.x[3]
         self.N = 8e2
         self.select_techs(30)
         self.simulate()
@@ -58,8 +65,12 @@ class Simulator():
         self.aC = x0[0]
         self.astLR = x0[1]
         self.aLR = x0[2]
+        self.b = x0[3]
+        if sum(x0[:3]) <= 0.05:
+            self.b = 0.1
         print(x0)
         return self.getObjStoch()
+
 
     # define objective for optimization and how to compute it for the deterministic case
     def getObj(self):
@@ -72,14 +83,15 @@ class Simulator():
     def getObjStoch(self):
         # define where to store objective for each simulation and values of units to be produced
         objs = []
-        Nrange = [1e2, 2e2, 3e2, 5e2, 8e2, 1e3, 5e3]
+        Nrange = [1e2, 1e4, 1e6]
         nTechrange = [df['Tech'].nunique() - 30,
-                      int( df['Tech'].nunique() / 4) ]
+                      int( df['Tech'].nunique() / 10) ]
         # for each number of units to be produced
         for N in Nrange:
             self.N = N
             # sampling ten times the number and the subset of technologies available 
-            for r in range(10):
+            for r in range(3):
+                np.random.seed(0)
                 ntechs = np.random.rand()
                 ntechs = int( ntechs * \
                     ( nTechrange[0] - nTechrange[1]) + \
@@ -87,7 +99,7 @@ class Simulator():
                 self.select_techs(ntechs)
                 # simulate and store objective
                 self.simulate()
-                objs.append(self.cost)
+                objs.append(self.cost / sum(self.units))
         print(np.mean(objs), np.var(objs))
         return np.mean( objs ) + np.var( objs )
 
@@ -132,7 +144,7 @@ class Simulator():
             lastCost = obt[1][-1]
             if len(obt[0]) > 1 :
                 shortTermLR = ( obt[1][-1] - obt[1][-2]) /\
-                                ( obt[0][-1] - obt[0][-2] )
+                                ( self.units[tidx] - obt[0][-2] )
                 LR = np.linalg.pinv(np.transpose([obt[0]]))\
                     .dot(np.transpose([obt[1],np.ones(len(obt[1]))]))[0][0]
             else:
@@ -147,21 +159,23 @@ class Simulator():
     def computeActions(self):
         self.actions = np.zeros(len(self.units))
         for tidx in self.techsidx:
-            self.actions[tidx] = max( self.input[tidx][0] * self.aC,  + \
+            self.actions[tidx] = self.units[tidx] * \
+                                    max( self.input[tidx][0] * self.aC,  + \
                                     self.input[tidx][1] * self.astLR + \
-                                    self.input[tidx][2] * self.aLR, 0 ) 
+                                    self.input[tidx][2] * self.aLR +
+                                    self.b , 0 ) 
         # for tidx in self.techsidx:
         #     self.actions[tidx] = (self.input[tidx])**self.gamma
 
     # execute the actions, potentially enforcing constrains
     def execute(self): 
-        if np.all(self.actions == self.actions[0]):
-            self.actions = [1 / sum(self.units>0) \
-                            for x in range(len(self.actions))]
-        else:
-            self.actions = self.actions / sum (self.actions)
+        # if np.all(self.actions == self.actions[0]):
+        #     self.actions = [1 / sum(self.units>0) \
+        #                     for x in range(len(self.actions))]
+        # else:
+        #     self.actions = self.actions / sum (self.actions)
         for tidx in self.techsidx:
-            self.units[tidx] += self.actions[tidx] * 100
+            self.units[tidx] += self.actions[tidx] #* 100
         # keep track of units over step by reporting each step
         self.portfolio.append(self.units.copy())
 
@@ -225,6 +239,7 @@ class Simulator():
 df = pd.read_csv('ExpCurves.csv')
 simulator = Simulator(df)
 # simulate and plot trajectories
+simulator.select_techs(30)
 simulator.simulate()
 simulator.plotTraj()
 simulator.plotPortfolio()

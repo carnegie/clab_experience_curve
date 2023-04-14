@@ -16,9 +16,9 @@ class Simulator():
         self.select_techs()
         # set parameter for a general simulation
         self.gamma = -2 # regulates how many units are to be produced based on current cost
-        self.aC = 0.02700935 
-        self.astLR = 0.30946333 
-        self.aLR = 0.45834448
+        self.aC = 0.92453032 
+        self.astLR = 0.08152243
+        self.aLR = 0.69743501
         self.N = 3e3 # number of units to be produced over the simulation
 
     # this can be used to select different subsets of technologies

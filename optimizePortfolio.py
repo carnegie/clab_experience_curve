@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib, os
 import scipy
-import pymoo
 import time
 from pymoo.core.problem import ElementwiseProblem
 from pymoo.algorithms.moo.nsga2 import NSGA2
@@ -22,15 +21,15 @@ class Simulator():
         self.select_techs()
         # set parameter for a general simulation
         self.gamma = -2 # regulates how many units are to be produced based on current cost
-        self.aC = 0.75582862
-        self.astLR = 0.45194541 
-        self.aLR = 0.60583144 
-        self.b = 0.03912682
-        self.aC = 0.87638915 
-        self.astLR = 0.89460666  
-        self.aLR = 0.08504421 
-        self.b = 0.03915088
-        self.N = 2e2
+        self.aC = 9.00914351
+        self.astLR = 5.35896406 
+        self.aLR = 0.49379278 
+        self.b = 0.80612666  
+        self.kC = 9.88409471  
+        self.kstLR = 1.69805398
+        self.kLR =   8.87059356 
+        self.kb = -3.34728171
+        self.N = 2e6
          # number of units to be produced over the simulation
 #
 # 
@@ -43,7 +42,7 @@ class Simulator():
         # select a subset of technologies to be used in the simulation
         else:
             subset = df.drop_duplicates(subset='Tech')\
-                        .sample(N, random_state=0).copy()
+                        .sample(N, random_state=N).copy()
             self.techs = df['Tech'].unique()
             self.techsidx = subset['Code'].unique()
 
@@ -56,18 +55,14 @@ class Simulator():
         # res = scipy.optimize.minimize(self.simObj, [0.1, 0.1, 0.1, 0.1], 
         #                               method='BFGS', options={'disp':True})
         res = scipy.optimize.differential_evolution(self.simObj, 
-                        bounds=[[0,1],[0,1],[0,1],[0.0001,1]], 
+                        bounds=[[0,10],[0,10],[0,10],[0.0001,1],
+                                [-10,10], [-10,10], [-10,10],[0,10]], 
                         disp = True, maxiter = 5)
-        # print(res)
+        print(res)
         self.aC = res.x[0]
         self.astLR = res.x[1]
         self.aLR = res.x[2]
         self.b = res.x[3]
-        self.N = 8e2
-        self.select_techs(30)
-        self.simulate()
-        self.plotTraj()
-        self.plotPortfolio()
 
     # set value suggested by solver and return the objective after simulating
     def simObj(self, x0):
@@ -78,6 +73,10 @@ class Simulator():
         self.b = x0[3]
         if sum(x0[:3]) <= 0.05:
             self.b = 0.1
+        self.kC = x0[4]
+        self.kstLR = x0[5]
+        self.kLR = x0[6]
+        self.kb = x0[7]
         print(x0)
         return self.getObjStoch()
 
@@ -94,15 +93,15 @@ class Simulator():
         start = time.time()
         # define where to store objective for each simulation and values of units to be produced
         objs = []
-        Nrange = [5e1, 1e2, 1e4, 1e6]
-        nTechrange = [df['Tech'].nunique() - 30,
+        Nrange = [5e2, 1e4, 1e6]
+        nTechrange = [df['Tech'].nunique() / 2 ,
                       int( df['Tech'].nunique() / 10) ]
         # for each number of units to be produced
         for N in Nrange:
             self.N = N
             # sampling ten times the number and the subset of technologies available 
             np.random.seed(0)
-            for r in range(10):
+            for r in range(3):
                 ntechs = np.random.rand()
                 ntechs = int( ntechs * \
                     ( nTechrange[0] - nTechrange[1]) + \
@@ -176,8 +175,14 @@ class Simulator():
             self.actions[tidx] = self.units[tidx] * \
                                     max( self.input[tidx][0] * self.aC,  + \
                                     self.input[tidx][1] * self.astLR + \
-                                    self.input[tidx][2] * self.aLR +
-                                    self.b , 0 ) 
+                                    self.input[tidx][2] * self.aLR + \
+                                    self.b , 1e-3) * \
+                                ( 1 - 1.0 / \
+                                max(self.kC * self.input[tidx][0] + \
+                                    self.kstLR * self.input[tidx][1] + \
+                                    self.kLR * self.input[tidx][2] + \
+                                    self.kb, 1.1 ) )
+
         # for tidx in self.techsidx:
         #     self.actions[tidx] = (self.input[tidx])**self.gamma
 
@@ -253,19 +258,28 @@ class Simulator():
 df = pd.read_csv('ExpCurves.csv')
 simulator = Simulator(df)
 # simulate and plot trajectories
-simulator.select_techs(6)
+simulator.select_techs(50)
 simulator.simulate()
 simulator.plotTraj()
 simulator.plotPortfolio()
 plt.show()
 
+# optimize
+# simulator.optimize()
+# plt.show()
+
 class PymooProblem(ElementwiseProblem):
     def __init__(self):
-        xl = np.zeros(4)
-        xl[3] = 0.0001
+        xl = np.zeros(8)
+        xl[4] = -10
+        xl[5] = -10
+        xl[6] = -10
+        xl[7] = -10
+        
 
-        xu = np.ones(4)
-        super().__init__(n_var=4,
+        xu = np.ones(8)*10
+        xu[3] = 1
+        super().__init__(n_var=8,
                      n_obj=1,
                      n_ieq_constr=0,
                      xl=xl, xu=xu)
@@ -274,11 +288,11 @@ class PymooProblem(ElementwiseProblem):
         out["F"] = simulator.simObj(x)
 
 problem = PymooProblem()
-algorithm = NSGA2(pop_size=25)
+algorithm = NSGA2(pop_size=100)
 res = minimize(problem,
                algorithm,
                seed=1,
-               termination=('n_eval', 100),
+               termination=('n_eval', 1000),
                verbose=True)
 
 print(res.X)
@@ -290,7 +304,3 @@ plot = Scatter()
 plot.add(problem.pareto_front(), plot_type="line", color="black", alpha=0.7)
 plot.add(res.F, facecolor="none", edgecolor="red")
 plot.show()
-
-# optimize
-simulator.optimize()
-plt.show()

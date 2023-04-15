@@ -21,15 +21,15 @@ class Simulator():
         self.select_techs()
         # set parameter for a general simulation
         self.gamma = -2 # regulates how many units are to be produced based on current cost
-        self.aC = 9.00914351
-        self.astLR = 5.35896406 
-        self.aLR = 0.49379278 
-        self.b = 0.80612666  
-        self.kC = 9.88409471  
-        self.kstLR = 1.69805398
-        self.kLR =   8.87059356 
-        self.kb = 3.34728171
-        self.N = 2e5
+        self.aC = 2.59698393
+        self.astLR = 2.57069299
+        self.aLR = 6.32303317
+        self.b = 0.34529746
+        self.kC = 5.93177356
+        self.kstLR = -1.07707536
+        self.kLR = 5.6549883
+        self.kb = 9.80943567
+        self.N = 2e3
          # number of units to be produced over the simulation
 #
 # 
@@ -262,7 +262,7 @@ class Simulator():
 df = pd.read_csv('ExpCurves.csv')
 simulator = Simulator(df)
 # simulate and plot trajectories
-simulator.select_techs(86)
+simulator.select_techs(40)
 simulator.simulate()
 simulator.plotTraj()
 simulator.plotPortfolio()

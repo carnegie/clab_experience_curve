@@ -3,6 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib, os
 import scipy
+import pymoo
+import time
+from pymoo.core.problem import ElementwiseProblem
+from pymoo.algorithms.moo.nsga2 import NSGA2
+from pymoo.visualization.scatter import Scatter
+from pymoo.optimize import minimize
 
 matplotlib.style.use('bmh')
 
@@ -20,7 +26,11 @@ class Simulator():
         self.astLR = 0.45194541 
         self.aLR = 0.60583144 
         self.b = 0.03912682
-        self.N = 1e3
+        self.aC = 0.87638915 
+        self.astLR = 0.89460666  
+        self.aLR = 0.08504421 
+        self.b = 0.03915088
+        self.N = 2e2
          # number of units to be produced over the simulation
 #
 # 
@@ -33,7 +43,7 @@ class Simulator():
         # select a subset of technologies to be used in the simulation
         else:
             subset = df.drop_duplicates(subset='Tech')\
-                        .sample(N, random_state = 0).copy()
+                        .sample(N, random_state=0).copy()
             self.techs = df['Tech'].unique()
             self.techsidx = subset['Code'].unique()
 
@@ -48,7 +58,7 @@ class Simulator():
         res = scipy.optimize.differential_evolution(self.simObj, 
                         bounds=[[0,1],[0,1],[0,1],[0.0001,1]], 
                         disp = True, maxiter = 5)
-        print(res)
+        # print(res)
         self.aC = res.x[0]
         self.astLR = res.x[1]
         self.aLR = res.x[2]
@@ -81,17 +91,18 @@ class Simulator():
     # it includes stochastic selection of technologies, number of technologies available, and number of units to be produced
     # in the future it might also include the objective function
     def getObjStoch(self):
+        start = time.time()
         # define where to store objective for each simulation and values of units to be produced
         objs = []
-        Nrange = [1e2, 1e4, 1e6]
+        Nrange = [5e1, 1e2, 1e4, 1e6]
         nTechrange = [df['Tech'].nunique() - 30,
                       int( df['Tech'].nunique() / 10) ]
         # for each number of units to be produced
         for N in Nrange:
             self.N = N
             # sampling ten times the number and the subset of technologies available 
-            for r in range(3):
-                np.random.seed(0)
+            np.random.seed(0)
+            for r in range(10):
                 ntechs = np.random.rand()
                 ntechs = int( ntechs * \
                     ( nTechrange[0] - nTechrange[1]) + \
@@ -100,16 +111,19 @@ class Simulator():
                 # simulate and store objective
                 self.simulate()
                 objs.append(self.cost / sum(self.units))
+        # print(time.time()-start)
         print(np.mean(objs), np.var(objs))
         return np.mean( objs ) + np.var( objs )
 
     # standard simulation fuction
     def simulate(self):
+        start = time.time()
         # reset variables to store trajectories
         self.reset()
         # until termination conditions is met, make a step
         while (self.flag):
             self.step()
+        # print(time.time()-start)
 
     # standard step ahead
     def step(self):
@@ -239,11 +253,44 @@ class Simulator():
 df = pd.read_csv('ExpCurves.csv')
 simulator = Simulator(df)
 # simulate and plot trajectories
-simulator.select_techs(30)
+simulator.select_techs(6)
 simulator.simulate()
 simulator.plotTraj()
 simulator.plotPortfolio()
 plt.show()
+
+class PymooProblem(ElementwiseProblem):
+    def __init__(self):
+        xl = np.zeros(4)
+        xl[3] = 0.0001
+
+        xu = np.ones(4)
+        super().__init__(n_var=4,
+                     n_obj=1,
+                     n_ieq_constr=0,
+                     xl=xl, xu=xu)
+
+    def _evaluate(self, x, out, *args, **kwargs):
+        out["F"] = simulator.simObj(x)
+
+problem = PymooProblem()
+algorithm = NSGA2(pop_size=25)
+res = minimize(problem,
+               algorithm,
+               seed=1,
+               termination=('n_eval', 100),
+               verbose=True)
+
+print(res.X)
+print(res.F)
+print(res.pop.get('X'))
+print(res.pop.get('F'))
+
+plot = Scatter()
+plot.add(problem.pareto_front(), plot_type="line", color="black", alpha=0.7)
+plot.add(res.F, facecolor="none", edgecolor="red")
+plot.show()
+
 # optimize
 simulator.optimize()
 plt.show()

@@ -28,8 +28,8 @@ class Simulator():
         self.kC = 9.88409471  
         self.kstLR = 1.69805398
         self.kLR =   8.87059356 
-        self.kb = -3.34728171
-        self.N = 2e6
+        self.kb = 3.34728171
+        self.N = 2e5
          # number of units to be produced over the simulation
 #
 # 
@@ -172,7 +172,7 @@ class Simulator():
     def computeActions(self):
         self.actions = np.zeros(len(self.units))
         for tidx in self.techsidx:
-            self.actions[tidx] = self.units[tidx] * \
+            self.actions[tidx] = max(self.units[tidx] * \
                                     max( self.input[tidx][0] * self.aC,  + \
                                     self.input[tidx][1] * self.astLR + \
                                     self.input[tidx][2] * self.aLR + \
@@ -181,7 +181,11 @@ class Simulator():
                                 max(self.kC * self.input[tidx][0] + \
                                     self.kstLR * self.input[tidx][1] + \
                                     self.kLR * self.input[tidx][2] + \
-                                    self.kb, 1.1 ) )
+                                    self.kb, 1.1 ) ) - self.units[tidx] ,
+                                    1.0*( len(self.obs[tidx]) <= 2 ) )
+        if sum(self.actions) == 0:
+            self.cost = self.N
+            self.flag = False
 
         # for tidx in self.techsidx:
         #     self.actions[tidx] = (self.input[tidx])**self.gamma
@@ -258,7 +262,7 @@ class Simulator():
 df = pd.read_csv('ExpCurves.csv')
 simulator = Simulator(df)
 # simulate and plot trajectories
-simulator.select_techs(50)
+simulator.select_techs(86)
 simulator.simulate()
 simulator.plotTraj()
 simulator.plotPortfolio()

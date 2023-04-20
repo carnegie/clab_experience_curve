@@ -21,15 +21,15 @@ class Simulator():
         self.select_techs()
         # set parameter for a general simulation
         self.gamma = -2 # regulates how many units are to be produced based on current cost
-        self.aC = 2.59698393
-        self.astLR = 2.57069299
-        self.aLR = 6.32303317
-        self.b = 0.34529746
-        self.kC = 5.93177356
-        self.kstLR = -1.07707536
-        self.kLR = 5.6549883
-        self.kb = 9.80943567
-        self.N = 2e3
+        self.aC = 7.88257189
+        self.astLR = 6.13032912
+        self.aLR = 9.8532207 
+        self.b = 0.91590684
+        self.kC = 6.24135516
+        self.kstLR = 7.43391527
+        self.kLR =  8.48427037 
+        self.kb = 9.6015371
+        self.N = 20
          # number of units to be produced over the simulation
 #
 # 
@@ -71,8 +71,6 @@ class Simulator():
         self.astLR = x0[1]
         self.aLR = x0[2]
         self.b = x0[3]
-        if sum(x0[:3]) <= 0.05:
-            self.b = 0.1
         self.kC = x0[4]
         self.kstLR = x0[5]
         self.kLR = x0[6]
@@ -93,15 +91,15 @@ class Simulator():
         start = time.time()
         # define where to store objective for each simulation and values of units to be produced
         objs = []
-        Nrange = [5e2, 1e4, 1e6]
-        nTechrange = [df['Tech'].nunique() / 2 ,
-                      int( df['Tech'].nunique() / 10) ]
+        Nrange = [20]
+        nTechrange = [50 ,
+                      2 ]
         # for each number of units to be produced
         for N in Nrange:
             self.N = N
             # sampling ten times the number and the subset of technologies available 
             np.random.seed(0)
-            for r in range(3):
+            for r in range(10):
                 ntechs = np.random.rand()
                 ntechs = int( ntechs * \
                     ( nTechrange[0] - nTechrange[1]) + \
@@ -116,22 +114,23 @@ class Simulator():
 
     # standard simulation fuction
     def simulate(self):
-        start = time.time()
         # reset variables to store trajectories
         self.reset()
         # until termination conditions is met, make a step
         while (self.flag):
             self.step()
-        # print(time.time()-start)
 
     # standard step ahead
     def step(self):
         # update information available
         self.collectData()
         # compute a metric for each technology
-        self.techMetric()
+        # what are the statistics of the data that are useful to take decisions?
+        # what model of the data gives you the best predictive skill? 
+        self.techMetric() 
         # derive an action based on the metric
         self.computeActions()
+        # the number of steps is known in advance once N is known
         # execute the action and update variables
         self.execute()
         self.updateCost()
@@ -143,7 +142,7 @@ class Simulator():
             # select for each technology the data that would be available
             # at a given cumulative production level and store it in obs
             sel = df.loc[df['Code']==tidx].copy()
-            sel = sel.loc[sel['Cumulative production'] <= self.units[tidx]]
+            sel = sel.loc[sel['Cumulative production'] <= max(self.units[tidx],1.0)]
             cols = ['Cumulative production','Unit cost']
             self.obs[tidx] = sel[cols].values
 
@@ -176,17 +175,16 @@ class Simulator():
                                     max( self.input[tidx][0] * self.aC,  + \
                                     self.input[tidx][1] * self.astLR + \
                                     self.input[tidx][2] * self.aLR + \
-                                    self.b , 1e-3) * \
+                                    self.b , 0.1) * \
                                 ( 1 - 1.0 / \
                                 max(self.kC * self.input[tidx][0] + \
                                     self.kstLR * self.input[tidx][1] + \
                                     self.kLR * self.input[tidx][2] + \
-                                    self.kb, 1.1 ) ) - self.units[tidx] ,
-                                    1.0*( len(self.obs[tidx]) <= 2 ) )
+                                    self.kb, 1.1 )) - self.units[tidx] ,
+                                    0 )
         if sum(self.actions) == 0:
-            self.cost = self.N
-            self.flag = False
-
+            for tidx in self.techsidx:
+                self.actions[tidx] = 0.01
         # for tidx in self.techsidx:
         #     self.actions[tidx] = (self.input[tidx])**self.gamma
 
@@ -198,7 +196,7 @@ class Simulator():
         # else:
         #     self.actions = self.actions / sum (self.actions)
         for tidx in self.techsidx:
-            self.units[tidx] += self.actions[tidx] #* 100
+            self.units[tidx] += self.actions[tidx] 
         # keep track of units over step by reporting each step
         self.portfolio.append(self.units.copy())
 
@@ -216,7 +214,7 @@ class Simulator():
     def reset(self):
         self.flag = True
         self.obs = [[] for x in range(df['Tech'].nunique())]
-        self.units = np.ones(df['Tech'].nunique())
+        self.units = np.ones(df['Tech'].nunique()) * 0.01
         for tidx in range(len(self.units)):
             if tidx not in self.techsidx:
                 self.units[tidx] = 0.0
@@ -262,8 +260,9 @@ class Simulator():
 df = pd.read_csv('ExpCurves.csv')
 simulator = Simulator(df)
 # simulate and plot trajectories
-simulator.select_techs(40)
+simulator.select_techs(5)
 simulator.simulate()
+print(simulator.cost)
 simulator.plotTraj()
 simulator.plotPortfolio()
 plt.show()
@@ -275,12 +274,11 @@ plt.show()
 class PymooProblem(ElementwiseProblem):
     def __init__(self):
         xl = np.zeros(8)
-        xl[4] = -10
-        xl[5] = -10
-        xl[6] = -10
-        xl[7] = -10
+        # xl[4] = -10
+        # xl[5] = -10
+        # xl[6] = -10
+        # xl[7] = -10
         
-
         xu = np.ones(8)*10
         xu[3] = 1
         super().__init__(n_var=8,

@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sm
 
 # prepare figure for plots
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(1, 2, figsize=(15,6))
+
 # folder name
 datafolder = 'expCurveData'
 # for all files in folder
@@ -15,12 +16,17 @@ for file in os.listdir(datafolder):
 	f = f.dropna()
 	# compute cumulative sum of units produce and normalize price and cumulative units produced
 	f[f.columns[2]] = f[f.columns[2]].cumsum()
+	ax[0].plot(f[f.columns[2]], f[f.columns[0]], lw = 0.75,
+	  alpha = 0.25, marker = 'o', markersize = 2)
 	f[f.columns[2]] = f[f.columns[2]] / f[f.columns[2]].values[0]
 	f[f.columns[0]] = f[f.columns[0]] / f[f.columns[0]].values[0]
 	# get the length of the observation series in years
 	f[f.columns[1]] = f[f.columns[1]] - f[f.columns[1]].values[0]
 	# plot as step functions
-	ax.step(f[f.columns[2]], f[f.columns[0]],'o-', where='post', markersize=2, alpha=0.5)
+	ax[1].plot(f[f.columns[2]], f[f.columns[0]], 'o-', 
+	 lw = 0.75, markersize=2, alpha=0.25)
+	# ax[1].step(f[f.columns[2]], f[f.columns[0]], 'o-', 
+	#  lw = 0.75, where='post', markersize=2, alpha=0.25)
 	# save unit cost, cumulative production, and name of technology
 	f['Tech'] = file
 	f = f[[f.columns[0], f.columns[1], f.columns[2], 'Tech']].copy()
@@ -31,10 +37,16 @@ for file in os.listdir(datafolder):
 	except NameError:
 		df = f
 # set axes styling
-ax.set_xscale('log', base=10)
-ax.set_yscale('log', base=10)	
-ax.set_ylabel('Unit cost')
-ax.set_xlabel('Cumulative production')
+ax[0].set_xscale('log', base=10)
+ax[0].set_yscale('log', base=10)	
+ax[0].set_ylabel('Unit cost')
+ax[0].set_xlabel('Cumulative production')
+ax[0].set_title('Raw data')
+ax[1].set_xscale('log', base=10)
+ax[1].set_yscale('log', base=10)	
+ax[1].set_ylabel('Unit cost')
+ax[1].set_xlabel('Cumulative production')
+ax[1].set_title('Data normalized using the first point')
 
 # figure reporting the number of available technologies for number of units produced
 fig, ax = plt.subplots()
@@ -59,16 +71,43 @@ ax.set_ylabel('Number of technologies available')
 ax.set_xlabel('Length of experience curve in years')
 
 # figure plotting number of years available against number of units
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(1, 3, figsize=(15,6))
 nyears =[]
 nunits = []
 for tech in df['Tech'].unique():
 	nunits.append(df.loc[df['Tech']==tech, df.columns[2]].max())
 	nyears.append(df.loc[df['Tech']==tech, df.columns[1]].max())
-ax.scatter(nyears,nunits)
-ax.set_yscale('log', base=10)
-ax.set_ylabel('Total number of units measured')
-ax.set_xlabel('Length of experience curve in years')
+ax[0].scatter(nunits,nyears, edgecolor = 'tab:blue', facecolors = "None", alpha = 0.75)
+ax[0].set_xscale('log', base=10)
+ax[0].set_xlabel('Total number of units measured')
+ax[0].set_ylabel('Length of experience curve in years')
+ax[0].plot([0.99999,9.9e9],[10,10],'r--', zorder = -1, alpha = 0.5)
+ax[0].annotate('10 years',(1e8,13), ha = 'center', va = 'center')
+ax[0].plot([20,20],[1,130],'r--', zorder = -1, alpha = 0.5)
+ax[0].annotate('20 cumulative units',(25,100), ha = 'left', va = 'center')
+
+# plotting number of points vs number of data vs number of cumulative production 
+# useful to check data quality
+nunits =[]
+npoints = []
+for tech in df['Tech'].unique():
+	nunits.append(df.loc[df['Tech']==tech, df.columns[2]].max())
+	npoints.append(df.loc[df['Tech']==tech, df.columns[1]].count())
+ax[1].scatter(nunits,npoints, edgecolor = 'tab:blue', facecolors = "None", alpha = 0.75)
+ax[1].set_xscale('log', base=10)
+ax[1].set_xlabel('Measured increase in cumulative number of units')
+ax[1].set_ylabel('Number of data points available')
+ax[1].plot([0.99999,9.9e9],[10,10],'r--', zorder = -1, alpha = 0.5)
+ax[1].annotate('10 data points',(1e8,13), ha = 'center', va = 'center')
+ax[1].plot([20,20],[1,130],'r--', zorder = -1, alpha = 0.5)
+ax[1].annotate('20 cumulative units',(25,100), ha = 'left', va = 'center')
+ax[2].scatter(nyears, npoints, edgecolor = 'tab:blue', facecolors = "None", alpha = 0.75)
+ax[2].set_xlabel('Length of experience curve in years')
+ax[2].set_ylabel('Number of data points available')
+ax[2].plot([1,130],[10,10],'r--', zorder = -1, alpha = 0.5)
+ax[2].annotate('10 years',(13,100), ha = 'left', va = 'center')
+ax[2].plot([10,10],[1,130],'r--', zorder = -1, alpha = 0.5)
+ax[2].annotate('10 data points',(100,13), ha = 'center', va = 'center')
 plt.show()
 
 df = df[['Unit cost','Year','Cumulative production','Tech']].copy()

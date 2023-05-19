@@ -137,7 +137,7 @@ for tech in df['Tech'].unique():
 ax3[int(count/9)][count%9].annotate(
     'The error of average technological learning rate is lower than'+\
     '\n'+'each technology learning rate for '+\
-    str(better)+ ' ('+str(round(better/86,2))+'%) technologies', 
+    str(better)+ ' ('+str(round(100*better/86))+'%) technologies', 
     (0.5,0.075), ha='center',
     xycoords='figure fraction')
 

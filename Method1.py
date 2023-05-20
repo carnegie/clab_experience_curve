@@ -9,7 +9,6 @@ from matplotlib import rc
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 
 df = pd.read_csv('ExpCurves.csv')
-# df = pd.read_csv('NormalizedExpCurves.csv')
 
 fig, ax = plt.subplots(10,9)
 count=0
@@ -43,12 +42,8 @@ better = 0
 for tech in df['Tech'].unique():
     # read data for specific technology
     sel = df.loc[df['Tech'] == tech]
-    try:
-        x = np.log10(sel['Cumulative production'].values)
-        y = np.log10(sel['Unit cost'].values)
-    except KeyError:
-        x = np.log10(sel['Normalized cumulative production'].values)
-        y = np.log10(sel['Normalized unit cost'].values)
+    x = np.log10(sel['Cumulative production'].values)
+    y = np.log10(sel['Unit cost'].values)
     # separate calibration and validation datasets based on points
     x_cal = x[:round(x.shape[0]*fraction)]
     x_val = x[round(x.shape[0]*fraction):]
@@ -133,7 +128,9 @@ for tech in df['Tech'].unique():
             ax3[int(count/9)][count%9].spines[axis].set_color('green')
             ax3[int(count/9)][count%9].spines[axis].set_linewidth(1.0)
         better += 1
+    ax2[int(count/9)][count%9].axis('off')
     count += 1
+
 ax3[int(count/9)][count%9].annotate(
     'The error of average technological learning rate is lower than'+\
     '\n'+'each technology learning rate for '+\

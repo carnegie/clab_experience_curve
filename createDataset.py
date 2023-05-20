@@ -197,7 +197,19 @@ for tech in df['Tech'].unique():
 	# plt.xlabel('Cumulative production')
 	# plt.title(select['Tech'].values[0])
 	# plt.show()
+print(np.mean(slopes))
 print(1 - 2**np.mean(slopes))
+
+x = np.log10(df['Cumulative production'].values)
+y = np.log10(df['Unit cost'].values)
+x = sm.add_constant(x)
+model = sm.OLS(endog=y, exog=x)
+res = model.fit()
+slopes.append(res.params[1])
+
+print(np.mean(slopes))
+print(1 - 2**np.mean(slopes))
+
 # plt.show()
 
 

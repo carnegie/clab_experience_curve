@@ -3,9 +3,101 @@ import numpy as np
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import seaborn, scipy
+from matplotlib import rc
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 
 df = pd.read_csv('ExpCurves.csv')
-# df = pd.read_csv('NormalizedExpCurves.csv')
+
+# get slope for all technologies
+x = np.log10(df['Cumulative production'].values)
+y = np.log10(df['Unit cost'].values)
+model = sm.OLS(y, sm.add_constant(x))
+result = model.fit()
+slopeall = result.params[1]
+
+# get error using technology specific slope
+count = 0
+dferr = []
+for tech in df['Tech'].unique():
+    sel = df.loc[df['Tech']==tech]
+    x = np.log10(sel['Cumulative production'].values)
+    y = np.log10(sel['Unit cost'].values)
+    H = len(x)
+    # select N points before midpoint and compute slope
+    for N in range(1, round(H/2)):
+        slope = (y[round(H/2)-1] - y[round(H/2)-N-1]) /\
+            (x[round(H/2)-1] - x[round(H/2)-N-1])
+        # compute error associated using slope M points after midpoint
+        for M in range(round(H/2),H):
+            error = (10**(y[M] - y[round(H/2)-1] -\
+                slopeall * (x[M] - x[round(H/2)-1])))**2
+            dferr.append([x[round(H/2)-1] - x[round(H/2)-N-1],
+                         x[M] - x[round(H/2)-1],
+                         error])
+            count += 1
+
+dferr = pd.DataFrame(dferr, 
+                     columns = ['Log of ratios for predictor',
+                                'Log of ratios for prediction',
+                                'Squared fractional error'])
+
+# select ratios to be plotted
+frac = np.log10([1, 2, 3, 5, 10, 1e2, 1e3, 1e9])
+
+mean = np.empty((len(frac)-1,len(frac)-1))
+count = np.empty((len(frac)-1,len(frac)-1))
+for i in range(1, len(frac)):
+    for j in range(1, len(frac)):
+        select = dferr.loc[
+            (dferr['Log of ratios for predictor']>frac[i-1]) &\
+            (dferr['Log of ratios for predictor']<=frac[i]) & \
+            (dferr['Log of ratios for prediction']>frac[j-1]) &\
+            (dferr['Log of ratios for prediction']<=frac[j])]
+        mean[i-1,j-1] = np.mean(select['Squared fractional error'].values)
+        count[i-1,j-1] = (select['Squared fractional error'].count())
+        # if count[i-1, j-1] < 10:
+        #     count[i-1,j-1] = np.nan
+        #     mean[i-1,j-1] = np.nan
+
+print(frac)
+im = plt.imshow(mean, aspect='auto')
+plt.gca().set_xticks([x for x in range(7)], 
+        [str(round(x,2))+' to '+str(round(y,2)) for x, y in zip(frac[:-1], frac[1:])],
+        rotation = 90)
+plt.gca().set_yticks([x for x in range(7)], 
+        [str(round(x,2))+' to '+str(round(y,2)) for x, y in zip(frac[:-1], frac[1:])])
+plt.xlabel('Log of ratios for prediction')
+plt.ylabel('Log of ratios for predictor')
+cbar = plt.colorbar(im)
+cbar.set_label('Squared fractional error')
+plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
+plt.suptitle('Average technological slope')
+
+# plt.figure()
+# im = plt.imshow(count)
+# plt.gca().set_xticks([x for x in range(7)], 
+#         [str(round(x,2))+' to '+str(round(y,2)) for x, y in zip(frac[:-1], frac[1:])],
+#         rotation = 90)
+# plt.gca().set_yticks([x for x in range(7)], 
+#         [str(round(x,2))+' to '+str(round(y,2)) for x, y in zip(frac[:-1], frac[1:])])
+# plt.colorbar(im)
+
+plt.show()
+
+exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 count = 0
 tot = 0

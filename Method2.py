@@ -18,6 +18,7 @@ slopeall = result.params[1]
 # get error using technology specific slope
 dferr = []
 dferr2 = []
+counterr = 0
 for tech in df['Tech'].unique():
 	sel = df.loc[df['Tech']==tech]
 	x = np.log10(sel['Cumulative production'].values)
@@ -30,17 +31,23 @@ for tech in df['Tech'].unique():
 			slope = (y[i] - y[N]) /\
 				(x[i] - x[N])
 			# compute error associated using slope M points after midpoint
-			for M in range(i+1,H):
+			for M in range(i+1, H):
 				pred =  y[i] + slope * (x[M] - x[i])
 				pred2 =  y[i] + slopeall * (x[M] - x[i])
-				error = (y[M] - (pred)) **2
-				error2 = (y[M] - (pred2)) **2
+				error = (y[M] - (pred)) 
+				error2 = (y[M] - (pred2)) 
 				dferr.append([x[i] - x[N],
 								x[M] - x[i],
 								error])
 				dferr2.append([x[i] - x[N],
 								x[M] - x[i],
 								error2])
+				if np.abs(error2) < np.abs(error):
+					counterr += 1
+
+print('Percentage of cases where error', 
+      ' is lower with average technological slope: ',
+      100*counterr/len(dferr), '%')
 
 dferr = pd.DataFrame(dferr, 
                      columns = ['Log of ratios for predictor',
@@ -50,8 +57,6 @@ dferr2 = pd.DataFrame(dferr2,
                      columns = ['Log of ratios for predictor',
                                 'Log of ratios for prediction',
                                 'Error'])
-
-print(dferr.count()[0])
 
 # select ratios to be plotted
 # frac = np.log10([1, 2, 3, 5, 10, 1e2, 1e3, 1e9])
@@ -77,14 +82,13 @@ for i in range(1, len(frac)):
             (dferr2['Log of ratios for predictor']<=frac[i]) & \
             (dferr2['Log of ratios for prediction']>frac[j-1]) &\
             (dferr2['Log of ratios for prediction']<=frac[j])]
-        mean1[i-1,j-1] = np.mean(select1['Error'].values)**0.5
-        mean2[i-1,j-1] = np.mean(select2['Error'].values)**0.5
+        mean1[i-1,j-1] = np.mean(select1['Error'].values**2)**0.5
+        mean2[i-1,j-1] = np.mean(select2['Error'].values**2)**0.5
         # mean1[i-1,j-1] = np.std(select1['Error'].values) 
         # mean2[i-1,j-1] = np.std(select2['Error'].values) 
-        meandiff[i-1,j-1] = np.mean(select2['Error'].values - 
-                                select1['Error'].values)
-        fracavg[i-1,j-1] = np.sum(select2['Error'].values < 
-                                select1['Error'].values)/\
+        meandiff[i-1,j-1] = mean2[i-1,j-1] - mean1[i-1,j-1]
+        fracavg[i-1,j-1] = np.sum(select2['Error'].values**2 < 
+                                select1['Error'].values**2)/\
                                 select2['Error'].count() * 100
         count[i-1,j-1] = (select1['Error'].count())
 
@@ -99,7 +103,7 @@ plt.gca().set_yticks([x for x in range(16)],
 plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')
 cbar = plt.colorbar(im)
-cbar.set_label('Mean squared error')
+cbar.set_label('RMSE')
 plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
 plt.suptitle('Technology-specific slope')
 
@@ -114,7 +118,7 @@ plt.gca().set_yticks([x for x in range(16)],
 plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')
 cbar = plt.colorbar(im)
-cbar.set_label('Mean squared error')
+cbar.set_label('RMSE')
 plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
 plt.suptitle('Average technology slope')
 
@@ -130,7 +134,7 @@ plt.gca().set_yticks([x for x in range(16)],
 plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')
 cbar = plt.colorbar(im)
-cbar.set_label('Mean difference between squared errors')
+cbar.set_label('RMSE difference')
 plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
 plt.suptitle('Average technology - Technology-specific')
 
@@ -153,7 +157,7 @@ plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
 count = count[::-1,:]
 
 plt.figure()
-im = plt.imshow(count, aspect='auto')
+im = plt.imshow(np.log10(count), aspect='auto')
 plt.gca().set_xticks([x for x in range(16)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
         rotation = 90)
@@ -163,6 +167,24 @@ plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')
 cbar = plt.colorbar(im)
 cbar.set_label('Bin size')
+plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
+
+prob = 100*(perc > 50) * count/np.sum(count)
+prob2 = -100*(perc < 50) * count/np.sum(count)
+prob[prob==0] = prob2[prob==0]
+
+plt.figure()
+divnorm = matplotlib.colors.TwoSlopeNorm(vcenter=0)
+im = plt.imshow(prob, aspect='auto', norm=divnorm, cmap='RdBu')
+plt.gca().set_xticks([x for x in range(16)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
+        rotation = 90)
+plt.gca().set_yticks([x for x in range(16)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])][::-1])
+plt.ylabel('Log of cumulative production ratios for prediction')
+plt.xlabel('Log of cumulative production ratios for predictor')
+cbar = plt.colorbar(im)
+cbar.set_label('Porbability improvement of more accuracy with average technological slope')
 plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
 
 plt.show()

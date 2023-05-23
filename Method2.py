@@ -8,31 +8,49 @@ rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 
 df = pd.read_csv('ExpCurves.csv')
 
-# get slope for all technologies
-x = np.log10(df['Cumulative production'].values)
-y = np.log10(df['Unit cost'].values)
-model = sm.OLS(y, sm.add_constant(x))
-result = model.fit()
-slopeall = result.params[1]
+method = 'regression'
+# method = 'slope'
 
-# get error using technology specific slope
-dferr = []
-dferr2 = []
-counterr = 0
+# get slope for all technologies
+slopes = []
 for tech in df['Tech'].unique():
 	sel = df.loc[df['Tech']==tech]
 	x = np.log10(sel['Cumulative production'].values)
 	y = np.log10(sel['Unit cost'].values)
+	model = sm.OLS(y, sm.add_constant(x))
+	result = model.fit()
+	slopes.append([tech, result.params[1]])
+slopes = pd.DataFrame(slopes, columns=['Tech', 'Slope'])
+
+# get error using technology specific slope
+# add information about the technology to make count of technologies in bin
+dferr = []
+dferr2 = []
+counterr = 0
+count = 0
+for tech in df['Tech'].unique():
+	# computing average technological slope based on all other technologies
+	slopeall = np.mean(slopes.loc[slopes['Tech'] != tech,'Slope'].values)
+	# computing technology specific slope
+	sel = df.loc[df['Tech']==tech]
+	x = np.log10(sel['Cumulative production'].values)
+	y = np.log10(sel['Unit cost'].values)
 	H = len(x)
-	i = round(H/2) - 1
     # select N points before midpoint and compute slope
 	for i in range(H):
 		for N in range(i-1, -1, -1):
 			slope = (y[i] - y[N]) /\
 				(x[i] - x[N])
+			# add linear regression method
+			if method=='regression':
+				model = sm.OLS(y[:i+1], sm.add_constant(x[:i+1]))
+				result = model.fit()
+				slope = result.params[1]
 			# compute error associated using slope M points after midpoint
 			for M in range(i+1, H):
 				pred =  y[i] + slope * (x[M] - x[i])
+				if method=='regression':
+					pred = result.params[0] + slope * x[M]
 				pred2 =  y[i] + slopeall * (x[M] - x[i])
 				error = (y[M] - (pred)) 
 				error2 = (y[M] - (pred2)) 
@@ -44,10 +62,16 @@ for tech in df['Tech'].unique():
 								error2])
 				if np.abs(error2) < np.abs(error):
 					counterr += 1
+				# if 'Offshore_Gas_Pi' in tech and i==7 and M==8 and N ==0:
+				# 	print(tech, i, N, M)
+				# 	print(x[:i], y[:i], pred, pred2, y[M])
+				# 	print(x[i], x[N], y[i], y[N], slope, x[M], x[i])
+				# 	exit()
+	count =+ 1
 
 print('Percentage of cases where error', 
       ' is lower with average technological slope: ',
-      100*counterr/len(dferr), '%')
+      round(100*counterr/len(dferr),2), '%')
 
 dferr = pd.DataFrame(dferr, 
                      columns = ['Log of ratios for predictor',
@@ -66,31 +90,33 @@ for x in range(17):
 
 mean1 = np.empty((len(frac)-1,len(frac)-1))
 mean2 = np.empty((len(frac)-1,len(frac)-1))
+median1 = np.empty((len(frac)-1,len(frac)-1))
+median2 = np.empty((len(frac)-1,len(frac)-1))
 meandiff = np.empty((len(frac)-1,len(frac)-1))
 fracavg = np.empty((len(frac)-1,len(frac)-1))
 count = np.empty((len(frac)-1,len(frac)-1))
 
 for i in range(1, len(frac)):
-    for j in range(1, len(frac)):
-        select1 = dferr.loc[
-            (dferr['Log of ratios for predictor']>frac[i-1]) &\
-            (dferr['Log of ratios for predictor']<=frac[i]) & \
-            (dferr['Log of ratios for prediction']>frac[j-1]) &\
-            (dferr['Log of ratios for prediction']<=frac[j])]
-        select2 = dferr2.loc[
-            (dferr2['Log of ratios for predictor']>frac[i-1]) &\
-            (dferr2['Log of ratios for predictor']<=frac[i]) & \
-            (dferr2['Log of ratios for prediction']>frac[j-1]) &\
-            (dferr2['Log of ratios for prediction']<=frac[j])]
-        mean1[i-1,j-1] = np.mean(select1['Error'].values**2)**0.5
-        mean2[i-1,j-1] = np.mean(select2['Error'].values**2)**0.5
-        # mean1[i-1,j-1] = np.std(select1['Error'].values) 
-        # mean2[i-1,j-1] = np.std(select2['Error'].values) 
-        meandiff[i-1,j-1] = mean2[i-1,j-1] - mean1[i-1,j-1]
-        fracavg[i-1,j-1] = np.sum(select2['Error'].values**2 < 
+	for j in range(1, len(frac)):
+		select1 = dferr.loc[
+					(dferr['Log of ratios for predictor']>frac[i-1]) &\
+					(dferr['Log of ratios for predictor']<=frac[i]) & \
+					(dferr['Log of ratios for prediction']>frac[j-1]) &\
+					(dferr['Log of ratios for prediction']<=frac[j])
+					]
+		select2 = dferr2.loc[
+					(dferr2['Log of ratios for predictor']>frac[i-1]) &\
+					(dferr2['Log of ratios for predictor']<=frac[i]) & \
+					(dferr2['Log of ratios for prediction']>frac[j-1]) &\
+					(dferr2['Log of ratios for prediction']<=frac[j])
+					]
+		mean1[i-1,j-1] = np.mean(select1['Error'].values**2)**0.5
+		mean2[i-1,j-1] = np.mean(select2['Error'].values**2)**0.5
+		meandiff[i-1,j-1] = mean2[i-1,j-1] - mean1[i-1,j-1]
+		fracavg[i-1,j-1] = np.sum(select2['Error'].values**2 < 
                                 select1['Error'].values**2)/\
                                 select2['Error'].count() * 100
-        count[i-1,j-1] = (select1['Error'].count())
+		count[i-1,j-1] = (select1['Error'].count())
 
 plt.figure()
 mean = mean1[::-1,:]
@@ -124,8 +150,12 @@ plt.suptitle('Average technology slope')
 
 plt.figure()
 mean = meandiff[::-1,:]
+mean[mean<0] = -1
+mean[mean>0] = 1
 divnorm = matplotlib.colors.TwoSlopeNorm(vcenter=0)
-im = plt.imshow(mean, aspect='auto', norm=divnorm, cmap='RdBu_r')
+im = plt.imshow(mean, aspect='auto', 
+		norm=divnorm, 
+		cmap='RdBu_r')
 plt.gca().set_xticks([x for x in range(16)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
         rotation = 90)

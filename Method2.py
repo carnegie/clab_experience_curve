@@ -9,7 +9,7 @@ rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 df = pd.read_csv('ExpCurves.csv')
 
 method = 'regression'
-# method = 'slope'
+method = 'slope'
 
 # get slope for all technologies
 slopes = []
@@ -27,7 +27,6 @@ slopes = pd.DataFrame(slopes, columns=['Tech', 'Slope'])
 dferr = []
 dferr2 = []
 counterr = 0
-count = 0
 for tech in df['Tech'].unique():
 	# computing average technological slope based on all other technologies
 	slopeall = np.mean(slopes.loc[slopes['Tech'] != tech,'Slope'].values)
@@ -56,10 +55,10 @@ for tech in df['Tech'].unique():
 				error2 = (y[M] - (pred2)) 
 				dferr.append([x[i] - x[N],
 								x[M] - x[i],
-								error])
+								error, tech])
 				dferr2.append([x[i] - x[N],
 								x[M] - x[i],
-								error2])
+								error2, tech])
 				if np.abs(error2) < np.abs(error):
 					counterr += 1
 				# if 'Offshore_Gas_Pi' in tech and i==7 and M==8 and N ==0:
@@ -67,7 +66,6 @@ for tech in df['Tech'].unique():
 				# 	print(x[:i], y[:i], pred, pred2, y[M])
 				# 	print(x[i], x[N], y[i], y[N], slope, x[M], x[i])
 				# 	exit()
-	count =+ 1
 
 print('Percentage of cases where error', 
       ' is lower with average technological slope: ',
@@ -76,14 +74,13 @@ print('Percentage of cases where error',
 dferr = pd.DataFrame(dferr, 
                      columns = ['Log of ratios for predictor',
                                 'Log of ratios for prediction',
-                                'Error'])
+                                'Error', 'Tech'])
 dferr2 = pd.DataFrame(dferr2, 
                      columns = ['Log of ratios for predictor',
                                 'Log of ratios for prediction',
-                                'Error'])
+                                'Error', 'Tech'])
 
 # select ratios to be plotted
-# frac = np.log10([1, 2, 3, 5, 10, 1e2, 1e3, 1e9])
 frac = []
 for x in range(17):
 	frac.append(0.001 * (10**(0.25*x)) )
@@ -97,26 +94,40 @@ fracavg = np.empty((len(frac)-1,len(frac)-1))
 count = np.empty((len(frac)-1,len(frac)-1))
 
 for i in range(1, len(frac)):
+	print(i)
 	for j in range(1, len(frac)):
+		print(j)
 		select1 = dferr.loc[
 					(dferr['Log of ratios for predictor']>frac[i-1]) &\
 					(dferr['Log of ratios for predictor']<=frac[i]) & \
 					(dferr['Log of ratios for prediction']>frac[j-1]) &\
 					(dferr['Log of ratios for prediction']<=frac[j])
-					]
+					].copy()
 		select2 = dferr2.loc[
 					(dferr2['Log of ratios for predictor']>frac[i-1]) &\
 					(dferr2['Log of ratios for predictor']<=frac[i]) & \
 					(dferr2['Log of ratios for prediction']>frac[j-1]) &\
 					(dferr2['Log of ratios for prediction']<=frac[j])
-					]
-		mean1[i-1,j-1] = np.mean(select1['Error'].values**2)**0.5
-		mean2[i-1,j-1] = np.mean(select2['Error'].values**2)**0.5
-		meandiff[i-1,j-1] = mean2[i-1,j-1] - mean1[i-1,j-1]
-		fracavg[i-1,j-1] = np.sum(select2['Error'].values**2 < 
-                                select1['Error'].values**2)/\
-                                select2['Error'].count() * 100
-		count[i-1,j-1] = (select1['Error'].count())
+					].copy()
+		# weight each technology equally in each bin
+		if select1.empty and select2.empty:
+			mean1[i-1, j-1] = 0.0
+			mean2[i-1, j-1] = 0.0
+			meandiff[i-1,j-1] = 0.0
+			fracavg[i-1,j-1] = 0.0
+			count[i-1,j-1] = 0.0
+		else:
+			mean1[i-1,j-1] = np.mean(select1['Error'].values**2)**0.5
+			mean2[i-1,j-1] = np.mean(select2['Error'].values**2)**0.5
+			select1['Weights'] = [1/select1.loc[select1['Tech']==t,'Tech'].count() for t in select1['Tech'].values]
+			select2['Weights'] = [1/select2.loc[select2['Tech']==t,'Tech'].count() for t in select2['Tech'].values]
+			mean1[i-1, j-1] = np.average(select1['Error']**2, weights=select1['Weights'])**0.5
+			mean2[i-1, j-1] = np.average(select2['Error']**2, weights=select2['Weights'])**0.5
+			meandiff[i-1,j-1] = mean2[i-1,j-1] - mean1[i-1,j-1]
+			fracavg[i-1,j-1] = np.sum(select2['Error'].values**2 < 
+									select1['Error'].values**2)/\
+									select2['Error'].count() * 100
+			count[i-1,j-1] = (select1['Error'].count())
 
 plt.figure()
 mean = mean1[::-1,:]

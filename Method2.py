@@ -92,11 +92,10 @@ median2 = np.empty((len(frac)-1,len(frac)-1))
 meandiff = np.empty((len(frac)-1,len(frac)-1))
 fracavg = np.empty((len(frac)-1,len(frac)-1))
 count = np.empty((len(frac)-1,len(frac)-1))
+counttech = np.empty((len(frac)-1,len(frac)-1))
 
 for i in range(1, len(frac)):
-	print(i)
 	for j in range(1, len(frac)):
-		print(j)
 		select1 = dferr.loc[
 					(dferr['Log of ratios for predictor']>frac[i-1]) &\
 					(dferr['Log of ratios for predictor']<=frac[i]) & \
@@ -119,15 +118,26 @@ for i in range(1, len(frac)):
 		else:
 			mean1[i-1,j-1] = np.mean(select1['Error'].values**2)**0.5
 			mean2[i-1,j-1] = np.mean(select2['Error'].values**2)**0.5
-			select1['Weights'] = [1/select1.loc[select1['Tech']==t,'Tech'].count() for t in select1['Tech'].values]
-			select2['Weights'] = [1/select2.loc[select2['Tech']==t,'Tech'].count() for t in select2['Tech'].values]
-			mean1[i-1, j-1] = np.average(select1['Error']**2, weights=select1['Weights'])**0.5
-			mean2[i-1, j-1] = np.average(select2['Error']**2, weights=select2['Weights'])**0.5
+			# select1['Weights'] = [1/select1.loc[select1['Tech']==t,'Tech'].count() for t in select1['Tech'].values]
+			# select2['Weights'] = [1/select2.loc[select2['Tech']==t,'Tech'].count() for t in select2['Tech'].values]
+			# mean1[i-1, j-1] = np.average(select1['Error']**2, weights=select1['Weights'])**0.5
+			# mean2[i-1, j-1] = np.average(select2['Error']**2, weights=select2['Weights'])**0.5
+			mean1[i-1,j-1] = 0.0
+			mean2[i-1,j-1] = 0.0
+			ntechs = select1['Tech'].nunique()
+			for tech in select1['Tech'].unique():
+				sel1 = select1.loc[select1['Tech']==tech].copy()
+				sel2 = select2.loc[select2['Tech']==tech].copy()
+				mean1[i-1,j-1] += 1/(ntechs * sel1.count()[0]) * np.mean(sel1['Error'].values**2)**0.5
+				mean2[i-1,j-1] += 1/(ntechs * sel2.count()[0]) * np.mean(sel2['Error'].values**2)**0.5
 			meandiff[i-1,j-1] = mean2[i-1,j-1] - mean1[i-1,j-1]
 			fracavg[i-1,j-1] = np.sum(select2['Error'].values**2 < 
 									select1['Error'].values**2)/\
 									select2['Error'].count() * 100
 			count[i-1,j-1] = (select1['Error'].count())
+			counttech[i-1,j-1] = (select1['Tech'].nunique())
+
+print(mean2)
 
 plt.figure()
 mean = mean1[::-1,:]

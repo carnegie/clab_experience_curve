@@ -91,6 +91,8 @@ dferr2 = pd.DataFrame(dferr2,
 frac = []
 for x in range(17):
 	frac.append(0.001 * (10**(0.25*x)) )
+# for x in range(41):
+# 	frac.append(0.001 * (10**(0.1*x)) )
 
 mean1 = np.empty((len(frac)-1,len(frac)-1))
 mean2 = np.empty((len(frac)-1,len(frac)-1))
@@ -125,21 +127,24 @@ for i in range(1, len(frac)):
 		else:
 			mean1[i-1,j-1] = np.mean(select1['Error'].values**2)**0.5
 			mean2[i-1,j-1] = np.mean(select2['Error'].values**2)**0.5
-			# ## weighting each technology the same in each bin
-			# mean1[i-1,j-1] = 0.0
-			# mean2[i-1,j-1] = 0.0
-			# ntechs = select1['Tech'].nunique()
-			# for tech in select1['Tech'].unique():
-			# 	sel1 = select1.loc[select1['Tech']==tech].copy()
-			# 	sel2 = select2.loc[select2['Tech']==tech].copy()
-			# 	mean1[i-1,j-1] += 1/(ntechs * sel1.count()[0]) * np.sum(sel1['Error'].values**2)
-			# 	mean2[i-1,j-1] += 1/(ntechs * sel2.count()[0]) * np.sum(sel2['Error'].values**2)
-			# mean1[i-1,j-1] = mean1[i-1,j-1]**0.5
-			# mean2[i-1,j-1] = mean2[i-1,j-1]**0.5
+			## weighting each technology the same in each bin
+			mean1[i-1,j-1] = 0.0
+			mean2[i-1,j-1] = 0.0
+			ntechs = select1['Tech'].nunique()
+			for tech in select1['Tech'].unique():
+				sel1 = select1.loc[select1['Tech']==tech].copy()
+				sel2 = select2.loc[select2['Tech']==tech].copy()
+				mean1[i-1,j-1] += 1/(ntechs * sel1.count()[0]) * np.sum(sel1['Error'].values**2)
+				mean2[i-1,j-1] += 1/(ntechs * sel2.count()[0]) * np.sum(sel2['Error'].values**2)
+				fracavg[i-1,j-1] += 1/ntechs * np.sum(sel2['Error'].values**2 < 
+									sel1['Error'].values**2)/\
+									sel2['Error'].count() * 100
+			mean1[i-1,j-1] = mean1[i-1,j-1]**0.5
+			mean2[i-1,j-1] = mean2[i-1,j-1]**0.5
 			meandiff[i-1,j-1] = mean2[i-1,j-1] - mean1[i-1,j-1]
-			fracavg[i-1,j-1] = np.sum(select2['Error'].values**2 < 
-									select1['Error'].values**2)/\
-									select2['Error'].count() * 100
+			# fracavg[i-1,j-1] = np.sum(select2['Error'].values**2 < 
+			# 						select1['Error'].values**2)/\
+			# 						select2['Error'].count() * 100
 			count[i-1,j-1] = (select1['Error'].count())
 			counttech[i-1,j-1] = (select1['Tech'].nunique())
 
@@ -147,10 +152,10 @@ for i in range(1, len(frac)):
 plt.figure()
 mean = mean1[::-1,:]
 im = plt.imshow(mean, aspect='auto', norm='log')
-plt.gca().set_xticks([x for x in range(16)], 
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
         rotation = 90)
-plt.gca().set_yticks([x for x in range(16)], 
+plt.gca().set_yticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])][::-1])
 plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')
@@ -162,10 +167,10 @@ plt.suptitle('Technology-specific slope')
 plt.figure()
 mean = mean2[::-1,:]
 im = plt.imshow(mean, aspect='auto', norm='log')
-plt.gca().set_xticks([x for x in range(16)], 
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
         rotation = 90)
-plt.gca().set_yticks([x for x in range(16)], 
+plt.gca().set_yticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])][::-1])
 plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')
@@ -180,10 +185,10 @@ divnorm = matplotlib.colors.TwoSlopeNorm(vcenter=0)
 im = plt.imshow(mean, aspect='auto', 
 		norm=divnorm, 
 		cmap='RdBu_r')
-plt.gca().set_xticks([x for x in range(16)], 
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
         rotation = 90)
-plt.gca().set_yticks([x for x in range(16)], 
+plt.gca().set_yticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])][::-1])
 plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')
@@ -196,10 +201,10 @@ plt.figure()
 perc = fracavg[::-1,:]
 divnorm = matplotlib.colors.TwoSlopeNorm(vcenter=50)
 im = plt.imshow(perc, aspect='auto', norm=divnorm, cmap='RdBu')
-plt.gca().set_xticks([x for x in range(16)], 
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
         rotation = 90)
-plt.gca().set_yticks([x for x in range(16)], 
+plt.gca().set_yticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])][::-1])
 plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')
@@ -212,10 +217,10 @@ count = count[::-1,:]
 
 plt.figure()
 im = plt.imshow(np.log10(count), aspect='auto')
-plt.gca().set_xticks([x for x in range(16)], 
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
         rotation = 90)
-plt.gca().set_yticks([x for x in range(16)], 
+plt.gca().set_yticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])][::-1])
 plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')
@@ -228,14 +233,15 @@ print(sum(sum(prob)))
 prob2 = -100*(perc < 50) * count/np.sum(count)
 print(sum(sum(prob2)))
 prob[prob==0] = prob2[prob==0]
+prob[prob==0] = np.nan
 
 plt.figure()
 divnorm = matplotlib.colors.TwoSlopeNorm(vcenter=0)
 im = plt.imshow(prob, aspect='auto', norm=divnorm, cmap='RdBu')
-plt.gca().set_xticks([x for x in range(16)], 
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
         rotation = 90)
-plt.gca().set_yticks([x for x in range(16)], 
+plt.gca().set_yticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])][::-1])
 plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')

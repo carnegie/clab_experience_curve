@@ -28,8 +28,6 @@ dferr = []
 dferr2 = []
 counterr = 0
 for tech in df['Tech'].unique():
-	# if 'Acry' not in tech:
-	# 	continue
 	# computing average technological slope based on all other technologies
 	slopeall = np.mean(slopes.loc[slopes['Tech'] != tech,'Slope'].values)
 	# computing technology specific slope
@@ -96,8 +94,10 @@ for x in range(17):
 
 mean1 = np.empty((len(frac)-1,len(frac)-1))
 mean2 = np.empty((len(frac)-1,len(frac)-1))
-median1 = np.empty((len(frac)-1,len(frac)-1))
-median2 = np.empty((len(frac)-1,len(frac)-1))
+std1 = np.empty((len(frac)-1,len(frac)-1))
+std2 = np.empty((len(frac)-1,len(frac)-1))
+# median1 = np.empty((len(frac)-1,len(frac)-1))
+# median2 = np.empty((len(frac)-1,len(frac)-1))
 meandiff = np.empty((len(frac)-1,len(frac)-1))
 fracavg = np.empty((len(frac)-1,len(frac)-1))
 count = np.empty((len(frac)-1,len(frac)-1))
@@ -121,12 +121,16 @@ for i in range(1, len(frac)):
 		if select1.empty and select2.empty:
 			mean1[i-1, j-1] = np.nan
 			mean2[i-1, j-1] = np.nan
+			std1[i-1, j-1] = np.nan
+			std2[i-1, j-1] = np.nan
 			meandiff[i-1,j-1] = np.nan
 			fracavg[i-1,j-1] = np.nan
 			count[i-1,j-1] = 0.0
 		else:
 			mean1[i-1,j-1] = np.mean(select1['Error'].values**2)**0.5
 			mean2[i-1,j-1] = np.mean(select2['Error'].values**2)**0.5
+			std1[i-1,j-1] = np.mean((select1['Error'].values - mean1[i-1,j-1])**2)**0.5
+			std2[i-1,j-1] = np.mean((select2['Error'].values - mean2[i-1,j-1])**2)**0.5
 			## weighting each technology the same in each bin
 			mean1[i-1,j-1] = 0.0
 			mean2[i-1,j-1] = 0.0
@@ -136,12 +140,29 @@ for i in range(1, len(frac)):
 				sel2 = select2.loc[select2['Tech']==tech].copy()
 				mean1[i-1,j-1] += 1/(ntechs * sel1.count()[0]) * np.sum(sel1['Error'].values**2)
 				mean2[i-1,j-1] += 1/(ntechs * sel2.count()[0]) * np.sum(sel2['Error'].values**2)
+				std1[i-1,j-1] += 1/(ntechs) * (1/sel1.count()[0] * \
+					np.sum(
+						(sel1['Error'].values - \
+						(1/sel1.count()[0]) * np.sum(sel1['Error'].values**2)**0.5
+						)**2))
+					# (np.percentile(sel1['Error'].values - \
+					# ((1/sel1.count()[0]) * np.sum(sel1['Error'].values**2))**0.5, 90))
+				std2[i-1,j-1] += 1/(ntechs) * (1/sel2.count()[0] * \
+					np.sum(
+						(sel2['Error'].values - \
+						(1/sel2.count()[0]) * np.sum(sel2['Error'].values**2)**0.5
+						)**2))
+					# (np.percentile(sel2['Error'].values - \
+					# ((1/sel2.count()[0]) * np.sum(sel2['Error'].values**2))**0.5,90))
 				fracavg[i-1,j-1] += 1/ntechs * np.sum(sel2['Error'].values**2 < 
 									sel1['Error'].values**2)/\
 									sel2['Error'].count() * 100
 			mean1[i-1,j-1] = mean1[i-1,j-1]**0.5
 			mean2[i-1,j-1] = mean2[i-1,j-1]**0.5
+			std1[i-1,j-1] = std1[i-1,j-1]**0.5
+			std2[i-1,j-1] = std2[i-1,j-1]**0.5
 			meandiff[i-1,j-1] = mean2[i-1,j-1] - mean1[i-1,j-1]
+
 			# fracavg[i-1,j-1] = np.sum(select2['Error'].values**2 < 
 			# 						select1['Error'].values**2)/\
 			# 						select2['Error'].count() * 100
@@ -181,7 +202,7 @@ plt.suptitle('Average technology slope')
 
 plt.figure()
 mean = meandiff[::-1,:]
-divnorm = matplotlib.colors.TwoSlopeNorm(vcenter=0)
+divnorm = matplotlib.colors.TwoSlopeNorm(vcenter=0, vmin=-336, vmax=2)
 im = plt.imshow(mean, aspect='auto', 
 		norm=divnorm, 
 		cmap='RdBu_r')
@@ -194,6 +215,7 @@ plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')
 cbar = plt.colorbar(im)
 cbar.set_label('RMSE difference')
+cbar.set_ticks([-300,-200,-100,0,1])
 plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
 plt.suptitle('Average technology - Technology-specific')
 
@@ -249,4 +271,121 @@ cbar = plt.colorbar(im)
 cbar.set_label('Porbability improvement of more accuracy with average technological slope')
 plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
 
+
+plt.figure()
+for i in range(mean1.shape[0]):
+	plt.plot(mean1[i,:], color='darkmagenta', alpha=0.25)
+	plt.fill_between([x for x in range(mean1.shape[1])], mean1[i,:], mean1[i,:]+std1[i,:], alpha=0.05, color='darkmagenta')	
+	plt.plot(mean2[i,:], color='forestgreen', alpha=0.25)
+	plt.fill_between([x for x in range(mean2.shape[1])], mean2[i,:], mean2[i,:]+std2[i,:], alpha=0.05, color='forestgreen')	
+plt.yscale('log', base=10)
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
+        rotation = 90)
+plt.xlabel('Log of cumulative production ratios for prediction')
+
+plt.figure()
+for i in range(mean1.shape[1]):
+	plt.plot(mean1[:,i], color='darkmagenta', alpha=0.25, label='Technology-specific slope')
+	plt.fill_between([x for x in range(mean1.shape[0])], mean1[:,i], mean1[:,i]+std1[:,i], alpha=0.05, color='darkmagenta')	
+	plt.plot(mean2[:,i], color='forestgreen', alpha=0.25, label='Average technological slope')
+	plt.fill_between([x for x in range(mean2.shape[0])], mean2[:,i], mean2[:,i]+std2[:,i], alpha=0.05, color='forestgreen')	
+plt.yscale('log', base=10)
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
+        rotation = 90)
+plt.xlabel('Log of cumulative production ratios for predictor')
+
+count = count[::-1,:]
+
+predonavg1 = []
+predonstd1 = []
+predonavg2 = []
+predonstd2 = []
+for i in range(mean1.shape[0]):
+	valueavg1 = 0.0
+	valuestd1 = 0.0
+	valueavg2 = 0.0
+	valuestd2 = 0.0
+	for j in range(mean1.shape[1]):
+		if count[i,j] > 0:
+			valueavg1 += mean1[i,j] * 1/16
+			valuestd1 += std1[i,j] * 1/16
+			valueavg2 += mean2[i,j] * 1/16
+			valuestd2 += std2[i,j] * 1/16
+	predonavg1.append(valueavg1)
+	predonstd1.append(valuestd1)
+	predonavg2.append(valueavg2)
+	predonstd2.append(valuestd2)
+
+predonavg1 = np.array(predonavg1)
+predonavg2 = np.array(predonavg2)
+predonstd1 = np.array(predonstd1)
+predonstd2 = np.array(predonstd2)
+print(predonavg1, predonstd1)
+plt.figure()
+plt.plot(predonavg1, color='darkmagenta', alpha=0.25, label='Technology-specific slope')
+plt.fill_between([x for x in range(mean1.shape[0])], predonavg1, predonavg1+predonstd1, color='darkmagenta', alpha=0.1)
+plt.plot(predonavg2, color='forestgreen', alpha=0.25, label='Average technological slope')
+plt.fill_between([x for x in range(mean1.shape[0])], predonavg2, predonavg2+predonstd2, color='forestgreen', alpha=0.1)
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
+        rotation = 90)
+plt.xlabel('Log of cumulative production ratios for predictor')
+plt.ylabel('RMSE (+stdev(RMSE) )')
+plt.legend()
+plt.subplots_adjust(bottom=0.3)
+
+
+predonavg1 = []
+predonstd1 = []
+predonavg2 = []
+predonstd2 = []
+for j in range(mean1.shape[1]):
+	valueavg1 = 0.0
+	valuestd1 = 0.0
+	valueavg2 = 0.0
+	valuestd2 = 0.0
+	for i in range(mean1.shape[0]):
+		if count[i,j] > 0:
+			valueavg1 += mean1[i,j] * 1/16
+			valuestd1 += std1[i,j] * 1/16
+			valueavg2 += mean2[i,j] * 1/16
+			valuestd2 += std2[i,j] * 1/16
+	predonavg1.append(valueavg1)
+	predonstd1.append(valuestd1)
+	predonavg2.append(valueavg2)
+	predonstd2.append(valuestd2)
+
+predonavg1 = np.array(predonavg1)
+predonavg2 = np.array(predonavg2)
+predonstd1 = np.array(predonstd1)
+predonstd2 = np.array(predonstd2)
+print(predonavg1, predonstd1)
+plt.figure()
+plt.plot(predonavg1, color='darkmagenta', alpha=0.25, label='Technology-specific slope')
+plt.fill_between([x for x in range(mean1.shape[0])], predonavg1, predonavg1+predonstd1, color='darkmagenta', alpha=0.1)
+plt.plot(predonavg2, color='forestgreen', alpha=0.25, label='Average technological slope')
+plt.fill_between([x for x in range(mean1.shape[0])], predonavg2, predonavg2+predonstd2, color='forestgreen', alpha=0.1)
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
+        rotation = 90)
+plt.xlabel('Log of cumulative production ratios for prediction')
+plt.ylabel('RMSE (+stdev(RMSE) )')
+plt.legend()
+plt.subplots_adjust(bottom=0.3)
+# 	plt.figure()
+# 	plt.plot(mean1[i,:], color='forestgreen', alpha=0.25)
+# 	plt.fill_between([x for x in range(mean1.shape[1])], mean1[i,:], mean1[i,:]+std1[i,:], alpha=0.05, color='forestgreen')	
+# 	plt.plot(mean2[i,:], color='darkmagenta', alpha=0.25)
+# 	plt.fill_between([x for x in range(mean2.shape[1])], mean2[i,:], mean2[i,:]+std2[i,:], alpha=0.05, color='darkmagenta')	
+
+# for i in range(mean1.shape[1]):
+# 	plt.figure()
+# 	plt.plot(mean1[:,i], color='forestgreen', alpha=0.25)
+# 	plt.fill_between([x for x in range(mean1.shape[0])], mean1[:,i], mean1[:,i]+std1[:,i], alpha=0.05, color='forestgreen')	
+# 	plt.plot(mean2[:,i], color='darkmagenta', alpha=0.25)
+# 	plt.fill_between([x for x in range(mean2.shape[0])], mean2[:,i], mean2[:,i]+std2[:,i], alpha=0.05, color='darkmagenta')	
+
+# plt.yscale('log', base=10)
 plt.show()

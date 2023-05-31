@@ -212,7 +212,7 @@ for i in range(std1.shape[0]):
 		if count[i,j] > 0:
 			plt.scatter(i,j,
 		      color=matplotlib.cm.viridis(norm(std1[i,j])),
-			  s=2+count[i,j]/100, alpha=0.5, lw=0.5, edgecolor='k')
+			  s=2+counttech[i,j]*2, alpha=0.5, lw=0.5, edgecolor='k')
 plt.gca().set_xticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
         rotation = 90)
@@ -223,8 +223,8 @@ plt.xlabel('Log of cumulative production ratios for predictor')
 plt.colorbar(matplotlib.cm.ScalarMappable(cmap='viridis', norm=norm), 
 	     label='Std of RMSE')
 legend_elements = [matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=2**0.5, color='k', label='1 data point'),
-		   matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=(2+np.max(count)/100)**0.5, color='k', label=str(int(np.max(count)))+' data points')]
-plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of data points', loc='lower center')
+		   matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=(2+np.max(counttech*2))**0.5, color='k', label=str(int(np.max(counttech)))+' technologies')]
+plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of technologies', loc='lower center')
 plt.subplots_adjust(bottom=0.4, left=0.2, right=0.95, top=0.9)
 plt.title('Technology-specific')
 
@@ -236,7 +236,7 @@ for i in range(std1.shape[0]):
 		if count[i,j] > 0:
 			plt.scatter(i,j,
 		      color=matplotlib.cm.viridis(norm(std2[i,j])),
-			  s=2+count[i,j]/100, alpha=0.5, lw=0.5, edgecolor='k')
+			  s=2+counttech[i,j]*2, alpha=0.5, lw=0.5, edgecolor='k')
 plt.gca().set_xticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
         rotation = 90)
@@ -246,9 +246,9 @@ plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')
 plt.colorbar(matplotlib.cm.ScalarMappable(cmap='viridis', norm=norm), 
 	     label='Std of RMSE')
-legend_elements = [matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=2**0.5, color='k', label='1 data point'),
-		   matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=(2+np.max(count)/100)**0.5, color='k', label=str(int(np.max(count)))+' data points')]
-plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of data points', loc='lower center')
+legend_elements = [matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=2**0.5, color='k', label='1 technology'),
+		   matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=(2+np.max(counttech)*2)**0.5, color='k', label=str(int(np.max(counttech)))+' technologies')]
+plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of technologies', loc='lower center')
 plt.subplots_adjust(bottom=0.4, left=0.2, right=0.95, top=0.9)
 plt.title('Average technology')
 
@@ -271,61 +271,64 @@ cbar.set_label('RMSE difference')
 plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
 plt.suptitle('Average technology - Technology-specific')
 
-# sel = df.loc[df['Tech']=='Photovoltaics']
-# x, y = np.log10(sel['Cumulative production'].values), np.log10(sel['Unit cost'].values)
-# H = len(x)
-# for i in range(H):
-# 	for N in range(i-1, -1, -1):
-# 		slope = (y[i] - y[N]) /\
-# 			(x[i] - x[N])
-# 		# add linear regression method
-# 		if method=='regression':
-# 			model = sm.OLS(y[N:i+1], sm.add_constant(x[N:i+1]))
-# 			result = model.fit()
-# 			slope = result.params[1]
-# 		# compute error associated using slope M points after midpoint
-# 		plt.figure(figsize=(8,7))
-# 		plt.scatter(10**x, 10**y, edgecolor='r', facecolor='none')
-# 		plt.scatter(10**x[N:i+1], 10**y[N:i+1], color='r')
-# 		for M in range(i+1, H):
-# 			pred =  y[i] + slope * (x[M] - x[i])
-# 			# if method=='regression':
-# 			# 	pred = result.params[0] + slope * x[M]
-# 			pred2 =  y[i] + slopeall * (x[M] - x[i])
-# 			plt.scatter(10**x[M], 10**pred, color='b')
-# 			plt.scatter(10**x[M], 10**pred2, color='g')
-# 			plt.xscale('log', base=10)
-# 			plt.yscale('log', base=10)
-# 			predordiff = x[i] - x[N]
-# 			predondiff = x[M] - x[i]
-# 			idxor = np.where(frac >= predordiff)[0][0]-1
-# 			idxon = np.where(frac >= predondiff)[0][0]-1
-# 			plt.plot([10**x[M],10**x[M]],
-# 	    		[10**(pred-std1[idxor][idxon]),10**(pred+std1[idxor][idxon])], ':',
-# 	    		marker='_', color='b', alpha = min(1.0, 0.1 + 0.9*counttech[idxor][idxon]/np.max(counttech)))
-# 			plt.plot([10**x[M],10**x[M]],
-# 	    		[10**(pred2-std2[idxor][idxon]),10**(pred2+std2[idxor][idxon])], '--',
-# 	    		marker='_', color='g', alpha = min(1.0, 0.1 + 0.9*counttech[idxor][idxon]/np.max(counttech)))
-# 		plt.title(sel['Tech'].values[0])
-# 		plt.xlabel('Cumulative production')
-# 		plt.ylabel('Unit cost')
-# 		legend_elements = [
-# 			matplotlib.lines.Line2D([0],[0], lw=0, label='$\\bf{Data\ points}$'),
-# 			matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=5, color='r', label='Observations'),
-# 			matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=5, color='b', label='Prediction - Technology-specific'),
-# 			matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=5, color='g', label='Prediction - Average technological slope'),
-# 			matplotlib.lines.Line2D([0],[0], lw=0, label='$\\bf{Uncertainty\ around\ predictions}$'),
-# 			matplotlib.lines.Line2D([0],[0], lw=1, ls=':', markersize=5, color='b', label='+/- 1 std (Technology-specific)'),
-# 			matplotlib.lines.Line2D([0],[0], lw=1, ls='--', markersize=5, color='g', label='+/- 1 std (Average technological slope)'),
-# 			matplotlib.lines.Line2D([0],[0], lw=0, label='$\\bf{Support\ for\ uncertainty\ estimation}$'),
-# 			matplotlib.lines.Line2D([0],[0], lw=1, alpha=1, color='k', label=str(int(np.max(counttech)))+' technologies'),
-# 			matplotlib.lines.Line2D([0],[0], lw=1, alpha=0.1, color='k', label='1 technology')
-# 		]
-# 		plt.gcf().legend(handles=legend_elements, loc='lower center')
-# 		plt.subplots_adjust(bottom=0.4, right=0.97, top=0.95, left=0.08)
-# 		plt.pause(.01)
-# 		input()
-# 		plt.close()
+sel = df.loc[df['Tech']=='Photovoltaics']
+x, y = np.log10(sel['Cumulative production'].values), np.log10(sel['Unit cost'].values)
+H = len(x)
+for i in range(H):
+	for N in range(i-1, -1, -1):
+		slope = (y[i] - y[N]) /\
+			(x[i] - x[N])
+		# add linear regression method
+		if method=='regression':
+			model = sm.OLS(y[N:i+1], sm.add_constant(x[N:i+1]))
+			result = model.fit()
+			slope = result.params[1]
+		# compute error associated using slope M points after midpoint
+		plt.figure(figsize=(8,7))
+		plt.scatter(10**x, 10**y, edgecolor='r', facecolor='none', zorder=10)
+		plt.scatter(10**x[N:i+1], 10**y[N:i+1], color='r', zorder=10)
+		for M in range(i+1, H):
+			pred =  y[i] + slope * (x[M] - x[i])
+			# if method=='regression':
+			# 	pred = result.params[0] + slope * x[M]
+			pred2 =  y[i] + slopeall * (x[M] - x[i])
+			plt.scatter(10**x[M], 10**pred, color='b', zorder=1)
+			plt.scatter(10**x[M], 10**pred2, color='g', zorder=1)
+			plt.xscale('log', base=10)
+			plt.yscale('log', base=10)
+			predordiff = x[i] - x[N]
+			predondiff = x[M] - x[i]
+			idxor = np.where(frac >= predordiff)[0][0]-1
+			idxon = np.where(frac >= predondiff)[0][0]-1
+			plt.plot([10**x[M],10**x[M]],
+	    		[10**(pred-mean1[idxor][idxon]),10**(pred+mean1[idxor][idxon])], ':',
+	    		marker='_', color='b', 
+				alpha = min(1.0, 0.1 + 0.9*counttech[idxor][idxon]/np.max(counttech)))
+			plt.plot([10**x[M],10**x[M]],
+	    		[10**(pred2-mean2[idxor][idxon]),10**(pred2+mean2[idxor][idxon])], '--',
+	    		marker='_', color='g', 
+				alpha = min(1.0, 0.1 + 0.9*counttech[idxor][idxon]/np.max(counttech)))
+		plt.title(sel['Tech'].values[0])
+		plt.xlabel('Cumulative production')
+		plt.ylabel('Unit cost')
+		legend_elements = [
+			matplotlib.lines.Line2D([0],[0], lw=0, label='$\\bf{Data\ points}$'),
+			matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=5, color='none', markeredgecolor='r', label='Observations'),
+			matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=5, color='r', label='Observations used to build technology-specific predictive model'),
+			matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=5, color='b', label='Prediction - Technology-specific'),
+			matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=5, color='g', label='Prediction - Average technological slope'),
+			matplotlib.lines.Line2D([0],[0], lw=0, label='$\\bf{Uncertainty\ around\ predictions}$'),
+			matplotlib.lines.Line2D([0],[0], lw=1, ls=':', markersize=5, color='b', label='+/- 1 RMSE (Technology-specific)'),
+			matplotlib.lines.Line2D([0],[0], lw=1, ls='--', markersize=5, color='g', label='+/- 1 RMSE (Average technological slope)'),
+			matplotlib.lines.Line2D([0],[0], lw=0, label='$\\bf{Number\ of\ technologies\ used\ to\ estimate\ uncertainty\ (both\ methods)}$'),
+			matplotlib.lines.Line2D([0],[0], lw=1, alpha=1, color='k', label=str(int(np.max(counttech)))+' technologies'),
+			matplotlib.lines.Line2D([0],[0], lw=1, alpha=0.1, color='k', label='1 technology')
+		]
+		plt.gcf().legend(handles=legend_elements, loc='lower center')
+		plt.subplots_adjust(bottom=0.425, right=0.97, top=0.95, left=0.08)
+		plt.pause(.01)
+		input()
+		plt.close()
 
 
 plt.figure()
@@ -350,29 +353,27 @@ plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of data points',
 plt.subplots_adjust(bottom=0.4, left=0.2, right=0.95, top=0.9)
 plt.title('Average technology - Technology-specific')
 
-plt.figure()
-for i in range(mean1.shape[0]):
-	for j in range(mean1.shape[1]-1,-1,-1):
-		if counttech[i,j] > 0:
-			plt.scatter(i,j,
-		      color=matplotlib.cm.RdBu_r(divnorm(meandiff[i,j].flatten())),
-			  s=2+counttech[i,j]*2, alpha=0.5, lw=0.5, edgecolor='k')
-plt.gca().set_xticks([x for x in range(len(frac)-1)], 
-        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
-        rotation = 90)
-plt.gca().set_yticks([x for x in range(len(frac)-1)], 
-        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])])
-plt.ylabel('Log of cumulative production ratios for prediction')
-plt.xlabel('Log of cumulative production ratios for predictor')
-plt.colorbar(matplotlib.cm.ScalarMappable(cmap='RdBu_r', norm=divnorm), 
-	     label='RMSE difference')
-legend_elements = [matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=2**0.5, color='k', label='1 technology'),
-		   matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=(2+np.max(counttech)*2)**0.5, color='k', label=str(int(np.max(counttech)))+' technologies')]
-plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of technologies', loc='lower center')
-plt.subplots_adjust(bottom=0.4, left=0.2, right=0.95, top=0.9)
-plt.title('Average technology - Technology-specific')
-
-plt.show()
+# plt.figure()
+# for i in range(mean1.shape[0]):
+# 	for j in range(mean1.shape[1]-1,-1,-1):
+# 		if counttech[i,j] > 0:
+# 			plt.scatter(i,j,
+# 		      color=matplotlib.cm.RdBu_r(divnorm(meandiff[i,j].flatten())),
+# 			  s=2+counttech[i,j]*2, alpha=0.5, lw=0.5, edgecolor='k')
+# plt.gca().set_xticks([x for x in range(len(frac)-1)], 
+#         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
+#         rotation = 90)
+# plt.gca().set_yticks([x for x in range(len(frac)-1)], 
+#         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])])
+# plt.ylabel('Log of cumulative production ratios for prediction')
+# plt.xlabel('Log of cumulative production ratios for predictor')
+# plt.colorbar(matplotlib.cm.ScalarMappable(cmap='RdBu_r', norm=divnorm), 
+# 	     label='RMSE difference')
+# legend_elements = [matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=2**0.5, color='k', label='1 technology'),
+# 		   matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=(2+np.max(counttech)*2)**0.5, color='k', label=str(int(np.max(counttech)))+' technologies')]
+# plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of technologies', loc='lower center')
+# plt.subplots_adjust(bottom=0.4, left=0.2, right=0.95, top=0.9)
+# plt.title('Average technology - Technology-specific')
 
 
 plt.figure()

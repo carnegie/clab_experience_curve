@@ -63,16 +63,6 @@ for tech in df['Tech'].unique():
 								error2, tech])
 				if np.abs(error2) < np.abs(error):
 					counterr += 1
-				# if 'Acrylic' in tech and i==2 and N==1:
-				# 	print(tech, i, N, M)
-				# 	print(x[:i+1], y[:i+1])
-				# 	print(x[i],x[N], y[i], y[N])
-				# 	print(x[i]-x[N], y[i]-y[N], slope)
-				# 	print(y[M], pred2, pred, x[i]-x[N], x[M]-x[i], slope)
-				# 	# print(x[:i], y[:i], pred, pred2, y[M])
-				# 	# print(x[i], x[N], y[i], y[N], slope, x[M], x[i])
-				# 	# exit()
-
 
 print('Percentage of cases where error', 
       ' is lower with average technological slope: ',
@@ -143,22 +133,30 @@ for i in range(1, len(frac)):
 			for tech in select1['Tech'].unique():
 				sel1 = select1.loc[select1['Tech']==tech].copy()
 				sel2 = select2.loc[select2['Tech']==tech].copy()
-				mean1[i-1,j-1] += 1/(ntechs * sel1.count()[0]) * np.sum(sel1['Error'].values**2)
-				mean2[i-1,j-1] += 1/(ntechs * sel2.count()[0]) * np.sum(sel2['Error'].values**2)
-				std1[i-1,j-1] += 1/(ntechs) * (1/sel1.count()[0] * \
-					np.sum(
-						(sel1['Error'].values - \
-						(1/sel1.count()[0]) * np.sum(sel1['Error'].values**2)**0.5
-						)**2))
+				# mean1[i-1,j-1] += 1/(ntechs * sel1.count()[0]) * np.sum(sel1['Error'].values**2)
+				# mean2[i-1,j-1] += 1/(ntechs * sel2.count()[0]) * np.sum(sel2['Error'].values**2)
+				# std1[i-1,j-1] += 1/(ntechs) * (1/sel1.count()[0] * \
+				# 	np.sum(
+				# 		(sel1['Error'].values - \
+				# 		(1/sel1.count()[0]) * np.sum(sel1['Error'].values**2)**0.5
+				# 		)**2))
 					# (np.percentile(sel1['Error'].values - \
 					# ((1/sel1.count()[0]) * np.sum(sel1['Error'].values**2))**0.5, 90))
-				std2[i-1,j-1] += 1/(ntechs) * (1/sel2.count()[0] * \
-					np.sum(
-						(sel2['Error'].values - \
-						(1/sel2.count()[0]) * np.sum(sel2['Error'].values**2)**0.5
-						)**2))
+				# std2[i-1,j-1] += 1/(ntechs) * (1/sel2.count()[0] * \
+				# 	np.sum(
+				# 		(sel2['Error'].values - \
+				# 		(1/sel2.count()[0]) * np.sum(sel2['Error'].values**2)**0.5
+				# 		)**2))
 					# (np.percentile(sel2['Error'].values - \
 					# ((1/sel2.count()[0]) * np.sum(sel2['Error'].values**2))**0.5,90))
+				m1 = 1/(sel1.count()[0]) * np.sum(sel1['Error'].values**2)
+				mean1[i-1,j-1] += 1/(ntechs) * m1
+				m2 = 1/(sel2.count()[0]) * np.sum(sel2['Error'].values**2)
+				mean2[i-1,j-1] += 1/(ntechs) * m2
+				s1 = 1/(sel1.count()[0]) * np.sum((sel1['Error'].values - m1**0.5)**2)
+				std1[i-1, j-1] += 1/(ntechs) * s1 
+				s2 = 1/(sel2.count()[0]) * np.sum((sel2['Error'].values - m2**0.5)**2)
+				std2[i-1, j-1] += 1/(ntechs) * s2 
 				fracavg[i-1,j-1] += 1/ntechs * np.sum(sel2['Error'].values**2 < 
 									sel1['Error'].values**2)/\
 									sel2['Error'].count() * 100
@@ -173,7 +171,6 @@ for i in range(1, len(frac)):
 			# 						select2['Error'].count() * 100
 			count[i-1,j-1] = (select1['Error'].count())
 			counttech[i-1,j-1] = (select1['Tech'].nunique())
-
 
 plt.figure()
 mean = mean1[::-1,:]
@@ -208,36 +205,52 @@ plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
 plt.suptitle('Average technology slope')
 
 plt.figure()
-mean = std1[::-1,:]
-maxstd1 = np.nanmax(std1)
-minstd1 = np.nanmin(std1)
-im = plt.imshow(mean, aspect='auto', norm='log')
+print(np.nanmin(std1), np.nanmax(std1))
+norm = matplotlib.colors.Normalize(vmin=0.0, vmax=1)
+for i in range(std1.shape[0]):
+	for j in range(std1.shape[1]-1,-1,-1):
+		if count[i,j] > 0:
+			plt.scatter(i,j,
+		      color=matplotlib.cm.viridis(norm(std1[i,j])),
+			  s=2+count[i,j]/100, alpha=0.5, lw=0.5, edgecolor='k')
 plt.gca().set_xticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
         rotation = 90)
 plt.gca().set_yticks([x for x in range(len(frac)-1)], 
-        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])][::-1])
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])])
 plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')
-cbar = plt.colorbar(im)
-cbar.set_label('Standard deviation of RMSE')
-plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
-plt.suptitle('Technology-specific slope')
+plt.colorbar(matplotlib.cm.ScalarMappable(cmap='viridis', norm=norm), 
+	     label='Std of RMSE')
+legend_elements = [matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=2**0.5, color='k', label='1 data point'),
+		   matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=(2+np.max(count)/100)**0.5, color='k', label=str(int(np.max(count)))+' data points')]
+plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of data points', loc='lower center')
+plt.subplots_adjust(bottom=0.4, left=0.2, right=0.95, top=0.9)
+plt.title('Technology-specific')
 
 plt.figure()
-mean = std2[::-1,:]
-im = plt.imshow(mean, aspect='auto', norm=matplotlib.colors.LogNorm(vmin=2e-3, vmax=maxstd1))
+print(np.nanmin(std1), np.nanmax(std1))
+norm = matplotlib.colors.Normalize(vmin=0.0, vmax=1)
+for i in range(std1.shape[0]):
+	for j in range(std1.shape[1]-1,-1,-1):
+		if count[i,j] > 0:
+			plt.scatter(i,j,
+		      color=matplotlib.cm.viridis(norm(std2[i,j])),
+			  s=2+count[i,j]/100, alpha=0.5, lw=0.5, edgecolor='k')
 plt.gca().set_xticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
         rotation = 90)
 plt.gca().set_yticks([x for x in range(len(frac)-1)], 
-        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])][::-1])
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])])
 plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')
-cbar = plt.colorbar(im)
-cbar.set_label('Standard deviation of RMSE')
-plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
-plt.suptitle('Average technology slope')
+plt.colorbar(matplotlib.cm.ScalarMappable(cmap='viridis', norm=norm), 
+	     label='Std of RMSE')
+legend_elements = [matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=2**0.5, color='k', label='1 data point'),
+		   matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=(2+np.max(count)/100)**0.5, color='k', label=str(int(np.max(count)))+' data points')]
+plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of data points', loc='lower center')
+plt.subplots_adjust(bottom=0.4, left=0.2, right=0.95, top=0.9)
+plt.title('Average technology')
 
 plt.figure()
 mean = meandiff[::-1,:]
@@ -257,6 +270,63 @@ cbar.set_label('RMSE difference')
 # cbar.set_ticks([-300,-200,-100,0,1])
 plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
 plt.suptitle('Average technology - Technology-specific')
+
+# sel = df.loc[df['Tech']=='Photovoltaics']
+# x, y = np.log10(sel['Cumulative production'].values), np.log10(sel['Unit cost'].values)
+# H = len(x)
+# for i in range(H):
+# 	for N in range(i-1, -1, -1):
+# 		slope = (y[i] - y[N]) /\
+# 			(x[i] - x[N])
+# 		# add linear regression method
+# 		if method=='regression':
+# 			model = sm.OLS(y[N:i+1], sm.add_constant(x[N:i+1]))
+# 			result = model.fit()
+# 			slope = result.params[1]
+# 		# compute error associated using slope M points after midpoint
+# 		plt.figure(figsize=(8,7))
+# 		plt.scatter(10**x, 10**y, edgecolor='r', facecolor='none')
+# 		plt.scatter(10**x[N:i+1], 10**y[N:i+1], color='r')
+# 		for M in range(i+1, H):
+# 			pred =  y[i] + slope * (x[M] - x[i])
+# 			# if method=='regression':
+# 			# 	pred = result.params[0] + slope * x[M]
+# 			pred2 =  y[i] + slopeall * (x[M] - x[i])
+# 			plt.scatter(10**x[M], 10**pred, color='b')
+# 			plt.scatter(10**x[M], 10**pred2, color='g')
+# 			plt.xscale('log', base=10)
+# 			plt.yscale('log', base=10)
+# 			predordiff = x[i] - x[N]
+# 			predondiff = x[M] - x[i]
+# 			idxor = np.where(frac >= predordiff)[0][0]-1
+# 			idxon = np.where(frac >= predondiff)[0][0]-1
+# 			plt.plot([10**x[M],10**x[M]],
+# 	    		[10**(pred-std1[idxor][idxon]),10**(pred+std1[idxor][idxon])], ':',
+# 	    		marker='_', color='b', alpha = min(1.0, 0.1 + 0.9*counttech[idxor][idxon]/np.max(counttech)))
+# 			plt.plot([10**x[M],10**x[M]],
+# 	    		[10**(pred2-std2[idxor][idxon]),10**(pred2+std2[idxor][idxon])], '--',
+# 	    		marker='_', color='g', alpha = min(1.0, 0.1 + 0.9*counttech[idxor][idxon]/np.max(counttech)))
+# 		plt.title(sel['Tech'].values[0])
+# 		plt.xlabel('Cumulative production')
+# 		plt.ylabel('Unit cost')
+# 		legend_elements = [
+# 			matplotlib.lines.Line2D([0],[0], lw=0, label='$\\bf{Data\ points}$'),
+# 			matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=5, color='r', label='Observations'),
+# 			matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=5, color='b', label='Prediction - Technology-specific'),
+# 			matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=5, color='g', label='Prediction - Average technological slope'),
+# 			matplotlib.lines.Line2D([0],[0], lw=0, label='$\\bf{Uncertainty\ around\ predictions}$'),
+# 			matplotlib.lines.Line2D([0],[0], lw=1, ls=':', markersize=5, color='b', label='+/- 1 std (Technology-specific)'),
+# 			matplotlib.lines.Line2D([0],[0], lw=1, ls='--', markersize=5, color='g', label='+/- 1 std (Average technological slope)'),
+# 			matplotlib.lines.Line2D([0],[0], lw=0, label='$\\bf{Support\ for\ uncertainty\ estimation}$'),
+# 			matplotlib.lines.Line2D([0],[0], lw=1, alpha=1, color='k', label=str(int(np.max(counttech)))+' technologies'),
+# 			matplotlib.lines.Line2D([0],[0], lw=1, alpha=0.1, color='k', label='1 technology')
+# 		]
+# 		plt.gcf().legend(handles=legend_elements, loc='lower center')
+# 		plt.subplots_adjust(bottom=0.4, right=0.97, top=0.95, left=0.08)
+# 		plt.pause(.01)
+# 		input()
+# 		plt.close()
+
 
 plt.figure()
 for i in range(mean1.shape[0]):
@@ -301,8 +371,6 @@ legend_elements = [matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize
 plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of technologies', loc='lower center')
 plt.subplots_adjust(bottom=0.4, left=0.2, right=0.95, top=0.9)
 plt.title('Average technology - Technology-specific')
-
-
 
 plt.show()
 

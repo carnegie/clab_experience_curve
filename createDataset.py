@@ -3,6 +3,11 @@ import os, matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
+import cmcrameri
+import matplotlib
+from matplotlib import rc
+matplotlib.rcParams['axes.prop_cycle'] = matplotlib.cycler(color=cmcrameri.cm.batlowS(np.linspace(0,1,100)))
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 
 # prepare figure for plots
 fig, ax = plt.subplots(1, 1, figsize=(9,7))
@@ -15,8 +20,8 @@ for file in os.listdir(datafolder):
 	f = pd.read_csv(datafolder+os.path.sep+file)
 	f = f.dropna()
 	# compute cumulative sum of units produce and normalize price and cumulative units produced
-	ax.plot(f[f.columns[3]], f[f.columns[0]], lw = 1.5,
-	  alpha = 0.25, marker = 'o', markersize = 2)
+	ax.plot(f[f.columns[3]], f[f.columns[0]], lw = 1,
+	  alpha = 0.5, marker = 'o', markersize = 2)
 	# ax[0].plot(f[f.columns[3]], f[f.columns[0]], lw = 0.75,
 	#   alpha = 0.25, marker = 'o', markersize = 2)
 	f['Normalized cumulative production'] = f[f.columns[3]] /\

@@ -4,9 +4,12 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 from scipy import stats
 import seaborn as sns
+import cmcrameri
 import matplotlib
 from matplotlib import rc
+matplotlib.rcParams['axes.prop_cycle'] = matplotlib.cycler(color=cmcrameri.cm.batlowS(np.linspace(0,1,100)))
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+matplotlib.rcParams['pdf.fonttype'] = 42
 
 df = pd.read_csv('ExpCurves.csv')
 

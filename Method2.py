@@ -4,7 +4,9 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib import rc
+from mpl_toolkits.mplot3d import axes3d 
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+matplotlib.rcParams['pdf.fonttype'] = 42
 
 df = pd.read_csv('ExpCurves.csv')
 
@@ -126,14 +128,17 @@ for i in range(1, len(frac)):
 			meandiff[i-1,j-1] = np.nan
 			fracavg[i-1,j-1] = np.nan
 			count[i-1,j-1] = 0.0
+			counttech[i-1,j-1] = 0.0
 		else:
-			mean1[i-1,j-1] = np.mean(select1['Error'].values**2)**0.5
-			mean2[i-1,j-1] = np.mean(select2['Error'].values**2)**0.5
-			std1[i-1,j-1] = np.mean((select1['Error'].values - mean1[i-1,j-1])**2)**0.5
-			std2[i-1,j-1] = np.mean((select2['Error'].values - mean2[i-1,j-1])**2)**0.5
+			# mean1[i-1,j-1] = np.mean(select1['Error'].values**2)**0.5
+			# mean2[i-1,j-1] = np.mean(select2['Error'].values**2)**0.5
+			# std1[i-1,j-1] = np.mean((select1['Error'].values - mean1[i-1,j-1])**2)**0.5
+			# std2[i-1,j-1] = np.mean((select2['Error'].values - mean2[i-1,j-1])**2)**0.5
 			## weighting each technology the same in each bin
 			mean1[i-1,j-1] = 0.0
 			mean2[i-1,j-1] = 0.0
+			std1[i-1,j-1] = 0.0
+			std2[i-1,j-1] = 0.0
 			ntechs = select1['Tech'].nunique()
 			for tech in select1['Tech'].unique():
 				sel1 = select1.loc[select1['Tech']==tech].copy()
@@ -182,12 +187,14 @@ plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')
 cbar = plt.colorbar(im)
 cbar.set_label('RMSE')
+maxmean1 = np.nanmax(mean1)
+minmean1 = np.nanmin(mean1)
 plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
 plt.suptitle('Technology-specific slope')
 
 plt.figure()
 mean = mean2[::-1,:]
-im = plt.imshow(mean, aspect='auto', norm='log')
+im = plt.imshow(mean, aspect='auto', norm=matplotlib.colors.LogNorm(vmin=minmean1, vmax=maxmean1))
 plt.gca().set_xticks([x for x in range(len(frac)-1)], 
         [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
         rotation = 90)
@@ -201,8 +208,40 @@ plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
 plt.suptitle('Average technology slope')
 
 plt.figure()
+mean = std1[::-1,:]
+maxstd1 = np.nanmax(std1)
+minstd1 = np.nanmin(std1)
+im = plt.imshow(mean, aspect='auto', norm='log')
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
+        rotation = 90)
+plt.gca().set_yticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])][::-1])
+plt.ylabel('Log of cumulative production ratios for prediction')
+plt.xlabel('Log of cumulative production ratios for predictor')
+cbar = plt.colorbar(im)
+cbar.set_label('Standard deviation of RMSE')
+plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
+plt.suptitle('Technology-specific slope')
+
+plt.figure()
+mean = std2[::-1,:]
+im = plt.imshow(mean, aspect='auto', norm=matplotlib.colors.LogNorm(vmin=2e-3, vmax=maxstd1))
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
+        rotation = 90)
+plt.gca().set_yticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])][::-1])
+plt.ylabel('Log of cumulative production ratios for prediction')
+plt.xlabel('Log of cumulative production ratios for predictor')
+cbar = plt.colorbar(im)
+cbar.set_label('Standard deviation of RMSE')
+plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
+plt.suptitle('Average technology slope')
+
+plt.figure()
 mean = meandiff[::-1,:]
-divnorm = matplotlib.colors.TwoSlopeNorm(vcenter=0, vmin=-336, vmax=2)
+divnorm = matplotlib.colors.TwoSlopeNorm(vcenter=0, vmin=-1, vmax=1)
 im = plt.imshow(mean, aspect='auto', 
 		norm=divnorm, 
 		cmap='RdBu_r')
@@ -215,9 +254,58 @@ plt.ylabel('Log of cumulative production ratios for prediction')
 plt.xlabel('Log of cumulative production ratios for predictor')
 cbar = plt.colorbar(im)
 cbar.set_label('RMSE difference')
-cbar.set_ticks([-300,-200,-100,0,1])
+# cbar.set_ticks([-300,-200,-100,0,1])
 plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
 plt.suptitle('Average technology - Technology-specific')
+
+plt.figure()
+for i in range(mean1.shape[0]):
+	for j in range(mean1.shape[1]-1,-1,-1):
+		if count[i,j] > 0:
+			plt.scatter(i,j,
+		      color=matplotlib.cm.RdBu_r(divnorm(meandiff[i,j].flatten())),
+			  s=2+count[i,j]/100, alpha=0.5, lw=0.5, edgecolor='k')
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
+        rotation = 90)
+plt.gca().set_yticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])])
+plt.ylabel('Log of cumulative production ratios for prediction')
+plt.xlabel('Log of cumulative production ratios for predictor')
+plt.colorbar(matplotlib.cm.ScalarMappable(cmap='RdBu_r', norm=divnorm), 
+	     label='RMSE difference')
+legend_elements = [matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=2**0.5, color='k', label='1 data point'),
+		   matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=(2+np.max(count)/100)**0.5, color='k', label=str(int(np.max(count)))+' data points')]
+plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of data points', loc='lower center')
+plt.subplots_adjust(bottom=0.4, left=0.2, right=0.95, top=0.9)
+plt.title('Average technology - Technology-specific')
+
+plt.figure()
+for i in range(mean1.shape[0]):
+	for j in range(mean1.shape[1]-1,-1,-1):
+		if counttech[i,j] > 0:
+			plt.scatter(i,j,
+		      color=matplotlib.cm.RdBu_r(divnorm(meandiff[i,j].flatten())),
+			  s=2+counttech[i,j]*2, alpha=0.5, lw=0.5, edgecolor='k')
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
+        rotation = 90)
+plt.gca().set_yticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])])
+plt.ylabel('Log of cumulative production ratios for prediction')
+plt.xlabel('Log of cumulative production ratios for predictor')
+plt.colorbar(matplotlib.cm.ScalarMappable(cmap='RdBu_r', norm=divnorm), 
+	     label='RMSE difference')
+legend_elements = [matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=2**0.5, color='k', label='1 technology'),
+		   matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=(2+np.max(counttech)*2)**0.5, color='k', label=str(int(np.max(counttech)))+' technologies')]
+plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of technologies', loc='lower center')
+plt.subplots_adjust(bottom=0.4, left=0.2, right=0.95, top=0.9)
+plt.title('Average technology - Technology-specific')
+
+
+
+plt.show()
+
 
 plt.figure()
 perc = fracavg[::-1,:]
@@ -249,6 +337,23 @@ plt.xlabel('Log of cumulative production ratios for predictor')
 cbar = plt.colorbar(im)
 cbar.set_label('Bin size')
 plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
+
+counttech = counttech[::-1,:]
+
+plt.figure()
+im = plt.imshow(counttech, aspect='auto')
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
+        rotation = 90)
+plt.gca().set_yticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])][::-1])
+plt.ylabel('Log of cumulative production ratios for prediction')
+plt.xlabel('Log of cumulative production ratios for predictor')
+cbar = plt.colorbar(im)
+cbar.set_label('Bin size')
+plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
+
+counttech = counttech[::-1,:]
 
 prob = 100*(perc > 50) * count/np.sum(count)
 print(sum(sum(prob)))
@@ -308,11 +413,19 @@ for i in range(mean1.shape[0]):
 	valueavg2 = 0.0
 	valuestd2 = 0.0
 	for j in range(mean1.shape[1]):
-		if count[i,j] > 0:
-			valueavg1 += mean1[i,j] * 1/16
-			valuestd1 += std1[i,j] * 1/16
-			valueavg2 += mean2[i,j] * 1/16
-			valuestd2 += std2[i,j] * 1/16
+		if counttech[i,j] > 0:
+			# valueavg1 += mean1[i,j] * counttech[i,j]/np.sum(counttech[i,:])
+			# valuestd1 += std1[i,j] * counttech[i,j]/np.sum(counttech[i,:])
+			# valueavg2 += mean2[i,j] * counttech[i,j]/np.sum(counttech[i,:])
+			# valuestd2 += std2[i,j] * counttech[i,j]/np.sum(counttech[i,:])
+			valueavg1 += mean1[i,j] * count[i,j]/np.sum(count[i,:])
+			valuestd1 += std1[i,j] * count[i,j]/np.sum(count[i,:])
+			valueavg2 += mean2[i,j] * count[i,j]/np.sum(count[i,:])
+			valuestd2 += std2[i,j] * count[i,j]/np.sum(count[i,:])
+			# valueavg1 += mean1[i,j] * 1/16/16
+			# valuestd1 += std1[i,j] * 1/16/16
+			# valueavg2 += mean2[i,j] * 1/16/16
+			# valuestd2 += std2[i,j] * 1/16/16
 	predonavg1.append(valueavg1)
 	predonstd1.append(valuestd1)
 	predonavg2.append(valueavg2)
@@ -333,8 +446,8 @@ plt.gca().set_xticks([x for x in range(len(frac)-1)],
         rotation = 90)
 plt.xlabel('Log of cumulative production ratios for predictor')
 plt.ylabel('RMSE (+stdev(RMSE) )')
-plt.legend()
-plt.subplots_adjust(bottom=0.3)
+plt.gcf().legend(loc='lower center')
+plt.subplots_adjust(bottom=0.4, top=0.99)
 
 
 predonavg1 = []
@@ -347,11 +460,19 @@ for j in range(mean1.shape[1]):
 	valueavg2 = 0.0
 	valuestd2 = 0.0
 	for i in range(mean1.shape[0]):
-		if count[i,j] > 0:
-			valueavg1 += mean1[i,j] * 1/16
-			valuestd1 += std1[i,j] * 1/16
-			valueavg2 += mean2[i,j] * 1/16
-			valuestd2 += std2[i,j] * 1/16
+		if counttech[i,j] > 0:
+			# valueavg1 += mean1[i,j] * counttech[i,j]/np.sum(counttech[:,j])
+			# valuestd1 += std1[i,j] * counttech[i,j]/np.sum(counttech[:,j])
+			# valueavg2 += mean2[i,j] * counttech[i,j]/np.sum(counttech[:,j])
+			# valuestd2 += std2[i,j] * counttech[i,j]/np.sum(counttech[:,j])
+			valueavg1 += mean1[i,j] * count[i,j]/np.sum(count[:,j])
+			valuestd1 += std1[i,j] * count[i,j]/np.sum(count[:,j])
+			valueavg2 += mean2[i,j] * count[i,j]/np.sum(count[:,j])
+			valuestd2 += std2[i,j] * count[i,j]/np.sum(count[:,j])
+			# valueavg1 += mean1[i,j] * 1/16/16
+			# valuestd1 += std1[i,j] * 1/16/16
+			# valueavg2 += mean2[i,j] * 1/16/16
+			# valuestd2 += std2[i,j] * 1/16/16
 	predonavg1.append(valueavg1)
 	predonstd1.append(valuestd1)
 	predonavg2.append(valueavg2)
@@ -372,8 +493,8 @@ plt.gca().set_xticks([x for x in range(len(frac)-1)],
         rotation = 90)
 plt.xlabel('Log of cumulative production ratios for prediction')
 plt.ylabel('RMSE (+stdev(RMSE) )')
-plt.legend()
-plt.subplots_adjust(bottom=0.3)
+plt.gcf().legend(loc='lower center')
+plt.subplots_adjust(bottom=0.4, top=0.99)
 # 	plt.figure()
 # 	plt.plot(mean1[i,:], color='forestgreen', alpha=0.25)
 # 	plt.fill_between([x for x in range(mean1.shape[1])], mean1[i,:], mean1[i,:]+std1[i,:], alpha=0.05, color='forestgreen')	

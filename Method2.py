@@ -205,6 +205,52 @@ plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
 plt.suptitle('Average technology slope')
 
 plt.figure()
+norm = matplotlib.colors.Normalize(vmin=0.0, vmax=1)
+for i in range(mean1.shape[0]):
+	for j in range(mean1.shape[1]-1,-1,-1):
+		if count[i,j] > 0:
+			plt.scatter(i,j,
+		      color=matplotlib.cm.viridis(norm(mean1[i,j])),
+			  s=2+counttech[i,j]*2, alpha=0.5, lw=0.5, edgecolor='k')
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
+        rotation = 90)
+plt.gca().set_yticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])])
+plt.ylabel('Log of cumulative production ratios for prediction')
+plt.xlabel('Log of cumulative production ratios for predictor')
+plt.colorbar(matplotlib.cm.ScalarMappable(cmap='viridis', norm=norm), 
+	     label='RMSE')
+legend_elements = [matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=2**0.5, color='k', label='1 data point'),
+		   matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=(2+np.max(counttech*2))**0.5, color='k', label=str(int(np.max(counttech)))+' technologies')]
+plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of technologies', loc='lower center')
+plt.subplots_adjust(bottom=0.4, left=0.2, right=0.95, top=0.9)
+plt.title('Technology-specific')
+
+plt.figure()
+norm = matplotlib.colors.Normalize(vmin=0.0, vmax=1)
+for i in range(mean2.shape[0]):
+	for j in range(mean2.shape[1]-1,-1,-1):
+		if count[i,j] > 0:
+			plt.scatter(i,j,
+		      color=matplotlib.cm.viridis(norm(mean2[i,j])),
+			  s=2+counttech[i,j]*2, alpha=0.5, lw=0.5, edgecolor='k')
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
+        rotation = 90)
+plt.gca().set_yticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])])
+plt.ylabel('Log of cumulative production ratios for prediction')
+plt.xlabel('Log of cumulative production ratios for predictor')
+plt.colorbar(matplotlib.cm.ScalarMappable(cmap='viridis', norm=norm), 
+	     label='RMSE')
+legend_elements = [matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=2**0.5, color='k', label='1 technology'),
+		   matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=(2+np.max(counttech)*2)**0.5, color='k', label=str(int(np.max(counttech)))+' technologies')]
+plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of technologies', loc='lower center')
+plt.subplots_adjust(bottom=0.4, left=0.2, right=0.95, top=0.9)
+plt.title('Average technology')
+
+plt.figure()
 print(np.nanmin(std1), np.nanmax(std1))
 norm = matplotlib.colors.Normalize(vmin=0.0, vmax=1)
 for i in range(std1.shape[0]):

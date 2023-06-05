@@ -52,6 +52,15 @@ for tech in df['Tech'].unique():
     x_val = x[round(x.shape[0]*fraction):]
     y_cal = y[:round(y.shape[0]*fraction)]
     y_val = y[round(y.shape[0]*fraction):]
+    sel2 = df.loc[~(df['Tech'] == tech)]
+    for tech2 in sel2['Tech'].unique():
+        sel2_ = sel2.loc[sel2['Tech'] == tech2]
+        x_ = np.log10(sel2_['Cumulative production'].values)
+        y_ = np.log10(sel2_['Unit cost'].values)
+        model = sm.OLS(y_, sm.add_constant(x_))
+        result = model.fit()
+        slopeall = result.params[1]
+
     # # alternative - separate calibration and validation datasets based on fraction of cumulative production
     # x_cal = x[x<(x[-1]-x[0])*fraction + x[0]]
     # x_val = x[x>=(x[-1]-x[0])*fraction + x[0]]
@@ -92,11 +101,11 @@ for tech in df['Tech'].unique():
     ax2[int(count/9)][count%9].plot(cp, ucpred, 
                                        color='k',
                                        alpha = 0.6)
-    ucpred2 = 10**(y_cal[-1] +  (-0.2912729419630219)* \
+    ucpred2 = 10**(y_cal[-1] +  slopeall* \
         (np.concatenate([np.array([x_cal[-1]]), x_val]) - x_cal[-1]))/sel['Unit cost'].values[0]
-    errpred2 = 10**(y_cal[-1] +  (-0.2912729419630219)* \
+    errpred2 = 10**(y_cal[-1] +  slopeall* \
         (x_val - x_cal[-1])) - sel['Unit cost'].values[len(x_cal):]
-    errpred2 = y_cal[-1] +  (-0.2912729419630219)* \
+    errpred2 = y_cal[-1] +  slopeall* \
         (x_val - x_cal[-1]) - np.log10(sel['Unit cost'].values[len(x_cal):])
     ax2[int(count/9)][count%9].plot(cp[len(x_cal)-1:], ucpred2, 
                                        color='g',

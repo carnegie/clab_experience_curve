@@ -9,12 +9,16 @@ rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 matplotlib.rcParams['pdf.fonttype'] = 42
 
 df = pd.read_csv('ExpCurves.csv')
+# df = pd.read_csv('NormalizedExpCurves.csv')
+# df['Cumulative production'] = df['Normalized cumulative production']
+# df['Unit cost'] = df['Normalized unit cost']
 
 method = 'regression'
 # method = 'slope'
 
 # get slope for all technologies
 slopes = []
+# slopes_pl = []
 for tech in df['Tech'].unique():
 	sel = df.loc[df['Tech']==tech]
 	x = np.log10(sel['Cumulative production'].values)
@@ -22,7 +26,18 @@ for tech in df['Tech'].unique():
 	model = sm.OLS(y, sm.add_constant(x))
 	result = model.fit()
 	slopes.append([tech, result.params[1]])
+	# a = (sum(y) * sum((10**x)**2) - sum(10**x) * sum((10**x)*y))/\
+	# 	(len(x) * sum((10**x)**2) - sum(10**x)**2)
+	# b = (len(x) * (np.sum((10**x)*y) - sum(10**x) * sum(y))) /\
+	# 	(len(x) * sum((10**x)**2) - sum(10**x)**2)
+	# print(result.params[1], b)
+	# slopes_pl.append(b)
+	# plt.scatter(10**x, 10**y)
+	# plt.scatter(10**x, 10**(result.params[0] + result.params[1] * x))
+	# plt.scatter(10**x, 10**(a + b * x))
+	# plt.show()
 slopes = pd.DataFrame(slopes, columns=['Tech', 'Slope'])
+# exit()
 
 # get error using technology specific slope
 # add information about the technology to make count of technologies in bin
@@ -83,6 +98,7 @@ for x in range(17):
 	frac.append(0.001 * (10**(0.25*x)) )
 # for x in range(41):
 # 	frac.append(0.001 * (10**(0.1*x)) )
+# frac = np.log10([1,1.2,1.5,2,5,10,20,50,100,1e3,1e10])
 
 mean1 = np.empty((len(frac)-1,len(frac)-1))
 mean2 = np.empty((len(frac)-1,len(frac)-1))
@@ -317,6 +333,29 @@ cbar.set_label('RMSE difference')
 plt.subplots_adjust(bottom=0.3, left=0.2, right=0.95, top=0.9)
 plt.suptitle('Average technology - Technology-specific')
 
+
+plt.figure()
+for i in range(mean1.shape[0]):
+	for j in range(mean1.shape[1]-1,-1,-1):
+		if count[i,j] > 0:
+			plt.scatter(i,j,
+		      color=matplotlib.cm.RdBu_r(divnorm(meandiff[i,j].flatten())),
+			  s=2+counttech[i,j]*2, alpha=0.5, lw=0.5, edgecolor='k')
+plt.gca().set_xticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
+        rotation = 90)
+plt.gca().set_yticks([x for x in range(len(frac)-1)], 
+        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])])
+plt.ylabel('Log of cumulative production ratios for prediction')
+plt.xlabel('Log of cumulative production ratios for predictor')
+plt.colorbar(matplotlib.cm.ScalarMappable(cmap='RdBu_r', norm=divnorm), 
+	     label='RMSE difference')
+legend_elements = [matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=2**0.5, color='k', label='1 data point'),
+		   matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=(2+np.max(counttech)*2)**0.5, color='k', label=str(int(np.max(counttech)))+' technologies')]
+plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of data points', loc='lower center')
+plt.subplots_adjust(bottom=0.4, left=0.2, right=0.95, top=0.9)
+plt.title('Average technology - Technology-specific')
+
 sel = df.loc[df['Tech']=='Photovoltaics']
 x, y = np.log10(sel['Cumulative production'].values), np.log10(sel['Unit cost'].values)
 H = len(x)
@@ -375,29 +414,6 @@ for i in range(H):
 		plt.pause(.01)
 		input()
 		plt.close()
-
-
-plt.figure()
-for i in range(mean1.shape[0]):
-	for j in range(mean1.shape[1]-1,-1,-1):
-		if count[i,j] > 0:
-			plt.scatter(i,j,
-		      color=matplotlib.cm.RdBu_r(divnorm(meandiff[i,j].flatten())),
-			  s=2+count[i,j]/100, alpha=0.5, lw=0.5, edgecolor='k')
-plt.gca().set_xticks([x for x in range(len(frac)-1)], 
-        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])],
-        rotation = 90)
-plt.gca().set_yticks([x for x in range(len(frac)-1)], 
-        [str(round(x,3))+' to '+str(round(y,3)) for x, y in zip(frac[:-1], frac[1:])])
-plt.ylabel('Log of cumulative production ratios for prediction')
-plt.xlabel('Log of cumulative production ratios for predictor')
-plt.colorbar(matplotlib.cm.ScalarMappable(cmap='RdBu_r', norm=divnorm), 
-	     label='RMSE difference')
-legend_elements = [matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=2**0.5, color='k', label='1 data point'),
-		   matplotlib.lines.Line2D([0],[0], lw=0, marker='o', markersize=(2+np.max(count)/100)**0.5, color='k', label=str(int(np.max(count)))+' data points')]
-plt.gcf().legend(handles=legend_elements, ncol=2, title='Number of data points', loc='lower center')
-plt.subplots_adjust(bottom=0.4, left=0.2, right=0.95, top=0.9)
-plt.title('Average technology - Technology-specific')
 
 # plt.figure()
 # for i in range(mean1.shape[0]):

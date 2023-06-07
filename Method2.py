@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib import rc
 from mpl_toolkits.mplot3d import axes3d 
+import cmcrameri as cm
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 matplotlib.rcParams['pdf.fonttype'] = 42
 
@@ -91,6 +92,212 @@ dferr2 = pd.DataFrame(dferr2,
                      columns = ['Log of ratios for predictor',
                                 'Log of ratios for prediction',
                                 'Error', 'Tech'])
+
+# fig, ax = plt.subplots(1,2)
+# dferr.plot(x='Log of ratios for predictor', y='Error',
+# 		marker='o', kind='scatter', ax=ax[0], color='darkmagenta', alpha=0.5)
+# dferr2.plot(x='Log of ratios for predictor', y='Error',
+# 		marker = '^', kind='scatter', ax=ax[1], color='forestgreen', alpha=0.5)
+# # plt.show()
+
+# fig, ax = plt.subplots()
+# im = ax.scatter(dferr['Log of ratios for predictor'],dferr['Log of ratios for prediction'],
+# 	   		marker='o', c=np.abs(dferr['Error'])-np.abs(dferr2['Error']), alpha=0.1,
+# 			cmap='RdBu', norm=matplotlib.colors.TwoSlopeNorm(vcenter=0, vmin=-1, vmax=1))
+# cbar = fig.colorbar(im, ax=ax)
+# cbar.set_label('Error difference')
+# ax.set_xlabel('Log of ratios for predictor')
+# ax.set_ylabel('Log of ratios for prediction')
+# # plt.show()
+
+ndx = 100
+ptiles_or, ptiles2_or, count_or = [], [], []
+ptiles_on, ptiles2_on, count_on = [], [], []
+dxs = np.linspace(0,dferr['Log of ratios for predictor'].max(),ndx)
+dxsor_plot, dxson_plot = [], []
+for idx in range(ndx-1):
+	if not dferr.loc[(dferr['Log of ratios for predictor']>=dxs[idx]) &\
+		    			(dferr['Log of ratios for predictor']<dxs[idx+1])].empty:
+		pt = dferr.loc[(dferr['Log of ratios for predictor']>=dxs[idx]) &\
+							(dferr['Log of ratios for predictor']<dxs[idx+1]),'Error']\
+							.quantile([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]).values
+		pt2 = dferr2.loc[(dferr2['Log of ratios for predictor']>=dxs[idx]) &\
+							(dferr2['Log of ratios for predictor']<dxs[idx+1]),'Error']\
+							.quantile([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]).values
+		count_or.append(dferr2.loc[(dferr2['Log of ratios for predictor']>=dxs[idx]) &\
+							(dferr2['Log of ratios for predictor']<dxs[idx+1])].count()[0])
+		ptiles_or.append(pt)
+		ptiles2_or.append(pt2)
+		dxsor_plot.append(dxs[idx])
+	if not dferr.loc[(dferr['Log of ratios for prediction']>=dxs[idx]) &\
+		    			(dferr['Log of ratios for prediction']<dxs[idx+1])].empty:
+		pt = dferr.loc[(dferr['Log of ratios for prediction']>=dxs[idx]) &\
+							(dferr['Log of ratios for prediction']<dxs[idx+1]),'Error']\
+							.quantile([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]).values
+		pt2 = dferr2.loc[(dferr2['Log of ratios for prediction']>=dxs[idx]) &\
+							(dferr2['Log of ratios for prediction']<dxs[idx+1]),'Error']\
+							.quantile([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]).values
+		count_on.append(dferr2.loc[(dferr2['Log of ratios for prediction']>=dxs[idx]) &\
+							(dferr2['Log of ratios for prediction']<dxs[idx+1])].count()[0])
+		ptiles_on.append(pt)
+		ptiles2_on.append(pt2)
+		dxson_plot.append(dxs[idx])
+	
+
+ptiles_or = np.array(ptiles_or)
+ptiles2_or = np.array(ptiles2_or)
+ptiles_on = np.array(ptiles_on)
+ptiles2_on = np.array(ptiles2_on)
+
+fig, ax = plt.subplots(1,2, sharey=True, figsize=(10,6))
+ax[0].plot(dxsor_plot, ptiles_or[:,4], color='darkmagenta')
+ax[0].plot(dxsor_plot, ptiles2_or[:,4], color='forestgreen')
+for idx in range(3,-1,-1):
+	ax[0].fill_between(dxsor_plot, ptiles_or[:,idx], 
+		    ptiles_or[:,idx+1], alpha=0.05+idx*0.2,
+			  color='darkmagenta', lw=0)
+	ax[0].fill_between(dxsor_plot, ptiles_or[:,-idx-1], 
+		    ptiles_or[:,-(idx+1)-1], alpha=0.05+idx*0.2,
+			  color='darkmagenta', lw=0)
+	ax[0].fill_between(dxsor_plot, ptiles2_or[:,idx], 
+		    ptiles2_or[:,idx+1], alpha=0.05+idx*0.2,
+			  color='forestgreen', lw=0)
+	ax[0].fill_between(dxsor_plot, ptiles2_or[:,-idx-1], 
+		    ptiles2_or[:,-(idx+1)-1], alpha=0.05+idx*0.2,
+			  color='forestgreen', lw=0)
+ax02 = ax[0].twinx()
+ax02.plot(dxsor_plot, count_or, color='k', zorder=-1)
+ax02.set_yscale('log', base=10)
+ax02.set_ylabel('Number of data points')
+ax[0].set_xlabel('Orders of magnitude used in predictor')
+ax[0].set_ylabel('Error')
+
+ax[1].plot(dxson_plot, ptiles_on[:,4], color='darkmagenta')
+ax[1].plot(dxson_plot, ptiles2_on[:,4], color='forestgreen')
+for idx in range(3,-1,-1):
+	ax[1].fill_between(dxson_plot, ptiles_on[:,idx], 
+		    ptiles_on[:,idx+1], alpha=0.05+idx*0.2,
+			  color='darkmagenta', lw=0)
+	ax[1].fill_between(dxson_plot, ptiles_on[:,-idx-1], 
+		    ptiles_on[:,-(idx+1)-1], alpha=0.05+idx*0.2,
+			  color='darkmagenta', lw=0)
+	ax[1].fill_between(dxson_plot, ptiles2_on[:,idx], 
+		    ptiles2_on[:,idx+1], alpha=0.05+idx*0.2,
+			  color='forestgreen', lw=0)
+	ax[1].fill_between(dxson_plot, ptiles2_on[:,-idx-1], 
+		    ptiles2_on[:,-(idx+1)-1], alpha=0.05+idx*0.2,
+			  color='forestgreen', lw=0)
+ax12 = ax[1].twinx()
+ax12.plot(dxson_plot, count_on, color='k', zorder=-1)
+ax12.set_yscale('log', base=10)
+ax12.set_ylabel('Number of data points')
+ax[1].set_xlabel('Orders of magnitude used in prediction')
+ax[1].set_ylabel('Error')
+
+legend_elements = [matplotlib.lines.Line2D([0],[0], color='darkmagenta', lw=1, label='Technology-specific slope (median)'),
+		   matplotlib.lines.Line2D([0],[0], color='forestgreen', lw=1, label='Average technological slope (median)'),
+		   matplotlib.patches.Patch(facecolor='darkmagenta', edgecolor='k', alpha=0.05, label='10th to 90th percentile'),
+		   matplotlib.patches.Patch(facecolor='forestgreen', edgecolor='k', alpha=0.05, label='10th to 90th percentile'),
+		   matplotlib.patches.Patch(facecolor='darkmagenta', edgecolor='k', alpha=0.25, label='20th to 80th percentile'),
+		   matplotlib.patches.Patch(facecolor='forestgreen', edgecolor='k', alpha=0.25, label='20th to 80th percentile'),
+		   matplotlib.patches.Patch(facecolor='darkmagenta', edgecolor='k', alpha=0.45, label='30th to 70th percentile'),
+		   matplotlib.patches.Patch(facecolor='forestgreen', edgecolor='k', alpha=0.45, label='30th to 70th percentile'),
+		   matplotlib.patches.Patch(facecolor='darkmagenta', edgecolor='k', alpha=0.65, label='40th to 60th percentile'),
+		   matplotlib.patches.Patch(facecolor='forestgreen', edgecolor='k', alpha=0.65, label='40th to 60th percentile'),
+		   matplotlib.lines.Line2D([0],[0], color='k', lw=1, label='Number of data points used to estimate statistics')]
+order = [0,2,4,6,8,10,1,3,5,7,9]
+legend_elements = [legend_elements[x] for x in order]
+fig.legend(handles=legend_elements, ncol=2, loc='lower center')
+fig.subplots_adjust(bottom=0.3, right=0.95, left=0.05, top=0.97)
+
+# plt.show()
+
+## plot with equal number of points
+
+npoints = 1000
+hnpoints = int(npoints/2)
+ptiles_or, ptiles2_or = [], []
+ptiles_on, ptiles2_on = [], []
+dferr_or = dferr.sort_values(by='Log of ratios for predictor')
+dferr2_or = dferr2.sort_values(by='Log of ratios for predictor')
+dferr_on = dferr.sort_values(by='Log of ratios for prediction')
+dferr2_on = dferr2.sort_values(by='Log of ratios for prediction')
+for point in range(hnpoints, dferr_or['Log of ratios for predictor'].count()-hnpoints, hnpoints):
+	subset = dferr_or.iloc[point-hnpoints:point+hnpoints]
+	subset2 = dferr2_or.iloc[point-hnpoints:point+hnpoints]
+	pt = subset['Error'].quantile([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]).values
+	pt2 = subset2['Error'].quantile([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]).values
+	ptiles_or.append(pt)
+	ptiles2_or.append(pt2)
+	subset = dferr_on.iloc[point-hnpoints:point+hnpoints]
+	subset2 = dferr2_on.iloc[point-hnpoints:point+hnpoints]
+	pt = subset['Error'].quantile([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]).values
+	pt2 = subset2['Error'].quantile([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]).values
+	ptiles_on.append(pt)
+	ptiles2_on.append(pt2)
+
+xaxor = dferr_or.iloc[hnpoints:-hnpoints:hnpoints]['Log of ratios for predictor'].values
+xaxon = dferr_on.iloc[hnpoints:-hnpoints:hnpoints]['Log of ratios for prediction'].values
+ptiles_or = np.array(ptiles_or)
+ptiles2_or = np.array(ptiles2_or)
+ptiles_on = np.array(ptiles_on)
+ptiles2_on = np.array(ptiles2_on)
+
+fig, ax = plt.subplots(1,2, sharey=True, figsize=(10,6))
+ax[0].plot(xaxor, ptiles_or[:,4], color='darkmagenta')
+ax[0].plot(xaxor, ptiles2_or[:,4], color='forestgreen')
+for idx in range(3,-1,-1):
+	ax[0].fill_between(xaxor, ptiles_or[:,idx], 
+		    ptiles_or[:,idx+1], alpha=0.05+idx*0.2,
+			  color='darkmagenta', lw=0)
+	ax[0].fill_between(xaxor, ptiles_or[:,-idx-1], 
+		    ptiles_or[:,-(idx+1)-1], alpha=0.05+idx*0.2,
+			  color='darkmagenta', lw=0)
+	ax[0].fill_between(xaxor, ptiles2_or[:,idx], 
+		    ptiles2_or[:,idx+1], alpha=0.05+idx*0.2,
+			  color='forestgreen', lw=0)
+	ax[0].fill_between(xaxor, ptiles2_or[:,-idx-1], 
+		    ptiles2_or[:,-(idx+1)-1], alpha=0.05+idx*0.2,
+			  color='forestgreen', lw=0)
+ax[0].set_xlabel('Orders of magnitude used in predictor')
+ax[0].set_ylabel('Error')
+
+ax[1].plot(xaxon, ptiles_on[:,4], color='darkmagenta')
+ax[1].plot(xaxon, ptiles2_on[:,4], color='forestgreen')
+for idx in range(3,-1,-1):
+	ax[1].fill_between(xaxon, ptiles_on[:,idx], 
+		    ptiles_on[:,idx+1], alpha=0.05+idx*0.2,
+			  color='darkmagenta', lw=0)
+	ax[1].fill_between(xaxon, ptiles_on[:,-idx-1], 
+		    ptiles_on[:,-(idx+1)-1], alpha=0.05+idx*0.2,
+			  color='darkmagenta', lw=0)
+	ax[1].fill_between(xaxon, ptiles2_on[:,idx], 
+		    ptiles2_on[:,idx+1], alpha=0.05+idx*0.2,
+			  color='forestgreen', lw=0)
+	ax[1].fill_between(xaxon, ptiles2_on[:,-idx-1], 
+		    ptiles2_on[:,-(idx+1)-1], alpha=0.05+idx*0.2,
+			  color='forestgreen', lw=0)
+ax[1].set_xlabel('Orders of magnitude used in predictor')
+ax[1].set_ylabel('Error')
+ax[0].plot(xaxon, 3*np.ones(len(xaxon)), color='k', marker='|',lw=0, alpha=0.5)
+ax[1].plot(xaxon, 3*np.ones(len(xaxon)), color='k', marker='|',lw=0, alpha=0.5)
+legend_elements = [matplotlib.lines.Line2D([0],[0], color='darkmagenta', lw=1, label='Technology-specific slope (median)'),
+		   matplotlib.lines.Line2D([0],[0], color='forestgreen', lw=1, label='Average technological slope (median)'),
+		   matplotlib.patches.Patch(facecolor='darkmagenta', edgecolor='k', alpha=0.05, label='10th to 90th percentile'),
+		   matplotlib.patches.Patch(facecolor='forestgreen', edgecolor='k', alpha=0.05, label='10th to 90th percentile'),
+		   matplotlib.patches.Patch(facecolor='darkmagenta', edgecolor='k', alpha=0.25, label='20th to 80th percentile'),
+		   matplotlib.patches.Patch(facecolor='forestgreen', edgecolor='k', alpha=0.25, label='20th to 80th percentile'),
+		   matplotlib.patches.Patch(facecolor='darkmagenta', edgecolor='k', alpha=0.45, label='30th to 70th percentile'),
+		   matplotlib.patches.Patch(facecolor='forestgreen', edgecolor='k', alpha=0.45, label='30th to 70th percentile'),
+		   matplotlib.patches.Patch(facecolor='darkmagenta', edgecolor='k', alpha=0.65, label='40th to 60th percentile'),
+		   matplotlib.patches.Patch(facecolor='forestgreen', edgecolor='k', alpha=0.65, label='40th to 60th percentile'),
+		   matplotlib.lines.Line2D([0],[0], color='k', lw=0, marker='|', label='Central data points used to estimate statistics ('+str(hnpoints)+' points on each side)')]
+order = [0,2,4,6,8,10,1,3,5,7,9]
+legend_elements = [legend_elements[x] for x in order]
+fig.legend(handles=legend_elements, ncol=2, loc='lower center')
+fig.subplots_adjust(bottom=0.3, right=0.95, left=0.05, top=0.97)
+plt.show()
+
 
 # select ratios to be plotted
 frac = []

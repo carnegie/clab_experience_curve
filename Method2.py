@@ -8,7 +8,7 @@ from mpl_toolkits.mplot3d import axes3d
 import cmcrameri as cm
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 matplotlib.rcParams['pdf.fonttype'] = 42
-
+matplotlib.style.use('ggplot')
 df = pd.read_csv('ExpCurves.csv')
 # df = pd.read_csv('NormalizedExpCurves.csv')
 # df['Cumulative production'] = df['Normalized cumulative production']
@@ -149,50 +149,48 @@ ptiles2_or = np.array(ptiles2_or)
 ptiles_on = np.array(ptiles_on)
 ptiles2_on = np.array(ptiles2_on)
 
-fig, ax = plt.subplots(1,2, sharey=True, figsize=(10,6))
-ax[0].plot(dxsor_plot, ptiles_or[:,4], color='darkmagenta')
-ax[0].plot(dxsor_plot, ptiles2_or[:,4], color='forestgreen')
+fig, ax = plt.subplots(2,2, sharey='row', figsize=(10,6), sharex=True)
+ax[0][0].plot(dxsor_plot, ptiles_or[:,4], color='darkmagenta')
+ax[0][0].plot(dxsor_plot, ptiles2_or[:,4], color='forestgreen')
 for idx in range(3,-1,-1):
-	ax[0].fill_between(dxsor_plot, ptiles_or[:,idx], 
+	ax[0][0].fill_between(dxsor_plot, ptiles_or[:,idx], 
 		    ptiles_or[:,idx+1], alpha=0.05+idx*0.2,
 			  color='darkmagenta', lw=0)
-	ax[0].fill_between(dxsor_plot, ptiles_or[:,-idx-1], 
+	ax[0][0].fill_between(dxsor_plot, ptiles_or[:,-idx-1], 
 		    ptiles_or[:,-(idx+1)-1], alpha=0.05+idx*0.2,
 			  color='darkmagenta', lw=0)
-	ax[0].fill_between(dxsor_plot, ptiles2_or[:,idx], 
+	ax[0][0].fill_between(dxsor_plot, ptiles2_or[:,idx], 
 		    ptiles2_or[:,idx+1], alpha=0.05+idx*0.2,
 			  color='forestgreen', lw=0)
-	ax[0].fill_between(dxsor_plot, ptiles2_or[:,-idx-1], 
+	ax[0][0].fill_between(dxsor_plot, ptiles2_or[:,-idx-1], 
 		    ptiles2_or[:,-(idx+1)-1], alpha=0.05+idx*0.2,
 			  color='forestgreen', lw=0)
-ax02 = ax[0].twinx()
-ax02.plot(dxsor_plot, count_or, color='k', zorder=-1)
-ax02.set_yscale('log', base=10)
-ax02.set_ylabel('Number of data points')
-ax[0].set_xlabel('Orders of magnitude used in predictor')
-ax[0].set_ylabel('Error')
+ax[1][0].plot(dxsor_plot, count_or, color='k', zorder=-1)
+ax[1][0].set_yscale('log', base=10)
+ax[1][0].set_ylabel('Number of data points')
+ax[1][0].set_xlabel('Orders of magnitude used for predictor')
+ax[0][0].set_ylabel('Error')
 
-ax[1].plot(dxson_plot, ptiles_on[:,4], color='darkmagenta')
-ax[1].plot(dxson_plot, ptiles2_on[:,4], color='forestgreen')
+ax[0][1].plot(dxson_plot, ptiles_on[:,4], color='darkmagenta')
+ax[0][1].plot(dxson_plot, ptiles2_on[:,4], color='forestgreen')
 for idx in range(3,-1,-1):
-	ax[1].fill_between(dxson_plot, ptiles_on[:,idx], 
+	ax[0][1].fill_between(dxson_plot, ptiles_on[:,idx], 
 		    ptiles_on[:,idx+1], alpha=0.05+idx*0.2,
 			  color='darkmagenta', lw=0)
-	ax[1].fill_between(dxson_plot, ptiles_on[:,-idx-1], 
+	ax[0][1].fill_between(dxson_plot, ptiles_on[:,-idx-1], 
 		    ptiles_on[:,-(idx+1)-1], alpha=0.05+idx*0.2,
 			  color='darkmagenta', lw=0)
-	ax[1].fill_between(dxson_plot, ptiles2_on[:,idx], 
+	ax[0][1].fill_between(dxson_plot, ptiles2_on[:,idx], 
 		    ptiles2_on[:,idx+1], alpha=0.05+idx*0.2,
 			  color='forestgreen', lw=0)
-	ax[1].fill_between(dxson_plot, ptiles2_on[:,-idx-1], 
+	ax[0][1].fill_between(dxson_plot, ptiles2_on[:,-idx-1], 
 		    ptiles2_on[:,-(idx+1)-1], alpha=0.05+idx*0.2,
 			  color='forestgreen', lw=0)
-ax12 = ax[1].twinx()
-ax12.plot(dxson_plot, count_on, color='k', zorder=-1)
-ax12.set_yscale('log', base=10)
-ax12.set_ylabel('Number of data points')
-ax[1].set_xlabel('Orders of magnitude used in prediction')
-ax[1].set_ylabel('Error')
+ax[1][1].plot(dxson_plot, count_on, color='k')
+ax[1][1].set_yscale('log', base=10)
+# ax[1][1].set_ylabel('Number of data points')
+ax[1][1].set_xlabel('Orders of magnitude used in prediction')
+# ax[0][1].set_ylabel('Error')
 
 legend_elements = [matplotlib.lines.Line2D([0],[0], color='darkmagenta', lw=1, label='Technology-specific slope (median)'),
 		   matplotlib.lines.Line2D([0],[0], color='forestgreen', lw=1, label='Average technological slope (median)'),
@@ -204,11 +202,14 @@ legend_elements = [matplotlib.lines.Line2D([0],[0], color='darkmagenta', lw=1, l
 		   matplotlib.patches.Patch(facecolor='forestgreen', edgecolor='k', alpha=0.45, label='30th to 70th percentile'),
 		   matplotlib.patches.Patch(facecolor='darkmagenta', edgecolor='k', alpha=0.65, label='40th to 60th percentile'),
 		   matplotlib.patches.Patch(facecolor='forestgreen', edgecolor='k', alpha=0.65, label='40th to 60th percentile'),
-		   matplotlib.lines.Line2D([0],[0], color='k', lw=1, label='Number of data points used to estimate statistics')]
+		   matplotlib.lines.Line2D([0],[0], color='k', lw=1, label='Number of data points used to estimate statistics ('+str(int(ndx))+' intervals)')]
 order = [0,2,4,6,8,10,1,3,5,7,9]
 legend_elements = [legend_elements[x] for x in order]
 fig.legend(handles=legend_elements, ncol=2, loc='lower center')
-fig.subplots_adjust(bottom=0.3, right=0.95, left=0.05, top=0.97)
+fig.subplots_adjust(bottom=0.325, right=0.95, left=0.1, top=0.9)
+ax[0][0].set_title('Predictor')
+ax[0][1].set_title('Prediction')
+# plt.show()
 
 # plt.show()
 
@@ -243,44 +244,46 @@ ptiles2_or = np.array(ptiles2_or)
 ptiles_on = np.array(ptiles_on)
 ptiles2_on = np.array(ptiles2_on)
 
-fig, ax = plt.subplots(1,2, sharey=True, figsize=(10,6))
-ax[0].plot(xaxor, ptiles_or[:,4], color='darkmagenta')
-ax[0].plot(xaxor, ptiles2_or[:,4], color='forestgreen')
+fig, ax = plt.subplots(2,2, sharey='row', figsize=(10,6), sharex=True)
+ax[0][0].plot(xaxor, ptiles_or[:,4], color='darkmagenta')
+ax[0][0].plot(xaxor, ptiles2_or[:,4], color='forestgreen')
 for idx in range(3,-1,-1):
-	ax[0].fill_between(xaxor, ptiles_or[:,idx], 
+	ax[0][0].fill_between(xaxor, ptiles_or[:,idx], 
 		    ptiles_or[:,idx+1], alpha=0.05+idx*0.2,
 			  color='darkmagenta', lw=0)
-	ax[0].fill_between(xaxor, ptiles_or[:,-idx-1], 
+	ax[0][0].fill_between(xaxor, ptiles_or[:,-idx-1], 
 		    ptiles_or[:,-(idx+1)-1], alpha=0.05+idx*0.2,
 			  color='darkmagenta', lw=0)
-	ax[0].fill_between(xaxor, ptiles2_or[:,idx], 
+	ax[0][0].fill_between(xaxor, ptiles2_or[:,idx], 
 		    ptiles2_or[:,idx+1], alpha=0.05+idx*0.2,
 			  color='forestgreen', lw=0)
-	ax[0].fill_between(xaxor, ptiles2_or[:,-idx-1], 
+	ax[0][0].fill_between(xaxor, ptiles2_or[:,-idx-1], 
 		    ptiles2_or[:,-(idx+1)-1], alpha=0.05+idx*0.2,
 			  color='forestgreen', lw=0)
-ax[0].set_xlabel('Orders of magnitude used in predictor')
-ax[0].set_ylabel('Error')
+ax[1][0].set_xlabel('Orders of magnitude used for predictor')
+ax[0][0].set_ylabel('Error')
 
-ax[1].plot(xaxon, ptiles_on[:,4], color='darkmagenta')
-ax[1].plot(xaxon, ptiles2_on[:,4], color='forestgreen')
+ax[0][1].plot(xaxon, ptiles_on[:,4], color='darkmagenta')
+ax[0][1].plot(xaxon, ptiles2_on[:,4], color='forestgreen')
 for idx in range(3,-1,-1):
-	ax[1].fill_between(xaxon, ptiles_on[:,idx], 
+	ax[0][1].fill_between(xaxon, ptiles_on[:,idx], 
 		    ptiles_on[:,idx+1], alpha=0.05+idx*0.2,
 			  color='darkmagenta', lw=0)
-	ax[1].fill_between(xaxon, ptiles_on[:,-idx-1], 
+	ax[0][1].fill_between(xaxon, ptiles_on[:,-idx-1], 
 		    ptiles_on[:,-(idx+1)-1], alpha=0.05+idx*0.2,
 			  color='darkmagenta', lw=0)
-	ax[1].fill_between(xaxon, ptiles2_on[:,idx], 
+	ax[0][1].fill_between(xaxon, ptiles2_on[:,idx], 
 		    ptiles2_on[:,idx+1], alpha=0.05+idx*0.2,
 			  color='forestgreen', lw=0)
-	ax[1].fill_between(xaxon, ptiles2_on[:,-idx-1], 
+	ax[0][1].fill_between(xaxon, ptiles2_on[:,-idx-1], 
 		    ptiles2_on[:,-(idx+1)-1], alpha=0.05+idx*0.2,
 			  color='forestgreen', lw=0)
-ax[1].set_xlabel('Orders of magnitude used in predictor')
-ax[1].set_ylabel('Error')
-ax[0].plot(xaxon, 3*np.ones(len(xaxon)), color='k', marker='|',lw=0, alpha=0.5)
-ax[1].plot(xaxon, 3*np.ones(len(xaxon)), color='k', marker='|',lw=0, alpha=0.5)
+ax[1][1].set_xlabel('Orders of magnitude used in prediction')
+# ax[0][1].set_ylabel('Error')
+
+ax[1][0].plot(xaxor, 3*np.zeros(len(xaxor)), color='k', marker='|',lw=0, alpha=0.5)
+ax[1][1].plot(xaxon, 3*np.zeros(len(xaxon)), color='k', marker='|',lw=0, alpha=0.5)
+
 legend_elements = [matplotlib.lines.Line2D([0],[0], color='darkmagenta', lw=1, label='Technology-specific slope (median)'),
 		   matplotlib.lines.Line2D([0],[0], color='forestgreen', lw=1, label='Average technological slope (median)'),
 		   matplotlib.patches.Patch(facecolor='darkmagenta', edgecolor='k', alpha=0.05, label='10th to 90th percentile'),
@@ -291,11 +294,17 @@ legend_elements = [matplotlib.lines.Line2D([0],[0], color='darkmagenta', lw=1, l
 		   matplotlib.patches.Patch(facecolor='forestgreen', edgecolor='k', alpha=0.45, label='30th to 70th percentile'),
 		   matplotlib.patches.Patch(facecolor='darkmagenta', edgecolor='k', alpha=0.65, label='40th to 60th percentile'),
 		   matplotlib.patches.Patch(facecolor='forestgreen', edgecolor='k', alpha=0.65, label='40th to 60th percentile'),
-		   matplotlib.lines.Line2D([0],[0], color='k', lw=0, marker='|', label='Central data points used to estimate statistics ('+str(hnpoints)+' points on each side)')]
+		   matplotlib.lines.Line2D([0],[0], color='k', lw=0, marker='|', label='Central data points used to estimate statistics ('+str(hnpoints)+' points on each side, overlap < 50%)')]
 order = [0,2,4,6,8,10,1,3,5,7,9]
 legend_elements = [legend_elements[x] for x in order]
 fig.legend(handles=legend_elements, ncol=2, loc='lower center')
-fig.subplots_adjust(bottom=0.3, right=0.95, left=0.05, top=0.97)
+fig.subplots_adjust(bottom=0.325, right=0.95, left=0.1, top=0.9)
+ax[0][0].set_title('Predictor')
+ax[0][1].set_title('Prediction')
+ax[1][0].set_yticks([])
+ax[1][0].yaxis.grid(False)
+ax[1][1].set_yticks([])
+ax[1][1].yaxis.grid(False)
 plt.show()
 
 

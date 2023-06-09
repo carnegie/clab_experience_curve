@@ -144,10 +144,10 @@ for tech in df['Tech'].unique():
     count += 1
 
 ax3[int(count/9)][count%9].annotate(
-    'The error of average technological learning rate is lower than'+\
-    '\n'+'each technology learning rate for '+\
+    'The sum of squared errors is lower \n using the average technological learning rate'+\
+    '\n'+' for '+\
     str(better)+ ' ('+str(round(100*better/86))+'%) technologies', 
-    (0.5,0.075), ha='center',
+    (0.5,0.065), ha='center', fontsize=10,
     xycoords='figure fraction')
 
 ax2[-1][-2].axis('off')

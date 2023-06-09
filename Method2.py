@@ -8,7 +8,7 @@ from mpl_toolkits.mplot3d import axes3d
 import cmcrameri as cm
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 matplotlib.rcParams['pdf.fonttype'] = 42
-matplotlib.style.use('ggplot')
+# matplotlib.style.use('ggplot')
 df = pd.read_csv('ExpCurves.csv')
 # df = pd.read_csv('NormalizedExpCurves.csv')
 # df['Cumulative production'] = df['Normalized cumulative production']
@@ -111,8 +111,8 @@ dferr2 = pd.DataFrame(dferr2,
 # # plt.show()
 
 ndx = 100
-ptiles_or, ptiles2_or, count_or = [], [], []
-ptiles_on, ptiles2_on, count_on = [], [], []
+ptiles_or, ptiles2_or, count_or, counttech_or = [], [], [], []
+ptiles_on, ptiles2_on, count_on, counttech_on = [], [], [], []
 dxs = np.linspace(0,dferr['Log of ratios for predictor'].max(),ndx)
 dxsor_plot, dxson_plot = [], []
 for idx in range(ndx-1):
@@ -126,6 +126,8 @@ for idx in range(ndx-1):
 							.quantile([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]).values
 		count_or.append(dferr2.loc[(dferr2['Log of ratios for predictor']>=dxs[idx]) &\
 							(dferr2['Log of ratios for predictor']<dxs[idx+1])].count()[0])
+		counttech_or.append(dferr2.loc[(dferr2['Log of ratios for predictor']>=dxs[idx]) &\
+							(dferr2['Log of ratios for predictor']<dxs[idx+1]),'Tech'].nunique())
 		ptiles_or.append(pt)
 		ptiles2_or.append(pt2)
 		dxsor_plot.append(dxs[idx])
@@ -139,6 +141,8 @@ for idx in range(ndx-1):
 							.quantile([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]).values
 		count_on.append(dferr2.loc[(dferr2['Log of ratios for prediction']>=dxs[idx]) &\
 							(dferr2['Log of ratios for prediction']<dxs[idx+1])].count()[0])
+		counttech_on.append(dferr2.loc[(dferr2['Log of ratios for prediction']>=dxs[idx]) &\
+							(dferr2['Log of ratios for prediction']<dxs[idx+1]),'Tech'].nunique())
 		ptiles_on.append(pt)
 		ptiles2_on.append(pt2)
 		dxson_plot.append(dxs[idx])
@@ -166,10 +170,17 @@ for idx in range(3,-1,-1):
 		    ptiles2_or[:,-(idx+1)-1], alpha=0.05+idx*0.2,
 			  color='forestgreen', lw=0)
 ax[1][0].plot(dxsor_plot, count_or, color='k', zorder=-1)
+ax102 = ax[1][0].twinx()
+ax102.plot(dxsor_plot, counttech_or, color='r', zorder=-1)
+ax102.set_yscale('log', base=10)
+ax102.spines['right'].set_color('red')
+ax102.tick_params(axis='y', colors='red')
+# ax102.set_ylabel('Number of technologies', color='red')
+ax102.minorticks_off()
 ax[1][0].set_yscale('log', base=10)
 ax[1][0].set_ylabel('Number of data points')
 ax[1][0].set_xlabel('Orders of magnitude used for predictor')
-ax[0][0].set_ylabel('Error')
+ax[0][0].set_ylabel('Error in log10 space')
 
 ax[0][1].plot(dxson_plot, ptiles_on[:,4], color='darkmagenta')
 ax[0][1].plot(dxson_plot, ptiles2_on[:,4], color='forestgreen')
@@ -187,6 +198,13 @@ for idx in range(3,-1,-1):
 		    ptiles2_on[:,-(idx+1)-1], alpha=0.05+idx*0.2,
 			  color='forestgreen', lw=0)
 ax[1][1].plot(dxson_plot, count_on, color='k')
+ax112 = ax[1][1].twinx()
+ax112.plot(dxson_plot, counttech_on, color='r')
+ax112.set_yscale('log', base=10)
+ax112.spines['right'].set_color('red')
+ax112.tick_params(axis='y', colors='red')
+ax112.set_ylabel('Number of technologies', color='red')
+ax112.minorticks_off()
 ax[1][1].set_yscale('log', base=10)
 # ax[1][1].set_ylabel('Number of data points')
 ax[1][1].set_xlabel('Orders of magnitude used in prediction')
@@ -207,8 +225,8 @@ order = [0,2,4,6,8,10,1,3,5,7,9]
 legend_elements = [legend_elements[x] for x in order]
 fig.legend(handles=legend_elements, ncol=2, loc='lower center')
 fig.subplots_adjust(bottom=0.325, right=0.95, left=0.1, top=0.9)
-ax[0][0].set_title('Predictor')
-ax[0][1].set_title('Prediction')
+ax[0][0].set_title('Increasing predictor calibration interval')
+ax[0][1].set_title('Increasing prediction interval')
 # plt.show()
 
 # plt.show()
@@ -217,8 +235,8 @@ ax[0][1].set_title('Prediction')
 
 npoints = 1000
 hnpoints = int(npoints/2)
-ptiles_or, ptiles2_or = [], []
-ptiles_on, ptiles2_on = [], []
+ptiles_or, ptiles2_or, counttech_or = [], [], []
+ptiles_on, ptiles2_on, counttech_on = [], [], []
 dferr_or = dferr.sort_values(by='Log of ratios for predictor')
 dferr2_or = dferr2.sort_values(by='Log of ratios for predictor')
 dferr_on = dferr.sort_values(by='Log of ratios for prediction')
@@ -299,14 +317,12 @@ order = [0,2,4,6,8,10,1,3,5,7,9]
 legend_elements = [legend_elements[x] for x in order]
 fig.legend(handles=legend_elements, ncol=2, loc='lower center')
 fig.subplots_adjust(bottom=0.325, right=0.95, left=0.1, top=0.9)
-ax[0][0].set_title('Predictor')
-ax[0][1].set_title('Prediction')
+ax[0][0].set_title('Increasing predictor calibration interval')
+ax[0][1].set_title('Increasing prediction interval')
 ax[1][0].set_yticks([])
 ax[1][0].yaxis.grid(False)
 ax[1][1].set_yticks([])
 ax[1][1].yaxis.grid(False)
-plt.show()
-
 
 # select ratios to be plotted
 frac = []

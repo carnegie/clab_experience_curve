@@ -157,6 +157,7 @@ for tech in df['Tech'].unique():
 	model = sm.OLS(endog=y, exog=x)
 	res = model.fit()
 	slopes.append(res.params[1])
+	f_values.append(res.f_pvalue)
 	# for npoints in range(2,len(select['Unit cost'].values)):
 	# 	# estimate experience curve using simple linear regression
 	# 	x = np.log10(select['Cumulative production'].values[:npoints])
@@ -204,7 +205,7 @@ for tech in df['Tech'].unique():
 	# plt.show()
 print(np.mean(slopes))
 print(1 - 2**np.mean(slopes))
-
+print(sum(np.asarray(f_values)<0.05)/len(f_values))
 x = np.log10(df['Cumulative production'].values)
 y = np.log10(df['Unit cost'].values)
 x = sm.add_constant(x)

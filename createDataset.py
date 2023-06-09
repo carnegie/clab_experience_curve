@@ -144,7 +144,7 @@ df_.to_csv('NormalizedExpCurves.csv', index=False)
 
 print('Running simple regression for prediction examples ...')
 # predict for each technology using only available data 
-f_values = []
+f_values = [] # here the p values for the f test for each single regression are stored
 slopes = []
 for tech in df['Tech'].unique():
 	select = df.loc[df['Tech']==tech].copy()
@@ -203,18 +203,23 @@ for tech in df['Tech'].unique():
 	# plt.xlabel('Cumulative production')
 	# plt.title(select['Tech'].values[0])
 	# plt.show()
-print(np.mean(slopes))
-print(1 - 2**np.mean(slopes))
-print(sum(np.asarray(f_values)<0.05)/len(f_values))
-x = np.log10(df['Cumulative production'].values)
-y = np.log10(df['Unit cost'].values)
-x = sm.add_constant(x)
-model = sm.OLS(endog=y, exog=x)
-res = model.fit()
-slopes.append(res.params[1])
+print('Mean slope is ',np.mean(slopes))
+print('Mean learning rate is ',1 - 2**np.mean(slopes))
+print('The percentage of technologies for which'+
+      ' the f-test statistic is significant is '+
+	  str(round(100*sum(np.asarray(f_values)<0.05)/len(f_values),1))+
+	  '%')
 
-print(np.mean(slopes))
-print(1 - 2**np.mean(slopes))
+# using all data to compute statistics 
+# x = np.log10(df['Cumulative production'].values)
+# y = np.log10(df['Unit cost'].values)
+# x = sm.add_constant(x)
+# model = sm.OLS(endog=y, exog=x)
+# res = model.fit()
+# slopes.append(res.params[1])
+
+# print(np.mean(slopes))
+# print(1 - 2**np.mean(slopes))
 
 # plt.show()
 

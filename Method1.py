@@ -143,6 +143,11 @@ for tech in df['Tech'].unique():
     ax2[int(count/9)][count%9].axis('off')
     count += 1
 
+axscatter.plot([0,0],[-3,3], color='k', alpha=0.8, lw=0.2, zorder=-30)
+axscatter.plot([-3,3],[0,0], color='k', alpha=0.8, lw=0.2, zorder=-30)
+axscatter.set_xlim((-2,2))
+axscatter.set_ylim((-2,2))
+# plt.pause(15)
 ax3[int(count/9)][count%9].annotate(
     'The sum of squared errors is lower \n using the average technological learning rate'+\
     '\n'+' for '+\
@@ -183,16 +188,16 @@ legend_elements = [
 fig2.legend(handles=legend_elements, ncol=3, loc='lower center')
 fig2.subplots_adjust(bottom=0.15)
 fig3.subplots_adjust(bottom=0.15)
-
+axscatter.set_aspect('equal','box')
+plt.show()
 model = sm.OLS(LR_val, sm.add_constant(LR_cal))
 result = model.fit()
 print(result.summary())
 axscatter.plot(np.linspace(-2,2,100), 
          result.params[0] + result.params[1] * np.linspace(-1,1,100),
-         zorder = -1, label='Regression')
-axscatter.plot([-2,2],[np.mean(LR_cal),np.mean(LR_cal)], label='Mean past learning rate')
-axscatter.plot([-2,2],[np.mean(LR_val),np.mean(LR_val)], label='Mean future learning rate')
-axscatter.axis('equal')
+         zorder = -1, label='Regression', color='royalblue')
+axscatter.plot([-2,2],[np.mean(LR_cal),np.mean(LR_cal)], label='Mean past learning rate', color='darkorange', zorder=-3)
+axscatter.plot([-2,2],[np.mean(LR_val),np.mean(LR_val)], label='Mean future learning rate', color='darkmagenta', zorder=-3)
 axscatter.set_xlim((-2,2))
 axscatter.set_ylim((-2,2))
 axscatter.annotate('R2 = ' + str(round(result.rsquared,2)) + \
@@ -221,5 +226,9 @@ print(1 - ssereg/ssetot)
 print(1 - ssecal/ssetot)
 print(1 - ssecal2/ssetot)
 print(1 - sseval/ssetot)
-figscatter.legend()
+figscatter.legend(ncol=3, loc='lower center')
+figscatter.subplots_adjust(bottom=0.15, top=0.95)
+axscatter.set_xlim((-2,2))
+axscatter.set_ylim((-2,2))
+axscatter.set_aspect('equal', 'box')
 plt.show()

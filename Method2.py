@@ -44,6 +44,7 @@ for tech in df['Tech'].unique():
 	# select N points before midpoint and compute slope
 	for i in range(H):
 		for N in range(i-1, -1, -1):
+		# for N in range(0-(i==0), -1, -1):
 			slope = (y[i] - y[N]) /\
 				(x[i] - x[N])
 			# add linear regression method

@@ -4,192 +4,116 @@ import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import seaborn, scipy
 
-plt.figure()
-plt.yscale('log', base=10)
-plt.ylim(20,100)
-plt.show()
 df = pd.read_csv('ExpCurves.csv')
 # df = pd.read_csv('NormalizedExpCurves.csv')
 
-slopes_normalized = []
-CProd = []
+method='regression'
+
+# get slope for all technologies
+slopes = []
+# slopes_pl = []
 for tech in df['Tech'].unique():
-    # read data for specific technology
-    sel = df.loc[df['Tech'] == tech]
-    try:
-        x = np.log10(sel['Cumulative production'].values)
-        y = np.log10(sel['Unit cost'].values)
-    except KeyError:
-        x = np.log10(sel['Normalized cumulative production'].values)
-        y = np.log10(sel['Normalized unit cost'].values)
-
-    slope_normalized = []
-    for n in range(x.shape[0]-1):
-        slope_normalized.append((y[n+1] - y[n]) / (x[n+1]-x[n]) * \
-                                (x[n+1]-x[n]) / (x[-1] - x[0]))
-    slope_normalized = np.array(slope_normalized)
-    slopes_normalized.append(slope_normalized)
-    CProd.append(10**x)
-
-plt.figure()
-slopes_ = np.array([x for el in slopes for x in el])
-print(1 - 2**np.mean(slopes_))
-sums = []
-for el in slopes_normalized:
-    sums.append(sum(el))
-mlrALL = np.mean(sums)
-print(1 - 2**np.mean(sums))
-sums = []
-for el in slopes:
-    sums.append(np.mean(el))
-print(1 - 2**np.mean(sums))
-## focus on slopes_normalized because it makes more sense than the other ones
-print('For each fraction compute R2 for regression and for past mean value')
-for frac in [0.3, 0.4, 0.5, 0.6, 0.7]:
-    eLR, lLR = [], []
-    print(frac)
-    for slope in slopes_normalized:
-        eLR.append(sum(slope[:round(len(slope)*frac)]))
-        lLR.append(sum(slope[round(len(slope)*frac):]))
-    model = sm.OLS(lLR, sm.add_constant(eLR))
+    sel = df.loc[df['Tech']==tech]
+    x = np.log10(sel['Cumulative production'].values)
+    y = np.log10(sel['Unit cost'].values)
+    model = sm.OLS(y, sm.add_constant(x))
     result = model.fit()
-    print('\t'+str(result.rsquared))
-    SStot = sum((lLR-np.mean(lLR))**2)
-    SSmlr = sum((lLR-np.mean(eLR))**2)
-    print('\t'+str(1 - SStot/SSmlr))
-    if frac == 0.5:
-        mlrALL = np.mean(eLR)
-print(mlrALL)
-dfij = []
-for frac1 in [10, 50, 100, 500, 1000, 1e10]:
-    for frac2 in [10, 50, 100, 500, 1000, 1e10]:
-        eLR = []
-        lLR = []
-        print('Order of magnitude of calibration and validation: ', frac1, frac2)
-        for idx, slope in enumerate(slopes_normalized):
-            eLR_ = slope[:round(len(slope)*0.5)]
-            lLR_ = slope[round(len(slope)*0.5):]
-            cprod = CProd[idx]
-            cprod = (cprod/cprod[0])[1:]
-            eLR_new = []
-            lLR_new = []
-            count = 0
-            for x in eLR_:
-                if cprod[round(len(cprod)*1/2)] / cprod[count] < frac1:
-                    eLR_new.append(eLR_[count])
-                count += 1
-            count = 0
-            cprod = cprod[round(len(cprod)*1/2):]
-            for x in lLR_:
-                if cprod[count]/cprod[0] < frac2:
-                    lLR_new.append(lLR_[count])
-                count += 1
-            eLR.append(sum(eLR_new))
-            lLR.append(sum(lLR_new))
-        model = sm.OLS(lLR, sm.add_constant(eLR))
-        result = model.fit()
-        print('\t'+str(result.rsquared))
-        SStot = sum((lLR-mlrALL)**2)
-        SSmlr = sum([(x-y)**2 for x,y in zip(lLR,eLR)])
-        r2mlr = 1 - SSmlr/SStot
-        SSmlrALL = sum((lLR-mlrALL)**2)
-        r2mlrALL = 1 - SSmlrALL/SStot
-        result.rsquared = 1 - sum((lLR - result.params[0] -\
-                              result.params[1]*np.array(eLR))**2)/SStot
-        print('\t'+str(r2mlr))
-        dfij.append([frac1, frac2, result.rsquared, r2mlr, r2mlrALL])
-dfij = pd.DataFrame(dfij, columns=['Frac1', 'Frac2','R2','R2m','R2mall'])
-dfij['R2 improvement'] = dfij['R2'] - dfij['R2mall']
-dfij['R2 improvement mtom'] = dfij['R2m'] - dfij['R2mall']
-dfij['R2 improvement total'] = dfij['R2'] - dfij['R2mall']
-R2diff = []
-# for frac2 in dfij['Frac2'].unique()[::-1]:
-#     r2diff = []
-#     for frac1 in dfij['Frac1'].unique():
-#         r2diff.append(dfij.loc[dfij['Frac1']==frac1]\
-#                       .loc[dfij['Frac2']==frac2,'R2 improvement'].values[0])
-#     R2diff.append(np.array(r2diff)) 
-# R2diff = np.vstack(R2diff)
-# im = plt.imshow( R2diff, aspect='auto', vmin=0)
-# plt.xticks([0,1,2,3,4,5],[1, 1.5, 2, 2.5, 3, 'Half of data set'])
-# plt.yticks([0,1,2,3,4,5],[1, 1.5, 2, 2.5, 3, 'Half of data set'][::-1])
-# plt.xlabel('Orders of magnitude used for estimation of past learning rate')
-# plt.ylabel('Orders of magnitude used for estimation of future learning rate')
-# cbar = plt.colorbar(im)
-# cbar.set_label('R2 improvement')
-# plt.title('Improvement using regression over using mean past learning rate of all technologies')
+    slopes.append([tech, result.params[1]])
+slopes = pd.DataFrame(slopes, columns=['Tech', 'Slope'])
 
-plt.figure()
-R2diff = []
-for frac2 in dfij['Frac2'].unique()[::-1]:
-    r2diff = []
-    for frac1 in dfij['Frac1'].unique():
-        r2diff.append(dfij.loc[dfij['Frac1']==frac1]\
-                      .loc[dfij['Frac2']==frac2,'R2 improvement mtom'].values[0])
-    R2diff.append(np.array(r2diff)) 
-R2diff = np.vstack(R2diff)
-im = plt.imshow( R2diff, aspect='auto')
-plt.xticks([0,1,2,3,4,5],[1, 1.5, 2, 2.5, 3, 'Half of data set'])
-plt.yticks([0,1,2,3,4,5],[1, 1.5, 2, 2.5, 3, 'Half of data set'][::-1])
-plt.xlabel('Orders of magnitude used for estimation of past learning rate')
-plt.ylabel('Orders of magnitude used for estimation of future learning rate')
-cbar = plt.colorbar(im)
-cbar.set_label('R2 improvement')
-plt.title('Improvement using mean past learning rate of speficic technology over using mean past learning rate of all technologies')
+dferr = []
+dferr2 = []
+counterr = 0
 
-# plt.figure()
-# R2diff = []
-# for frac2 in dfij['Frac2'].unique()[::-1]:
-#     r2diff = []
-#     for frac1 in dfij['Frac1'].unique():
-#         r2diff.append(dfij.loc[dfij['Frac1']==frac1]\
-#                       .loc[dfij['Frac2']==frac2,'R2 improvement total'].values[0])
-#     R2diff.append(np.array(r2diff)) 
-# R2diff = np.vstack(R2diff)
-# im = plt.imshow( R2diff, aspect='auto', vmin=0)
-# plt.xticks([0,1,2,3,4,5],[1, 1.5, 2, 2.5, 3, 'Half of data set'])
-# plt.yticks([0,1,2,3,4,5],[1, 1.5, 2, 2.5, 3, 'Half of data set'][::-1])
-# plt.xlabel('Orders of magnitude used for estimation of past learning rate')
-# plt.ylabel('Orders of magnitude used for estimation of future learning rate')
-# cbar = plt.colorbar(im)
-# cbar.set_label('R2 improvement')
-# plt.title('Improvement over prediction using mean past learning rate of all technologies')
+errordiff = []
 
-plt.show()
+Rp, Rm = 0, 0
+Rank1, Rank2 = [], []
+RMSEdiff = []
+for tech in df['Tech'].unique():
+    # errordiff = []
+    rmse1 = []
+    rmse2 = []
+    # computing average technological slope based on all other technologies
+    slopeall = np.mean(slopes.loc[slopes['Tech'] != tech,'Slope'].values)
+    # computing technology specific slope
+    sel = df.loc[df['Tech']==tech]
+    x = np.log10(sel['Cumulative production'].values)
+    y = np.log10(sel['Unit cost'].values)
+    H = len(x)
+    # calibrate model over first set of points
+    for i in range(H):
+    #     for N in range(0 - 1*(i==0), -1, -1):
+        for N in range(i-1, -1, -1):
+    # for i in range(round(H/2),round(H/2)+1):
+    # for i in range(round(0.5*H),H):
+    # for i in range(H-2,H):
+        # for N in range(0, -1, -1):
+            slope = (y[i] - y[N]) /\
+                (x[i] - x[N])
+            # add linear regression method
+            if method=='regression':
+                model = sm.OLS(y[N:i+1], sm.add_constant(x[N:i+1]))
+                result = model.fit()
+                slope = result.params[1]
+            # compute error associated using slope M points after midpoint
+            for M in range(i+1, H):
+                pred =  y[i] + slope * (x[M] - x[i])
+                # if method=='regression':
+                # 	pred = result.params[0] + slope * x[M]
+                pred2 =  y[i] + slopeall * (x[M] - x[i])
+                error = (y[M] - (pred))
+                error2 = (y[M] - (pred2))
+                rmse1.append(error**2)
+                rmse2.append(error2**2)
+                # error point by point
+                # RMSEdiff.append((error**2)**0.5-(error2**2)**0.5)
+    # error by technology
+    RMSEdiff.append(np.mean(rmse1)**0.5-np.mean(rmse2)**0.5)
+RMSEdiff = pd.DataFrame(RMSEdiff, columns=['diff'])
+N = RMSEdiff['diff'].nunique()
 
-exit()
+# # number of wins assuming binomial distribution
+# print('Assuming wins have a binomial distribution, number of wins for each  method should be between ', \
+#      round( RMSEdiff['diff'].nunique()/2-RMSEdiff['diff'].nunique()**0.5), ' and ', \
+#         round( RMSEdiff['diff'].nunique()/2+RMSEdiff['diff'].nunique()**0.5))
+# print('\t Number of wins: Technology specific (', sum(RMSEdiff['diff'].values < 0), \
+#         '), Average slope (', sum(RMSEdiff['diff'].values > 0), ')')
+
+# print('Paired t-test: null hypothesis rejected if value is above +/- 1.990')
+# mu = np.mean(RMSEdiff['diff'].values)
+# std = np.std(RMSEdiff['diff'].values) / (RMSEdiff.shape[0])**0.5
+# print('\t The value is ', mu/std)
+# # print('The mean difference is ', mu)   
+# # print('\t The confidence interval for the mean is (', mu-1.990*std,', ', mu+1.990*std,')')
 
 
-plt.figure()
-im = plt.imshow(slopes__, vmin=-1, vmax=1, aspect='auto', cmap='RdBu')
-plt.colorbar(im)
-plt.show()
-seaborn.displot(slopes_.flatten(), rug=True, kind='kde')
-
-plt.figure()
-plt.scatter(np.arange(0,86,1), mean)
-plt.plot([0,86],[np.mean(mean),np.mean(mean)])
-# plt.xticks([x for x in range(len(slopes))], 
-#               df['Tech'].unique(), 
-#               fontsize=5, rotation=90)
-# plt.plot([0,86],[np.mean(slopes),np.mean(slopes)])
-plt.ylabel('Mean')
-plt.xlabel('Technologies')
-
-
-plt.figure()
-plt.plot(sorted(SNR))
-plt.ylabel('Signal-to-noise ratio')
-plt.xlabel('Technologies')
-plt.annotate('More noise than signal', (70,0.5), ha='center')
-plt.annotate('More signal than noise', (20,1.5), ha='center')
-plt.plot([0,86],[1,1])
+print('Wilcoxon signed rank test: null hypothesis rejected if value is below -1.96')
+RMSEdiff['abs'] = np.abs(RMSEdiff['diff'].values)
+RMSEdiff = RMSEdiff.sort_values(by='abs', ascending=False)
+RMSEdiff = RMSEdiff.reset_index()
+Rp, Rm = 0, 0
+for i in range(RMSEdiff.shape[0]):
+    if RMSEdiff['diff'].values[i] > 0:
+        Rp += i+1
+    elif RMSEdiff['diff'].values[i] == 0:
+        Rp += 1/2*(i+1)
+        Rm += 1/2*(i+1)
+    else:
+        Rm += i+1
+T = min(Rp,Rm)
+z = (T - 1/4*N*(N+1)) / (1/24*N*(N+1)*(2*N+1))**0.5
+print('\tThe value is ', z)
+# for t in range(1, int(N*(N+1)/2),100):
+#     print(t, (t-1/4*N*(N+1))/(1/24*N*(N+1)*(2*N+1))**0.5)
 
 
-plt.figure()
-plt.plot(sorted(cov))
-plt.ylabel('Coefficient of variation')
-plt.xlabel('Technologies')
-
-plt.show()
-print(count, tot)
+# Rank1 = (sum(RMSEdiff['diff'].values < 0) + 2 * sum(RMSEdiff['diff'].values > 0) )/ RMSEdiff.shape[0]
+# Rank2 = (sum(RMSEdiff['diff'].values > 0) + 2 * sum(RMSEdiff['diff'].values < 0) )/ RMSEdiff.shape[0]
+# k = 2
+# chi2 = 12*N/(k*(k+1))* ( \
+#     sum([np.mean(Rank1)**2, np.mean(Rank2)**2]) - \
+#     k * (k+1)**2/4
+#     )
+# print('Iman and Davenport (1980) version of the Friedman test: rejected if above 4')
+# print('\tThe value is: ',(N-1)*chi2/(N*(k-1)-chi2))

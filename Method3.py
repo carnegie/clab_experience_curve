@@ -43,12 +43,12 @@ for tech in df['Tech'].unique():
     H = len(x)
     # calibrate model over first set of points
     for i in range(H):
-    #     for N in range(0 - 1*(i==0), -1, -1):
-        for N in range(i-1, -1, -1):
+        for N in range(0 - 1*(i==0), -1, -1):
+        # for N in range(i-1, -1, -1):
     # for i in range(round(H/2),round(H/2)+1):
-    # for i in range(round(0.5*H),H):
+    # for i in range(round(0.9*H),H):
     # for i in range(H-2,H):
-        # for N in range(0, -1, -1):
+    #     for N in range(0, -1, -1):
             slope = (y[i] - y[N]) /\
                 (x[i] - x[N])
             # add linear regression method
@@ -80,12 +80,15 @@ N = RMSEdiff['diff'].nunique()
 # print('\t Number of wins: Technology specific (', sum(RMSEdiff['diff'].values < 0), \
 #         '), Average slope (', sum(RMSEdiff['diff'].values > 0), ')')
 
-# print('Paired t-test: null hypothesis rejected if value is above +/- 1.990')
-# mu = np.mean(RMSEdiff['diff'].values)
-# std = np.std(RMSEdiff['diff'].values) / (RMSEdiff.shape[0])**0.5
-# print('\t The value is ', mu/std)
-# # print('The mean difference is ', mu)   
-# # print('\t The confidence interval for the mean is (', mu-1.990*std,', ', mu+1.990*std,')')
+plt.hist(RMSEdiff['diff'].values, bins=1000)
+
+print('Paired t-test: null hypothesis rejected if value is above +/- 1.990')
+mu = np.mean(RMSEdiff['diff'].values)
+std = np.std(RMSEdiff['diff'].values) / (RMSEdiff.shape[0])**0.5
+print(mu, std)
+print('\t The value is ', mu/std)
+# print('The mean difference is ', mu)   
+# print('\t The confidence interval for the mean is (', mu-1.990*std,', ', mu+1.990*std,')')
 
 
 print('Wilcoxon signed rank test: null hypothesis rejected if value is below -1.96')
@@ -117,3 +120,5 @@ print('\tThe value is ', z)
 #     )
 # print('Iman and Davenport (1980) version of the Friedman test: rejected if above 4')
 # print('\tThe value is: ',(N-1)*chi2/(N*(k-1)-chi2))
+
+plt.show()

@@ -16,6 +16,9 @@ df = pd.read_csv('ExpCurves.csv')
 # df['Cumulative production'] = df['Normalized cumulative production']
 # df['Unit cost'] = df['Normalized unit cost']
 
+cmapp = matplotlib.colormaps['Purples']
+cmapg = matplotlib.colormaps['Greens']
+
 method = 'regression'
 
 # get slope for all technologies
@@ -120,7 +123,8 @@ ax[1].set_xscale('log', base=10)
 # plt.show()
 
 # # for different max ranges
-maxsrange = [0.5, 2]
+maxsrange = [0.5, 1, 2]
+rangess = {0.5: [-1, -0.5, 0, 0.5], 1: [0,1/3,2/3,1], 2: [0,0.5,1,2]}
 rangess = {0.5: [-1, -0.5, 0, 0.5], 1: [0,1/3,2/3,1], 2: [0,0.5,1,2]}
 # maxsrange = [np.log10(10**(2/4)), 10**(1), 10**3]
 # rangess = {10**(2/4): [10**i*2/4/4 for i in range(1,4)],
@@ -163,16 +167,7 @@ for maxrange in maxsrange:
 			if t not in techs2[0]:
 				techss.remove(t)
 
-	# idx = 0
-	# while predr[idx]<np.log10(maxrange):
-	# 	idx += 1
-	# techsr = predr_techs[idx]
-	# idx = 0
-	# while predn[idx]<np.log10(maxrange):
-	# 	idx += 1
-	# techsn = predn_techs[idx]
-	# print(len(techsr),len(techsn))
-	# techss = [t for t in techsr if t in techsn]
+
 	print(maxrange)
 	print(techss)
 	select1 = dferr.loc[dferr['Tech'].isin(techss)]
@@ -180,6 +175,143 @@ for maxrange in maxsrange:
 	techsranges.append(techss)
 	frac = [*rangess[maxrange]]
 	frac = [np.log10(10**x+1) for x in frac]
+	# lineplot with confidence intervals
+	figl, axl = plt.subplots(3,1, sharex=True, sharey=True, figsize=(6,8))
+	dj = (frac[-1] - frac[0])/30
+	jfrac = np.arange(frac[0],frac[-1]+dj,dj)
+	count = np.zeros((len(frac)-1,len(jfrac)-1))
+	counttech = np.zeros((len(frac)-1,len(jfrac)-1))
+	for i in range(len(frac)-1):
+		pct1 = []
+		pct2 = []
+		for j in range(len(jfrac)-1):
+			sel1 = select1.loc[
+				(select1['Log of ratios for predictor']>frac[i]) &\
+				(select1['Log of ratios for predictor']<=frac[i+1]) & \
+				(select1['Log of ratios for prediction']>jfrac[j]) &\
+				(select1['Log of ratios for prediction']<=jfrac[j+1])
+				].copy()
+			sel2 = select2.loc[
+				(select2['Log of ratios for predictor']>frac[i]) &\
+				(select2['Log of ratios for predictor']<=frac[i+1]) & \
+				(select2['Log of ratios for prediction']>jfrac[j]) &\
+				(select2['Log of ratios for prediction']<=jfrac[j+1])
+				].copy()
+			for tt in sel1['Tech'].unique():
+				sel1.loc[sel1['Tech']==tt,'Weights'] = 1/sel1.loc[sel1['Tech']==tt].count()[0]
+				sel2.loc[sel2['Tech']==tt,'Weights'] = 1/sel2.loc[sel2['Tech']==tt].count()[0]
+			counttech[i,j] = sel1['Tech'].nunique()
+			sel1 = sel1.sort_values(by='Error', ascending=True)
+			sel2 = sel2.sort_values(by='Error', ascending=True)
+			cumsum = sel1['Weights'].cumsum().round(4)
+			cumsum2 = sel2['Weights'].cumsum().round(4)
+			pt1, pt2 = [], []
+			for q in [0,25,50,75,100]:
+			# for q in [0,10,20,30,40,50,60,70,80,90,100]:
+				cutoff = sel1['Weights'].sum() * q/100
+				cutoff2 = sel2['Weights'].sum() * q/100
+				pt1.append(sel1['Error'][cumsum >= cutoff.round(4)].iloc[0])
+				pt2.append(sel2['Error'][cumsum2 >= cutoff2.round(4)].iloc[0])
+			pct1.append([i,j,*pt1])
+			pct2.append([i,j,*pt2])
+		pct1 = np.array(pct1)
+		pct2 = np.array(pct2)
+		axl[i].plot([10**x - 1 for x in jfrac[:-1]],10**pct1[:,4], color=cmapp(0.7), lw=2)
+		axl[i].plot([10**x - 1 for x in jfrac[:-1]],10**pct2[:,4], color=cmapg(0.7), lw=2)
+		for r in range(1,-1,-1):
+			axl[i].fill_between([10**x - 1 for x in jfrac[:-1]], 10**pct1[:,2+r], 10**pct1[:,-r-1], alpha=0.1+0.2*r, color=cmapp(0.7), zorder=-2-r, lw=0)
+			axl[i].fill_between([10**x - 1 for x in jfrac[:-1]], 10**pct2[:,2+r], 10**pct2[:,-r-1], alpha=0.1+0.2*r, color=cmapg(0.7), zorder=-2-r, lw=0)
+		# axl[i].plot([10**x - 1 for x in jfrac[:-1]],10**pct1[:,7], color=cmapp(0.7), lw=2)
+		# axl[i].plot([10**x - 1 for x in jfrac[:-1]],10**pct2[:,7], color=cmapg(0.7), lw=2)
+		# for r in range(4,-1,-1):
+		# 	axl[i].fill_between([10**x - 1 for x in jfrac[:-1]], 10**pct1[:,2+r], 10**pct1[:,-r-1], alpha=0.1+0.2*r, color=cmapp(0.7), zorder=-2-r, lw=0)
+		# 	axl[i].fill_between([10**x - 1 for x in jfrac[:-1]], 10**pct2[:,2+r], 10**pct2[:,-r-1], alpha=0.1+0.2*r, color=cmapg(0.7), zorder=-2-r, lw=0)
+		axl[i].set_ylim(8*1e-2,12)
+		axl[i].set_yscale('log', base=10)
+		axl[i].set_xscale('log', base=10)
+		axl[i].set_title('Predictor range (ratio of last to first point): from 10^'+str(np.log10(10**frac[i]-1).round(2))+' to 10^'+str(np.log10(10**frac[i+1]-1).round(2)))
+	axl[2].set_xlabel('Ratio of increase in cumulative production to current cumulative production')
+	axl[1].annotate('Prediction error (actual to predicted ratio)', 
+			xy=(0.025, 0.5), ha='center', va='center', 
+			xycoords='figure fraction', rotation=90)
+	legend_elements = [
+		matplotlib.lines.Line2D([0],[0], c=cmapp(0.7), lw=2, label='Technology-specific slope'),
+		matplotlib.lines.Line2D([0],[0], c=cmapg(0.7), lw=2, label='Average technological slope')
+	]
+	figl.legend(handles=legend_elements, loc='lower center', ncol=2)
+	figl.suptitle('Number of technologies always available over the intervals considered: '+str(len(techss)))
+	plt.subplots_adjust(bottom=0.125, left=0.1, right=0.9, top=0.875, hspace=0.5)
+
+	if maxrange != maxsrange[0]:
+		for testmaxrange in maxsrange:
+			if testmaxrange < maxrange:
+				frac = [*rangess[testmaxrange]]
+				frac = [np.log10(10**x+1) for x in frac]
+				mean1 = np.zeros((len(frac)-1,len(frac)-1))
+				mean2 = np.zeros((len(frac)-1,len(frac)-1))
+				pct1 = []
+				pct2 = []
+				figl, axl = plt.subplots(3,1, sharex=True, sharey=True, figsize=(6,8))
+				dj = (frac[-1] - frac[0])/30
+				jfrac = np.arange(frac[0],frac[-1]+dj,dj)
+				count = np.zeros((len(frac)-1,len(jfrac)-1))
+				counttech = np.zeros((len(frac)-1,len(jfrac)-1))
+				for i in range(len(frac)-1):
+					pct1 = []
+					pct2 = []
+					for j in range(len(jfrac)-1):
+						sel1 = select1.loc[
+							(select1['Log of ratios for predictor']>frac[i]) &\
+							(select1['Log of ratios for predictor']<=frac[i+1]) & \
+							(select1['Log of ratios for prediction']>jfrac[j]) &\
+							(select1['Log of ratios for prediction']<=jfrac[j+1])
+							].copy()
+						sel2 = select2.loc[
+							(select2['Log of ratios for predictor']>frac[i]) &\
+							(select2['Log of ratios for predictor']<=frac[i+1]) & \
+							(select2['Log of ratios for prediction']>jfrac[j]) &\
+							(select2['Log of ratios for prediction']<=jfrac[j+1])
+							].copy()
+						for tt in sel1['Tech'].unique():
+							sel1.loc[sel1['Tech']==tt,'Weights'] = 1/sel1.loc[sel1['Tech']==tt].count()[0]
+							sel2.loc[sel2['Tech']==tt,'Weights'] = 1/sel2.loc[sel2['Tech']==tt].count()[0]
+						counttech[i,j] = sel1['Tech'].nunique()
+						sel1 = sel1.sort_values(by='Error', ascending=True)
+						sel2 = sel2.sort_values(by='Error', ascending=True)
+						cumsum = sel1['Weights'].cumsum().round(4)
+						cumsum2 = sel2['Weights'].cumsum().round(4)
+						pt1, pt2 = [], []
+						for q in [0,25,50,75,100]:
+							cutoff = sel1['Weights'].sum() * q/100
+							cutoff2 = sel2['Weights'].sum() * q/100
+							pt1.append(sel1['Error'][cumsum >= cutoff.round(4)].iloc[0])
+							pt2.append(sel2['Error'][cumsum2 >= cutoff2.round(4)].iloc[0])
+						pct1.append([i,j,*pt1])
+						pct2.append([i,j,*pt2])
+					pct1 = np.array(pct1)
+					pct2 = np.array(pct2)
+					axl[i].plot([10**x - 1 for x in jfrac[:-1]],10**pct1[:,4], color=cmapp(0.7), lw=2)
+					axl[i].plot([10**x - 1 for x in jfrac[:-1]],10**pct2[:,4], color=cmapg(0.7), lw=2)
+					for r in range(1,-1,-1):
+						axl[i].fill_between([10**x - 1 for x in jfrac[:-1]], 10**pct1[:,2+r], 10**pct1[:,-r-1], alpha=0.1+0.2*r, color=cmapp(0.7), zorder=-2-r, lw=0)
+						axl[i].fill_between([10**x - 1 for x in jfrac[:-1]], 10**pct2[:,2+r], 10**pct2[:,-r-1], alpha=0.1+0.2*r, color=cmapg(0.7), zorder=-2-r, lw=0)
+					axl[i].set_ylim(8*1e-2,12)
+					axl[i].set_yscale('log', base=10)
+					axl[i].set_xscale('log', base=10)
+					axl[i].set_title('Predictor range (ratio of last to first point): from 10^'+str(np.log10(10**frac[i]-1).round(2))+' to 10^'+str(np.log10(10**frac[i+1]-1).round(2)))
+				axl[2].set_xlabel('Ratio of increase in cumulative production to current cumulative production')
+				axl[1].annotate('Prediction error (actual to predicted ratio)', 
+						xy=(0.025, 0.5), ha='center', va='center', 
+						xycoords='figure fraction', rotation=90)
+				legend_elements = [
+					matplotlib.lines.Line2D([0],[0], c=cmapp(0.7), lw=2, label='Technology-specific slope'),
+					matplotlib.lines.Line2D([0],[0], c=cmapg(0.7), lw=2, label='Average technological slope')
+				]
+				figl.legend(handles=legend_elements, loc='lower center', ncol=2)
+				figl.suptitle('Number of technologies always available over the intervals considered: '+str(len(techss)))
+				plt.subplots_adjust(bottom=0.125, left=0.1, right=0.9, top=0.875, hspace=0.5)
+
+
 	mean1 = np.zeros((len(frac)-1,len(frac)-1))
 	mean2 = np.zeros((len(frac)-1,len(frac)-1))
 	pct1 = []
@@ -253,9 +385,9 @@ for maxrange in maxsrange:
 	# plt.subplots_adjust(bottom=0.125, left=0.1, right=0.9, top=0.875, hspace=0.5)
 	
 	fig, ax = plt.subplots(3,1, sharex=True, sharey=True, figsize=(6,8))
-	cmapp = matplotlib.colormaps['Purples']
-	cmapg = matplotlib.colormaps['Greens']
+	fig2, ax2 = plt.subplots(3,1, sharex=True, sharey=True, figsize=(6,8))
 	for i in range(len(frac)-1):
+		pcline1, pcline2 = [], []
 		for j in range(len(frac)-1):
 			p1 = pct1.loc[(pct1['Predictor']==i) & (pct1['Prediction']==j)]
 			p2 = pct2.loc[(pct2['Predictor']==i) & (pct2['Prediction']==j)]
@@ -269,6 +401,16 @@ for maxrange in maxsrange:
 	     		boxprops = props1, whiskerprops = props1, capprops = props1)
 			ax[i].bxp([s2], positions=[j*5+0.5], showfliers=False, 
 	     		boxprops = props2, whiskerprops = props2, capprops = props2)
+			pcline1.append([s1[x] for x in p1.columns[2:]])
+			pcline2.append([s2[x] for x in p1.columns[2:]])
+		pcline1 = np.array(pcline1)
+		pcline2 = np.array(pcline2)
+		ax2[i].plot(frac[:-1],pcline1[:,2], color=cmapp(0.7), lw=2)
+		ax2[i].plot(frac[:-1],pcline2[:,2], color=cmapg(0.7), lw=2)
+		for r in range(1,-1,-1):
+			ax2[i].fill_between(frac[:-1], pcline1[:,r], pcline1[:,-r-1], alpha=0.1+0.2*r, color=cmapp(0.7), zorder=-2-r, lw=0)
+			ax2[i].fill_between(frac[:-1], pcline2[:,r], pcline2[:,-r-1], alpha=0.1+0.2*r, color=cmapg(0.7), zorder=-2-r, lw=0)
+	
 		ax[i].set_ylim(8*1e-2,12)
 		ax[i].set_yscale('log', base=10)
 		ax[i].set_xticks([0,5,10],['From 10^'+str(np.log10(10**frac[x]-1).round(2))+' to 10^'+str(np.log10(10**frac[x+1]-1).round(2)) for x in range(len(frac)-1)])

@@ -13,33 +13,14 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 
 df = pd.read_csv('ExpCurves.csv')
 
-fig, ax = plt.subplots(10,9)
-count=0
-for tech in df['Tech'].unique():
-    if count in [81]:
-        for x in range(2):
-            ax[int(count/9)][count%9].axis('off')
-            count += 1
-    sel = df.loc[df['Tech'] == tech]
-    uc = sel['Unit cost'].values /sel['Unit cost'].values[0]
-    cp = sel['Cumulative production'].values/sel['Cumulative production'].values[0]
-    ax[int(count/9)][count%9].plot(cp,uc)
-    ax[int(count/9)][count%9].set_yscale('log', base=10)
-    ax[int(count/9)][count%9].set_xscale('log', base=10)
-    ax[int(count/9)][count%9].axis('off')
-    count += 1
-ax[-1][-2].axis('off')
-ax[-1][-1].axis('off')
-
-
-
 fraction = 1/2
 
 LR_cal = []
 LR_val = []
-figscatter , axscatter = plt.subplots()
+figscatter , axscatter = plt.subplots(figsize=(7,6))
 fig2 , ax2 = plt.subplots(10,9, figsize=(13,7))
 fig3 , ax3 = plt.subplots(10,9, figsize=(13,7))
+fig4, ax4 = plt.subplots(10,9, figsize=(13,7))
 count = 0
 better = 0
 for tech in df['Tech'].unique():
@@ -47,11 +28,19 @@ for tech in df['Tech'].unique():
     sel = df.loc[df['Tech'] == tech]
     x = np.log10(sel['Cumulative production'].values)
     y = np.log10(sel['Unit cost'].values)
-    # separate calibration and validation datasets based on points
+    # separate calibration and validation datasets based on number of points
     x_cal = x[:round(x.shape[0]*fraction)]
     x_val = x[round(x.shape[0]*fraction):]
     y_cal = y[:round(y.shape[0]*fraction)]
     y_val = y[round(y.shape[0]*fraction):]
+    # separate calibration and validation datasets based on cumulative production range
+    # idxcal = np.where(np.array(x)<=x[0]+(x[-1]-x[0])*fraction)
+    # idxval = np.where(np.array(x)>x[0]+(x[-1]-x[0])*fraction)
+    # x_cal = x[idxcal]
+    # x_val = x[idxval]
+    # y_cal = y[idxcal]
+    # y_val = y[idxval]
+
     sel2 = df.loc[~(df['Tech'] == tech)]
     for tech2 in sel2['Tech'].unique():
         sel2_ = sel2.loc[sel2['Tech'] == tech2]
@@ -61,11 +50,6 @@ for tech in df['Tech'].unique():
         result = model.fit()
         slopeall = result.params[1]
 
-    # # alternative - separate calibration and validation datasets based on fraction of cumulative production
-    # x_cal = x[x<(x[-1]-x[0])*fraction + x[0]]
-    # x_val = x[x>=(x[-1]-x[0])*fraction + x[0]]
-    # y_cal = y[x<(x[-1]-x[0])*fraction + x[0]]
-    # y_val = y[x>=(x[-1]-x[0])*fraction + x[0]]
     # perform regression on both datasets separately
     model_cal = sm.OLS(y_cal, sm.add_constant(x_cal))
     result_cal = model_cal.fit()
@@ -82,9 +66,10 @@ for tech in df['Tech'].unique():
         for x in range(2):
             ax2[int(count/9)][count%9].axis('off')
             ax3[int(count/9)][count%9].axis('off')
+            ax4[int(count/9)][count%9].axis('off')
             count += 1
-    uc = sel['Unit cost'].values /sel['Unit cost'].values[0]
-    cp = sel['Cumulative production'].values/sel['Cumulative production'].values[0]
+    uc = sel['Unit cost'].values #/sel['Unit cost'].values[0]
+    cp = sel['Cumulative production'].values #/sel['Cumulative production'].values[0]
     ax2[int(count/9)][count%9].scatter(cp, uc, 
                                        marker='o', 
                                        color='firebrick',
@@ -92,17 +77,34 @@ for tech in df['Tech'].unique():
                                        facecolor='None', s=2)
     ax2[int(count/9)][count%9].set_yscale('log', base=10)
     ax2[int(count/9)][count%9].set_xscale('log', base=10)
+    ax4[int(count/9)][count%9].scatter(cp, uc, 
+                                       marker='o', 
+                                       color='firebrick',
+                                       lw=0.5, 
+                                       facecolor='None', s=2)
+    ax4[int(count/9)][count%9].set_yscale('log', base=10)
+    ax4[int(count/9)][count%9].set_xscale('log', base=10)
     ucpred = 10**(result_cal.params[0] + result_cal.params[1] * \
-        np.concatenate([x_cal, x_val]))/sel['Unit cost'].values[0]
+        np.concatenate([x_cal, x_val])) #/sel['Unit cost'].values[0]
     errpred = 10**(result_cal.params[0] + result_cal.params[1] * \
         x_val) - sel['Unit cost'].values[len(x_cal):]
     errpred = result_cal.params[0] + result_cal.params[1] * \
         x_val - np.log10(sel['Unit cost'].values[len(x_cal):])
+    ucalpred = 10**(result_cal.params[0] + result_cal.params[1] * \
+        (x_cal)) #/sel['Unit cost'].values[0]
+    uvalpred = 10**(result_val.params[0] + result_val.params[1] * \
+        (x_val)) #/sel['Unit cost'].values[0]
     ax2[int(count/9)][count%9].plot(cp, ucpred, 
                                        color='k',
                                        alpha = 0.6)
+    ax4[int(count/9)][count%9].plot(10**x_cal, ucalpred, 
+                                       color='k',
+                                       alpha = 0.6)
+    ax4[int(count/9)][count%9].plot(10**x_val, uvalpred, 
+                                       color='b',
+                                       alpha = 0.6)
     ucpred2 = 10**(y_cal[-1] +  slopeall* \
-        (np.concatenate([np.array([x_cal[-1]]), x_val]) - x_cal[-1]))/sel['Unit cost'].values[0]
+        (np.concatenate([np.array([x_cal[-1]]), x_val]) - x_cal[-1])) #/sel['Unit cost'].values[0]
     errpred2 = 10**(y_cal[-1] +  slopeall* \
         (x_val - x_cal[-1])) - sel['Unit cost'].values[len(x_cal):]
     errpred2 = y_cal[-1] +  slopeall* \
@@ -114,18 +116,28 @@ for tech in df['Tech'].unique():
     ylim = ax2[int(count/9)][count%9].get_ylim()
     ax2[int(count/9)][count%9].plot(
         [cp[len(x_cal)-1],cp[len(x_cal)-1]],
-        [0,10],'k', alpha=0.2, zorder=-30)
+        [0,max(10**y)*1.2],'k', alpha=0.2, zorder=-30)
+    ax4[int(count/9)][count%9].plot(
+        [cp[len(x_cal)-1],cp[len(x_cal)-1]],
+        [0,max(10**y)*1.2],'k', alpha=0.2, zorder=-30)
     ax2[int(count/9)][count%9].set_xlim(xlim)
     ax2[int(count/9)][count%9].set_ylim(ylim)
     ax2[int(count/9)][count%9].set_xticks([])
     ax2[int(count/9)][count%9].set_yticks([])
     ax2[int(count/9)][count%9].minorticks_off()
+    ax4[int(count/9)][count%9].set_xlim(xlim)
+    ax4[int(count/9)][count%9].set_ylim(ylim)
+    ax4[int(count/9)][count%9].set_xticks([])
+    ax4[int(count/9)][count%9].set_yticks([])
+    ax4[int(count/9)][count%9].minorticks_off()
     # plt.pause(0.01)
     for axis in ['top','bottom','left','right']:
         ax2[int(count/9)][count%9].spines[axis].set_linewidth(0.1)
         ax3[int(count/9)][count%9].spines[axis].set_linewidth(0.1)
+        ax4[int(count/9)][count%9].spines[axis].set_linewidth(0.1)
         ax2[int(count/9)][count%9].spines[axis].set_alpha(0.5)
         ax3[int(count/9)][count%9].spines[axis].set_alpha(0.5)
+        ax4[int(count/9)][count%9].spines[axis].set_alpha(0.5)
     sns.kdeplot(errpred, color='k', 
                 ax=ax3[int(count/9)][count%9])
     sns.kdeplot(errpred2, color='g', 
@@ -159,16 +171,25 @@ ax2[-1][-2].axis('off')
 ax2[-1][-1].axis('off')
 ax3[-1][-2].axis('off')
 ax3[-1][-1].axis('off')
+ax4[-1][-2].axis('off')
+ax4[-1][-1].axis('off')
 fig2.suptitle('Predictions and observations')
 fig3.suptitle('Unit cost error distributions')
+fig4.suptitle('First and second half regression lines')
 ax2[0][0].annotate('Unit cost', (0.05,0.55), 
                    ha='center', rotation=90, 
                     xycoords='figure fraction')
 ax2[0][0].annotate('Cumulative production', 
                    (0.5,0.1), ha='center',
                    xycoords='figure fraction')
-axscatter.set_xlabel('Early learning rate')
-axscatter.set_ylabel('Late learning rate')
+ax4[0][0].annotate('Unit cost', (0.05,0.55), 
+                   ha='center', rotation=90, 
+                    xycoords='figure fraction')
+ax4[0][0].annotate('Cumulative production', 
+                   (0.5,0.1), ha='center',
+                   xycoords='figure fraction')
+axscatter.set_xlabel('First half learning rate')
+axscatter.set_ylabel('Second half learning rate')
 legend_elements = [
     matplotlib.lines.Line2D([0],[0],color='k',
                             label='Technology-specific learning rate'),
@@ -186,26 +207,37 @@ legend_elements = [
                             label='Mean technological learning rate')
 ]
 fig2.legend(handles=legend_elements, ncol=3, loc='lower center')
+legend_elements = [
+    matplotlib.lines.Line2D([0],[0],color='firebrick', lw=0,
+                            marker='o', markerfacecolor='None',
+                            label='Observations'),
+    matplotlib.lines.Line2D([0],[0],color='k',
+                            label='First half regression line'),
+    matplotlib.lines.Line2D([0],[0],color='b',
+                            label='Second half regression line')
+]
+fig4.legend(handles=legend_elements, ncol=3, loc='lower center')
 fig2.subplots_adjust(bottom=0.15)
 fig3.subplots_adjust(bottom=0.15)
+fig4.subplots_adjust(bottom=0.15)
 axscatter.set_aspect('equal','box')
-plt.show()
+# plt.show()
 model = sm.OLS(LR_val, sm.add_constant(LR_cal))
 result = model.fit()
 print(result.summary())
 axscatter.plot(np.linspace(-2,2,100), 
          result.params[0] + result.params[1] * np.linspace(-1,1,100),
          zorder = -1, label='Regression', color='royalblue')
-axscatter.plot([-2,2],[np.mean(LR_cal),np.mean(LR_cal)], label='Mean past learning rate', color='darkorange', zorder=-3)
-axscatter.plot([-2,2],[np.mean(LR_val),np.mean(LR_val)], label='Mean future learning rate', color='darkmagenta', zorder=-3)
+# axscatter.plot([-2,2],[np.mean(LR_cal),np.mean(LR_cal)], label='Mean past learning rate', color='darkorange', zorder=-3)
+# axscatter.plot([-2,2],[np.mean(LR_val),np.mean(LR_val)], label='Mean future learning rate', color='darkmagenta', zorder=-3)
 axscatter.set_xlim((-2,2))
 axscatter.set_ylim((-2,2))
 axscatter.annotate('R2 = ' + str(round(result.rsquared,2)) + \
              '\n N = ' + str(len(df['Tech'].unique())),
              (-1.5,1))
-axscatter.annotate('late LR = ' + str(round(result.params[0],2)) + \
-             '+ ' + str(round(result.params[1],2)) +'* early LR'+\
-                '\n Significancy (F test p-value): '+str(round(result.f_pvalue,3)),
+axscatter.annotate('LR2 = ' + str(round(result.params[0],2)) + \
+             '+ ' + str(round(result.params[1],2)) +'* LR1'+\
+                '\n F-test p-value: '+str(round(result.f_pvalue,3)),
                 (1.2,-1.25), ha='center')
 ssetot = 0.0
 ssereg = 0.0
@@ -226,6 +258,7 @@ print(1 - ssereg/ssetot)
 print(1 - ssecal/ssetot)
 print(1 - ssecal2/ssetot)
 print(1 - sseval/ssetot)
+print(ssetot, ssereg, (ssetot-ssereg), (ssereg) / (((ssetot-ssereg))/84))
 figscatter.legend(ncol=3, loc='lower center')
 figscatter.subplots_adjust(bottom=0.15, top=0.95)
 axscatter.set_xlim((-2,2))

@@ -388,7 +388,7 @@ for sector in sectors:
         result = model.fit()
         R2[label].append(result.rsquared)
 R2 = pd.DataFrame(R2)
-R2.boxplot(ax=ax)
+R2.boxplot(ax=ax, whis=99)
 ax.grid(False)
 ax.set_ylabel('R2')
 plt.subplots_adjust(right=0.95, left=0.05, bottom=0.1, top=0.95)

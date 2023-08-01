@@ -46,8 +46,8 @@ for tech in df['Tech'].unique():
 	H = len(x)
 	# select N points before midpoint and compute slope
 	for i in range(H):
-		for N in range(i-1, -1, -1):
-		# for N in range(0-(i==0), -1, -1):
+		# for N in range(i-1, -1, -1):
+		for N in range(0-(i==0), -1, -1):
 			slope = (y[i] - y[N]) /\
 				(x[i] - x[N])
 			# add linear regression method
@@ -126,7 +126,7 @@ dferr2 = pd.DataFrame(dferr2,
 maxsrange = [0.5, 1, 2]
 rangess = {0.5: [-1, -0.5, 0, 0.5], 1: [0,1/3,2/3,1], 2: [-1,0.5,1,2]}
 rangess = {0.5: [-1, -0.5, 0, 0.5], 1: [0,1/3,2/3,1], 2: [-1,0.5,1,2]}
-rangess = {0.5: [1+10**-1, 1+10**-0.5, 1+10**0, 10**0.5], 1: [1+10**0,10**(1/3),10**(2/3),10], 2: [1+10**0,10**(0.5),10,100]}
+rangess = {0.5: [1, 1+10**-0.5, 1+10**0, 10**0.5], 1: [1,10**(1/3),10**(2/3),10], 2: [1,10**(0.5),10,100]}
 
 # maxsrange = [np.log10(10**(2/4)), 10**(1), 10**3]
 # rangess = {10**(2/4): [10**i*2/4/4 for i in range(1,4)],
@@ -180,7 +180,7 @@ for maxrange in maxsrange:
 	print(frac)
 	# lineplot with confidence intervals
 	figl, axl = plt.subplots(3,1, sharex=True, sharey=True, figsize=(6,8))
-	dj = (frac[-1] - frac[0])/100
+	dj = 0.5
 	jfrac = np.arange(frac[0]-dj/2,frac[-1]+dj*3/2,dj)
 	print(jfrac[0]+dj/2, jfrac[-2]+dj/2)
 	count = np.zeros((len(frac)-1,len(jfrac)-1))
@@ -204,6 +204,11 @@ for maxrange in maxsrange:
 			for tt in sel1['Tech'].unique():
 				sel1.loc[sel1['Tech']==tt,'Weights'] = 1/sel1.loc[sel1['Tech']==tt].count()[0]
 				sel2.loc[sel2['Tech']==tt,'Weights'] = 1/sel2.loc[sel2['Tech']==tt].count()[0]
+			if sel1.empty:
+				pct1.append([i,j,np.nan,np.nan,np.nan,np.nan,np.nan])
+				pct2.append([i,j,np.nan,np.nan,np.nan,np.nan,np.nan])
+				counttech[i,j] = 0
+				continue
 			counttech[i,j] = sel1['Tech'].nunique()
 			sel1 = sel1.sort_values(by='Error', ascending=True)
 			sel2 = sel2.sort_values(by='Error', ascending=True)

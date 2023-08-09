@@ -79,8 +79,8 @@ counterr = 0
 RMSEdiff = []
 for tech in df['Tech'].unique():
     # errordiff = []
-    rmse1 = []
-    rmse2 = []
+    e1 = []
+    e2 = []
     # computing average technological slope based on all other technologies
     slopeall = np.mean(slopes.loc[slopes['Tech'] != tech,'Slope'].values)
     # computing technology specific slope
@@ -89,13 +89,13 @@ for tech in df['Tech'].unique():
     y = np.log10(sel['Unit cost'].values)
     H = len(x)
     # calibrate model over first set of points
-    # for i in range(H):
-    #     for N in range(0 - 1*(i==0), -1, -1):
-        # for N in range(i-1, -1, -1):
-    for i in range(round(H/2),round(H/2)+1):
+    for i in range(H):
+        # for N in range(0 - 1*(i==0), -1, -1):
+        for N in range(i-1, -1, -1):
+    # for i in range(round(H/2),round(H/2)+1):
     # for i in range(round(0.9*H),H):
     # for i in range(H-2,H):
-        for N in range(0, -1, -1):
+        # for N in range(0, -1, -1):
             slope = (y[i] - y[N]) /\
                 (x[i] - x[N])
             # add linear regression method
@@ -111,25 +111,17 @@ for tech in df['Tech'].unique():
                 pred2 =  y[i] + slopeall * (x[M] - x[i])
                 error = (y[M] - (pred))
                 error2 = (y[M] - (pred2))
-                rmse1.append(error**2)
-                rmse2.append(error2**2)
+                e1.append(error**2)
+                e2.append(error2**2)
                 # error point by point
                 # RMSEdiff.append((error**2)**0.5-(error2**2)**0.5)
     # error by technology
-    RMSEdiff.append(np.mean(rmse1)**0.5-np.mean(rmse2)**0.5)
+    RMSEdiff.append(np.mean(e1)**0.5-np.mean(e2)**0.5)
 RMSEdiff = pd.DataFrame(RMSEdiff, columns=['diff'])
 N = RMSEdiff['diff'].nunique()
 
-# # number of wins assuming binomial distribution
-# print('Assuming wins have a binomial distribution, number of wins for each  method should be between ', \
-#      round( RMSEdiff['diff'].nunique()/2-RMSEdiff['diff'].nunique()**0.5), ' and ', \
-#         round( RMSEdiff['diff'].nunique()/2+RMSEdiff['diff'].nunique()**0.5))
-# print('\t Number of wins: Technology specific (', sum(RMSEdiff['diff'].values < 0), \
-#         '), Average slope (', sum(RMSEdiff['diff'].values > 0), ')')
-
-# plt.hist(RMSEdiff['diff'].values, bins=1000)
-
-print('Paired t-test: null hypothesis rejected if value is above +/- 1.990')
+print('Paired t-test: null hypothesis rejected if value is outside [' + \
+      str(scipy.stats.t.ppf(0.025, N-1).round(3))+ ','+str(scipy.stats.t.ppf(0.975, N-1).round(3))+']')
 mu = np.mean(RMSEdiff['diff'].values)
 std = np.std(RMSEdiff['diff'].values) / (RMSEdiff.shape[0])**0.5
 print(mu, std)
@@ -138,9 +130,9 @@ print('\t The value is ', mu/std)
 # print('\t The confidence interval for the mean is (', mu-1.990*std,', ', mu+1.990*std,')')
 
 
-print('Wilcoxon signed rank test: null hypothesis rejected if value is below -1.96')
+print('Wilcoxon signed rank test: null hypothesis rejected if value is outside [-1.96,1.96]')
 RMSEdiff['abs'] = np.abs(RMSEdiff['diff'].values)
-RMSEdiff = RMSEdiff.sort_values(by='abs', ascending=False)
+RMSEdiff = RMSEdiff.sort_values(by='abs', ascending=True)
 RMSEdiff = RMSEdiff.reset_index()
 Rp, Rm = 0, 0
 for i in range(RMSEdiff.shape[0]):
@@ -209,7 +201,8 @@ for sector in sectors:
 
     # plt.hist(RMSEdiff['diff'].values, bins=1000)
 
-    print('Paired t-test: null hypothesis rejected if value is above +/- 1.990')
+    print('Paired t-test: null hypothesis rejected if value is outside [' + \
+        str(scipy.stats.t.ppf(0.025, N-1).round(3))+ ','+str(scipy.stats.t.ppf(0.975, N-1).round(3))+']')
     mu = np.mean(RMSEdiff['diff'].values)
     std = np.std(RMSEdiff['diff'].values) / (RMSEdiff.shape[0])**0.5
     print(mu, std)
@@ -218,7 +211,7 @@ for sector in sectors:
     # print('\t The confidence interval for the mean is (', mu-1.990*std,', ', mu+1.990*std,')')
 
 
-    print('Wilcoxon signed rank test: null hypothesis rejected if value is below -1.96')
+    print('Wilcoxon signed rank test: null hypothesis rejected if value is outside [-1.96,1.96]')
     RMSEdiff['abs'] = np.abs(RMSEdiff['diff'].values)
     RMSEdiff = RMSEdiff.sort_values(by='abs', ascending=False)
     RMSEdiff = RMSEdiff.reset_index()

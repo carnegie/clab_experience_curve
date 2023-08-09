@@ -314,9 +314,11 @@ def plotForecastErrors(dferrTech, dferrAvg, trainErr,
         trainIntAxis.append(trainInt[idx]+\
                             (trainInt[idx+1]-trainInt[idx])/2)
     trainIntAxis.append(0)
+    # initialize lists to count points, technologies, and store percentiles
     countPoints = []
     countTechs = []
     pctTrain = []
+    # iterate over the length of training interval breaks
     for i in range(len(trainInt)):
         if i == 0:
             sel = trainErr.loc[(trainErr['Forecast horizon']<=trainInt[i+1])].copy()
@@ -445,11 +447,7 @@ def plotForecastErrors(dferrTech, dferrAvg, trainErr,
                     '\n Total points with '+ str(tOrd)+ ' orders of magnitude for training '+
                     ' and '+ str(fOrd)+' orders of magnitude for forecast: '+ str(dferrTech.shape[0]))
     axb[0].set_ylabel('Error (Actual/Predicted)')
-    axb[0].set_title('Technologies available: ' + str(trainErr['Tech'].nunique())
-                    #  +
-                    # '\n Total points with '+ str(tOrd)+ ' orders of magnitude for training '+
-                    # ' and '+ str(fOrd)+' orders of magnitude for forecast: '+ str(countTot)
-                    )
+    axb[0].set_title('Technologies available: ' + str(trainErr['Tech'].nunique()))
     ax[0].plot([0,10**10],[1,1],'k', zorder=-10)
     ax[0].set_xlim(10**-tOrd, 10**fOrd)
     ax[1].annotate('Forecast', xy=(10**(+fOrd/5), 6), xycoords='data', ha='center', va='bottom', fontsize=12)

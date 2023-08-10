@@ -95,10 +95,10 @@ T = min(Rp,Rm)
 z = (T - 1/4*N*(N+1)) / (1/24*N*(N+1)*(2*N+1))**0.5
 print('\tThe value is ', z)
 
-for sector in sectors:
+for sector in analysisFunctions.sectors:
     print('\n\n',sector)
     RMSEdiff = []
-    for tech in sectors[sector]:
+    for tech in analysisFunctions.sectors[sector]:
         rmse1 = []
         rmse2 = []
         # computing average technological slope based on all other technologies

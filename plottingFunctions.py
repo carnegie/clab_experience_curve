@@ -5,6 +5,12 @@ import statsmodels.api as sm
 import matplotlib
 import analysisFunctions
 
+# set color to be used to represent tech-specific slope
+cmapp = matplotlib.colormaps['Purples']
+# set color to be used to represent average slope
+cmapg = matplotlib.colormaps['Greens']
+
+
 # produce scatter figure with R2 values for 
 # early slope and late slope
 def scatterFigure(LR_cal, LR_val, sectorsList):
@@ -37,14 +43,27 @@ def scatterFigure(LR_cal, LR_val, sectorsList):
     axscatter.set_aspect('equal', 'box')
     if not(all([x==sectorsList[0] for x in sectorsList])):
         legend_elements = [
-            matplotlib.lines.Line2D([0],[0],lw=0,color='royalblue',marker='o', label='Energy'),
-            matplotlib.lines.Line2D([0],[0],lw=0,color='black',marker='o', label='Chemicals'),
-            matplotlib.lines.Line2D([0],[0],lw=0,color='red',marker='o', label='Hardware'),  
-            matplotlib.lines.Line2D([0],[0],lw=0,color='forestgreen',marker='o', label='Consumer goods'),
-            matplotlib.lines.Line2D([0],[0],lw=0,color='cyan',marker='o', label='Food'),
-            matplotlib.lines.Line2D([0],[0],lw=0,color='darkmagenta',marker='o', label='Genomics')
+            matplotlib.lines.Line2D(\
+                [0],[0], lw=0, color='royalblue',
+                marker='o', label='Energy'),
+            matplotlib.lines.Line2D(\
+                [0],[0], lw=0, color='black', 
+                marker='o', label='Chemicals'),
+            matplotlib.lines.Line2D(\
+                [0],[0], lw=0, color='red', 
+                marker='o', label='Hardware'),  
+            matplotlib.lines.Line2D(\
+                [0],[0], lw=0, color='forestgreen', 
+                marker='o', label='Consumer goods'),
+            matplotlib.lines.Line2D(\
+                [0],[0], lw=0, color='cyan', 
+                marker='o', label='Food'),
+            matplotlib.lines.Line2D(\
+                [0],[0], lw=0, color='darkmagenta', 
+                marker='o', label='Genomics')
         ]
-        figscatter.legend(handles=legend_elements, loc='center right', title='Sector')
+        figscatter.legend(handles=legend_elements, 
+                          loc='center right', title='Sector')
     else:
         axscatter.set_title(sectorsList[0])
     return figscatter, axscatter
@@ -57,7 +76,7 @@ def gridPlots(uc, cpCal, cpVal, ucpred, errpred, ucpred2, errpred2):
 
     count = 0 # counter for subplot position
     countt = 0 # counter for tech position vs subplot position
-    better = 0 # counter for number of technologies with lower MSE using average slope
+    better = 0 # counter for techs with lower MSE using average slope
 
     # create figures
     fig2 , ax2 = plt.subplots(10,9, figsize=(13,7))
@@ -68,7 +87,8 @@ def gridPlots(uc, cpCal, cpVal, ucpred, errpred, ucpred2, errpred2):
 
         # extract relevant data
         uc_ = uc[count - countt]
-        cp_ = np.concatenate([cpCal[count - countt], cpVal[count - countt]])
+        cp_ = np.concatenate(\
+            [cpCal[count - countt], cpVal[count - countt]])
         cpcal_ = cpCal[count - countt]
         cpval_ = cpVal[count - countt]
         ucpred_ = ucpred[count - countt]
@@ -148,7 +168,8 @@ def gridPlots(uc, cpCal, cpVal, ucpred, errpred, ucpred2, errpred2):
             ax3[int(count/9)][count%9].spines[axis].set_alpha(0.5)
             ax4[int(count/9)][count%9].spines[axis].set_alpha(0.5)
         xlim = ax3[int(count/9)][count%9].get_xlim()
-        ax3[int(count/9)][count%9].set_xlim((-max(np.abs(xlim)),max(np.abs(xlim))))
+        ax3[int(count/9)][count%9].set_xlim(\
+                                (-max(np.abs(xlim)),max(np.abs(xlim))))
         ax3[int(count/9)][count%9].set_xticks([0],[])
         ax3[int(count/9)][count%9].set_yticks([])
         ax3[int(count/9)][count%9].set_ylabel('')
@@ -162,7 +183,8 @@ def gridPlots(uc, cpCal, cpVal, ucpred, errpred, ucpred2, errpred2):
 
     # add annotation on error distribution figure
     ax3[int(count/9)][count%9].annotate(
-        'The sum of squared errors is lower \n using the average technological slope'+\
+        'The sum of squared errors is lower'+
+         ' \n using the average technological slope'+\
         '\n'+' for '+\
         str(better)+ ' ('+str(round(100*better/86))+'%) technologies', 
         (0.5,0.065), ha='center', fontsize=10,
@@ -223,7 +245,8 @@ def gridPlots(uc, cpCal, cpVal, ucpred, errpred, ucpred2, errpred2):
 # produce figure with number of technologies with lower MSE
 def barSectorMSE(errpred, errpred2, sectorsList):
     # prepare figure
-    fig, ax = plt.subplots(2, 3, sharex=True, sharey=True, figsize=(10,6))
+    fig, ax = plt.subplots(2, 3, sharex=True, 
+                           sharey=True, figsize=(10,6))
     # initialize lists
     avg, tech = [], []
     # iterate over errors and sector lists
@@ -242,8 +265,10 @@ def barSectorMSE(errpred, errpred2, sectorsList):
     # plot bars for each sector
     for count in range(len(tech)):
         ax[count//3][count%3].set_title(tech[count][0])
-        ax[count//3][count%3].bar([0,1],
-                                [tech[count][1], avg[count][1]], color=analysisFunctions.sectorsColor[tech[count][0]])
+        ax[count//3][count%3].bar(\
+                            [0,1], [tech[count][1], avg[count][1]],
+                            color = analysisFunctions\
+                                .sectorsColor[tech[count][0]])
     # set labels and ticks
     ax[1][0].set_xticks([0,1],['Technology-specific','Average slope'])
     ax[1][1].set_xticks([0,1],['Technology-specific','Average slope'])
@@ -272,286 +297,387 @@ def plotOrdersOfMagnitude(df):
         # plot horizontal line
         ax[0].plot([0, x1-x0], [count, count], 
                    color='k',
-                #    color=analysisFunctions.sectorsColor[analysisFunctions.sectorsinv[tech]],
+                #    color = analysisFunctions\
+                # .sectorsColor[analysisFunctions.sectorsinv[tech]],
                      lw=0.5)
         # update labels
         labs.append(tech + ' (' + str(sel.shape[0]) + ')')
         count += 1
-    ax[0].set_yticks([x for x in range(len(df['Tech'].unique()))], labs, fontsize=5)
+    ax[0].set_yticks(\
+        [x for x in range(len(df['Tech'].unique()))], labs, fontsize=5)
     ax[0].set_ylabel('Technology')
-    # sort orders of magnitude to plot cumulative production orders of magnitude covered
+    # sort orders of magnitude to plot 
+    # cumulative production orders of magnitude covered
     oOfM.sort()
     # compute number of samples as orders of magnitude covered increase
     density = [[0,86]]
     for el in oOfM:
         density.append([el[0], density[-1][1]-1])
     density = np.array(density)
-    # plot number of technologies per cumulative production orders of magnitude covered
+    # plot number of technologies per 
+    # cumulative production orders of magnitude covered
     ax[1].plot(density[:,0], density[:,1], color='k', lw=2)
     ax[1].set_xlabel('Orders of magnitude of cumulative production')
     ax[1].set_ylabel('Number of technologies available')
     plt.subplots_adjust(top=0.98, bottom=0.09, hspace=0.15, left=0.2)
     return fig, ax
 
-def plotForecastErrors(dferrTech, dferrAvg, trainErr, 
-                       tOrd, fOrd, samplingPoints):
+def plotPercentiles(centered, pct, 
+                    countPoints, countTechs, 
+                    color, ax1, ax2, ax2b = None,
+                    ):
+    ax1.plot(\
+        [10**x for x in centered],10**pct[:,4], 
+        color=color, lw=2, zorder=-2)
+    for r in range(2,-1,-1):
+        ax1.fill_between(\
+            [10**x for x in centered], 
+            10**pct[:,1+r], 10**pct[:,-r-1], 
+            alpha=0.1+0.2*r, color=color, zorder=-2-r, lw=0)
+    ax1.plot([1,1],[0,100**100],'k', zorder=-2)
+    ax2.plot([10**x for x in centered], countPoints, 
+                color='k', lw=2, zorder=-2)
+    ax2.set_ylim(0,max(countPoints)*1.1)
+    if ax2b is None:
+        ax2b = ax2.twinx()
+    ax2b.plot([10**x for x in centered], countTechs, 
+                color='red', lw=2, zorder=-2)    
+    return ax2b
 
-    # set colors to be used
-    cmapp = matplotlib.colormaps['Purples']
-    cmapg = matplotlib.colormaps['Greens']
+def plotBoxplotsArray(centered, stats, color, ax):
+    for idx in range(len(stats)):
+        ax.bxp([stats[idx]], positions = [10**centered[idx]], 
+                widths = (10**centered[idx])/12,
+                showfliers=False, boxprops=dict(color=color, lw=2), 
+                manage_ticks=False)
+
+def plotForecastErrors(dferrTech, dferrAvg,
+                       fOrd, samplingPoints,
+                       trainErr = None, tOrd = None):
 
     # create figures
-    fig, ax = plt.subplots(3,1, sharex=True, figsize=(9,8))
-    figb, axb = plt.subplots(3,1, sharex=True, figsize=(9,8))
+    if trainErr is None:
+        figsize = (7,8)
+    else:
+        figsize = (9,8)
+    fig, ax = plt.subplots(3,1, sharex=True, figsize=figsize)
 
-    ### plot training error
-    npoints = int(samplingPoints * tOrd)
-    # create centered cumulative production array for plotting
-    trainInt = np.linspace(-tOrd-tOrd/npoints/2, 0+ tOrd/npoints/2, npoints+2)
-    trainInt = np.linspace(-tOrd-tOrd/npoints, 0, npoints+2)
-    trainIntAxis = [trainInt[1]]
-    for idx in range(1,len(trainInt)-1):
-        trainIntAxis.append(trainInt[idx]+\
-                            (trainInt[idx+1]-trainInt[idx])/2)
-    trainIntAxis.append(0)
-    # initialize lists to count points, technologies, and store percentiles
-    countPoints = []
-    countTechs = []
-    pctTrain = []
-    # iterate over the length of training interval breaks
-    for i in range(len(trainInt)):
-        if i == 0:
-            sel = trainErr.loc[(trainErr['Forecast horizon']<=trainInt[i+1])].copy()
-        elif i == len(trainInt)-1:
-            sel = trainErr.loc[(trainErr['Forecast horizon']==trainInt[i])].copy()
-        else:
-            sel = trainErr.loc[(trainErr['Forecast horizon']>trainInt[i]) &\
-                        (trainErr['Forecast horizon']<=trainInt[i+1])].copy()
-        if sel.shape[0] == 0:
-            pctTrain.append([trainInt[i],np.nan,np.nan,np.nan,np.nan,np.nan])
-            countPoints.append(0)
-            countTechs.append(0)
-            continue
-        countPoints.append(sel.shape[0])
-        countTechs.append(sel['Tech'].nunique())
-        for tt in sel['Tech'].unique():
-            sel.loc[sel['Tech']==tt,'Weights'] = 1/sel.loc[sel['Tech']==tt].count()[0]
-        sel = sel.sort_values(by='Error', ascending=True)
-        cumsum = sel['Weights'].cumsum().round(4)
-        pt = []
-        for q in [0,10,25,50,75,90,100]:
-        # for q in [0,10,20,30,40,50,60,70,80,90,100]:
-            cutoff = sel['Weights'].sum() * q/100
-            pt.append(sel['Error'][cumsum >= cutoff.round(4)].iloc[0])
-        pctTrain.append([trainInt[i],*pt])
-    pctTrain = np.array(pctTrain)
-    ax[0].plot([10**x for x in trainIntAxis],10**pctTrain[:,4], color='b', lw=2)
-    for r in range(2,-1,-1):
-        ax[0].fill_between([10**x for x in trainIntAxis], 10**pctTrain[:,1+r], 10**pctTrain[:,-r-1], alpha=0.1+0.2*r, color='b', zorder=-2-r, lw=0)
-    ax[2].plot([1,1],[0,100**100],'k')
-    ax[2].plot([10**x for x in trainIntAxis],countPoints, color='k', lw=2)
-    ax[2].set_ylim(0,max(countPoints)*1.1)
-    ax2 = ax[2].twinx()
-    ax2.plot([10**x for x in trainIntAxis],countTechs, color='red', lw=2)
+    if trainErr is not None:
+        # analyze training errors
+        pctTrain, _, trainIntAxis, \
+            countPoints, countTechs, stats = \
+                analysisFunctions.\
+                    dataToPercentilesArray(trainErr,
+                                        tOrd, samplingPoints,
+                                        training=True)
 
-    for x in trainIntAxis:
-        stats = {}
-        labs = ['whislo', 'q1', 'med', 'q3', 'whishi']
-        count_ = 1
-        for l in labs:
-            stats[l] = 10**pctTrain[trainIntAxis.index(x),count_]
-            count_ += 1
-            if count_ == 2 or count_ == 6:
-                count_ += 1
-        axb[0].bxp([stats], positions = [10**x], widths = (10**x)/8, showfliers=False, boxprops=dict(color='b', lw=2), manage_ticks=False)
-    axb[0].set_yscale('log', base=10)
-    axb[2].plot([1,1],[0,100**100],'k')
-    axb[2].plot([10**x for x in trainIntAxis],countPoints, color='k', lw=2)
-    axb[2].set_ylim(0,max(countPoints)*1.1)
-    axb[0].set_xscale('log', base=10)
-    ax2b = axb[2].twinx()
-    ax2b.plot([10**x for x in trainIntAxis],countTechs, color='red', lw=2)
+        # plot percentiles and boxplots
+        ax2b = plotPercentiles(trainIntAxis, pctTrain, 
+                        countPoints, countTechs, 
+                        color = 'b', ax1 = ax[0], ax2 = ax[2])
+        plotBoxplotsArray(trainIntAxis, stats, 
+                        color = 'b', ax = ax[0])
+    else:
+        ax2b = None
 
-    # plot forecast error
-    npoints = int(samplingPoints * fOrd)
-    forecastInt = np.linspace(0-fOrd/npoints, fOrd, npoints+2)
-    forecastIntAxis = [0]
-    for idx in range(1,len(forecastInt)-1):
-        forecastIntAxis.append(forecastInt[idx]+\
-                                (forecastInt[idx+1]-forecastInt[idx])/2)
-    forecastIntAxis.append(fOrd)
-    pctTech, pctAvg = [], []
-    countPoints = []
-    countTechs = []
-    for i in range(len(forecastInt)):
-        if i == 0:
-            sel1 = dferrTech.loc[(dferrTech['Forecast horizon']==0)].copy()
-            sel2 = dferrAvg.loc[(dferrAvg['Forecast horizon']==0)].copy()
-        elif i == len(forecastInt)-1:
-            sel1 = dferrTech.loc[(dferrTech['Forecast horizon']>=forecastInt[i])].copy()
-            sel2 = dferrAvg.loc[(dferrAvg['Forecast horizon']>=forecastInt[i])].copy()
-        else:
-            sel1 = dferrTech.loc[(dferrTech['Forecast horizon']>forecastInt[i]) &\
-                        (dferrTech['Forecast horizon']<=forecastInt[i+1])].copy()
-            sel2 = dferrAvg.loc[(dferrAvg['Forecast horizon']>forecastInt[i]) &\
-                        (dferrAvg['Forecast horizon']<=forecastInt[i+1])].copy()
-        if sel1.shape[0] == 0:
-            pctTech.append([forecastInt[i],np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan])
-            pctAvg.append([forecastInt[i],np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan])
-            countPoints.append([0,0])
-            countTechs.append([0,0])
-            continue
-        countPoints.append([sel1.shape[0],sel2.shape[0]])
-        countTechs.append([sel1['Tech'].nunique(),sel2['Tech'].nunique()])
-        for tt in sel1['Tech'].unique():
-            sel1.loc[sel1['Tech']==tt,'Weights'] = 1/sel1.loc[sel1['Tech']==tt].count()[0]
-        for tt in sel2['Tech'].unique():
-            sel2.loc[sel2['Tech']==tt,'Weights'] = 1/sel2.loc[sel2['Tech']==tt].count()[0]
-        sel1 = sel1.sort_values(by='Error', ascending=True)
-        sel2 = sel2.sort_values(by='Error', ascending=True)
-        cumsum1 = sel1['Weights'].cumsum().round(4)
-        cumsum2 = sel2['Weights'].cumsum().round(4)
-        pt1, pt2 = [], []
-        for q in [0,10,25,50,75,90,100]:
-        # for q in [0,10,20,30,40,50,60,70,80,90,100]:
-            cutoff1 = sel1['Weights'].sum() * q/100
-            cutoff2 = sel2['Weights'].sum() * q/100
-            pt1.append(sel1['Error'][cumsum1 >= cutoff1.round(4)].iloc[0])
-            pt2.append(sel2['Error'][cumsum2 >= cutoff2.round(4)].iloc[0])
-        pctTech.append([forecastInt[i],*pt1])
-        pctAvg.append([forecastInt[i],*pt2])
-    pctTech = np.array(pctTech)
-    pctAvg = np.array(pctAvg)
-    ax[0].plot([10**x for x in forecastIntAxis],10**pctTech[:,4], color=cmapp(0.7), lw=2)
-    ax[1].plot([10**x for x in forecastIntAxis],10**pctAvg[:,4], color=cmapg(0.7), lw=2)
-    for r in range(2,-1,-1):
-        ax[0].fill_between([10**x for x in forecastIntAxis], 10**pctTech[:,1+r], 10**pctTech[:,-r-1], alpha=0.1+0.2*r, color=cmapp(0.7), zorder=-2-r, lw=0)
-        ax[1].fill_between([10**x for x in forecastIntAxis], 10**pctAvg[:,1+r], 10**pctAvg[:,-r-1], alpha=0.1+0.2*r, color=cmapg(0.7), zorder=-2-r, lw=0)
-    ax[2].plot([10**x for x in forecastIntAxis], np.asarray(countPoints)[:,0], color='k', lw=2)
-    ax2.plot([10**x for x in forecastIntAxis], np.asarray(countTechs)[:,1], color='red', lw=2)
-    ax2.set_ylabel('Number of technologies available', color='red')
-    ax2b.set_ylabel('Number of technologies available', color='red')
-    ax[0].plot([1,1],[0,100],'k')
-    ax[1].plot([1,1],[0,100],'k')
-    axb[0].plot([1,1],[0,100],'k')
-    axb[1].plot([1,1],[0,100],'k')
-    ax[0].annotate('Training', xy=(10**(-tOrd/2), 6), xycoords='data', ha='center', va='bottom', fontsize=12)
-    ax[0].annotate('Forecast', xy=(10**(+fOrd/5), 6), xycoords='data', ha='center', va='bottom', fontsize=12)
-    axb[0].annotate('Training', xy=(10**(-tOrd/2), 6), xycoords='data', ha='center', va='bottom', fontsize=12)
-    axb[0].annotate('Forecast', xy=(10**(+fOrd/5), 6), xycoords='data', ha='center', va='bottom', fontsize=12)
+    # analyze forecast error
+    pctTech, _, forecastIntAxis, \
+        countPointsTech, countTechsTech, statsTech = \
+            analysisFunctions.\
+                dataToPercentilesArray(dferrTech,
+                                     fOrd, samplingPoints)
+    pctAvg, _, _, \
+        _, _, statsAvg = \
+            analysisFunctions.\
+                dataToPercentilesArray(dferrAvg,
+                                     fOrd, samplingPoints)
+
+    ax2b = plotPercentiles(forecastIntAxis, pctTech,
+                          countPointsTech, countTechsTech,
+                          color = cmapp(0.7), ax1 = ax[0], 
+                          ax2 = ax[2], ax2b = ax2b)
+    ax2b = plotPercentiles(forecastIntAxis, pctAvg,
+                          countPointsTech, countTechsTech,
+                          color = cmapg(0.7), ax1 = ax[1], 
+                          ax2 = ax[2], ax2b = ax2b)
+    plotBoxplotsArray(forecastIntAxis, statsTech, 
+                        color = cmapp(0.7), ax = ax[0])
+    plotBoxplotsArray(forecastIntAxis, statsAvg, 
+                        color = cmapg(0.7), ax = ax[1])
+
+    # labeling and annotating graphs
+    if tOrd is not None:
+        ax[0].plot([1,1],[0,100],'k', zorder=-2)
+        ax[1].plot([1,1],[0,100],'k', zorder=-2)
+        ax[2].plot([1,1],[0,10**10],'k', zorder=-2)
+        ax[0].annotate('Training', xy=(10**(-tOrd/2), 6), 
+                       xycoords='data', ha='center', 
+                       va='bottom', fontsize=12)
+        ax[0].annotate('Forecast', xy=(10**(+fOrd/5), 6), 
+                       xycoords='data', ha='center', 
+                       va='bottom', fontsize=12)
+        ax[0].set_xlim(10**-tOrd, 10**fOrd)
+        ax[1].set_xlim(10**-tOrd, 10**fOrd)
+        ax[1].annotate('Training', xy=(10**(-tOrd/2), 6), 
+                       xycoords='data', ha='center', 
+                       va='bottom', fontsize=12)
+        ax[1].annotate('Forecast', xy=(10**(+fOrd/5), 6), 
+                       xycoords='data', ha='center', 
+                       va='bottom', fontsize=12)
+        ax[2].set_xlim(10**-tOrd, 10**fOrd)
+        ax[2].annotate('Training', xy=(10**(-tOrd/2), 6), 
+                       xycoords='data', ha='center', 
+                       va='bottom', fontsize=12)
+        ax[2].annotate('Forecast', xy=(10**(+fOrd/5), 6), 
+                       xycoords='data', ha='center', 
+                       va='bottom', fontsize=12)
+    else:
+        ax[0].set_xlim(10**0, 10**fOrd)
+        ax[1].set_xlim(10**0, 10**fOrd)
+        ax[2].set_xlim(10**0, 10**fOrd)
     ax[0].set_ylim(0.1,10)
     ax[0].set_yscale('log', base=10)
     ax[0].set_xscale('log', base=10)
     ax[0].set_ylabel('Error (Actual/Predicted)')
-    ax[0].set_title('Technologies available: ' + str(trainErr['Tech'].nunique())+
-                    '\n Total points with '+ str(tOrd)+ ' orders of magnitude for training '+
-                    ' and '+ str(fOrd)+' orders of magnitude for forecast: '+ str(dferrTech.shape[0]))
-    axb[0].set_ylabel('Error (Actual/Predicted)')
-    axb[0].set_title('Technologies available: ' + str(trainErr['Tech'].nunique()))
+    ax[0].set_title('Technologies available: ' + \
+                    str(dferrAvg['Tech'].nunique()))
     ax[0].plot([0,10**10],[1,1],'k', zorder=-10)
-    ax[0].set_xlim(10**-tOrd, 10**fOrd)
-    ax[1].annotate('Forecast', xy=(10**(+fOrd/5), 6), xycoords='data', ha='center', va='bottom', fontsize=12)
-    axb[1].annotate('Forecast', xy=(10**(+fOrd/5), 6), xycoords='data', ha='center', va='bottom', fontsize=12)
     ax[1].set_ylim(0.1,10)
     ax[1].set_yscale('log', base=10)
     ax[1].set_xscale('log', base=10)
     ax[1].set_ylabel('Error (Actual/Predicted)')
-    axb[1].set_ylabel('Error (Actual/Predicted)')
     ax[1].plot([0,10**10],[1,1],'k', zorder=-10)
-    ax[1].set_xlim(10**-tOrd, 10**fOrd)
-
-    ax[2].annotate('Training', xy=(10**(-tOrd/2), 6), xycoords='data', ha='center', va='bottom', fontsize=12)
-    ax[2].annotate('Forecast', xy=(10**(+fOrd/5), 6), xycoords='data', ha='center', va='bottom', fontsize=12)
-    axb[2].annotate('Training', xy=(10**(-tOrd/2), 6), xycoords='data', ha='center', va='bottom', fontsize=12)
-    axb[2].annotate('Forecast', xy=(10**(+fOrd/5), 6), xycoords='data', ha='center', va='bottom', fontsize=12)
     ax[2].set_xscale('log', base=10)
-    ax[2].set_xlabel('Predicted cumulative production / Current cumulative production')
+    ax[2].set_xlabel(
+        'Predicted cumulative production / Current cumulative production')
     ax[2].set_ylabel('Number of points to estimate error')
-    axb[2].set_xlabel('Predicted cumulative production / Current cumulative production')
-    axb[2].set_ylabel('Number of points to estimate error')
-    ax[2].set_xlim(10**-tOrd,10**fOrd)
-    countPoints = np.array(countPoints)
-    ax[2].set_ylim(0,max(max(countPoints[:,0])*1.1, ax[2].get_ylim()[1]))
+    ax[2].set_ylim(0, 
+                   max(
+                    max([*countPointsTech,*countPoints])*1.1, 
+                        ax[2].get_ylim()[1]))
 
-    legend_elements = [
-                        matplotlib.lines.Line2D([0], [0], color='b', lw=2, label='Training error'),
-                        matplotlib.lines.Line2D([0], [0], color=cmapp(0.7), lw=2, label='Forecast error - Technology-specific'),
-                        matplotlib.lines.Line2D([0], [0], color=cmapg(0.7), lw=2, label='Forecast error - Average slope'),
-                        ]
+    if trainErr is not None:
+        legend_elements = [
+            matplotlib.lines.Line2D(\
+                [0], [0], color='b', lw=2, label='Training error'),
+            matplotlib.lines.Line2D(\
+                [0], [0], color=cmapp(0.7), lw=2, 
+                label='Forecast error - Technology-specific'),
+            matplotlib.lines.Line2D(\
+                [0], [0], color=cmapg(0.7), lw=2, 
+                label='Forecast error - Average slope'),
+                            ]
+        fig.legend(handles=legend_elements, loc='lower center', ncol=3)
+    else:
+        legend_elements = [
+            matplotlib.lines.Line2D(\
+                [0], [0], color=cmapp(0.7), lw=2, 
+                label='Forecast error - Technology-specific'),
+            matplotlib.lines.Line2D(\
+                [0], [0], color=cmapg(0.7), lw=2, 
+                label='Forecast error - Average slope'),
+                            ]
+        fig.legend(handles=legend_elements, loc='lower center', ncol=2)      
 
-    fig.legend(handles=legend_elements, loc='lower center', ncol=3)
+    axes1=fig.add_axes([0.825,0.415,0.15,0.2])
+    axes1.plot([-1,2],[0.5,0.5],'k', lw=2)
+    axes1.fill_between([-1,2],[0.25,0.25],[0.75,0.75], 
+                       color='k', alpha=0.3)
+    axes1.fill_between([-1,2],[0.1,0.1],[0.9,0.9], 
+                       color='k', alpha=0.3)
+    axes1.fill_between([-1,2],[0,0],[1.0,1.0], 
+                       color='k', alpha=0.1)
+    axes1.annotate('10th percentile', 
+                   xy=(4.0, 0.1), xycoords='data', 
+                   ha='center', va='center', fontsize=7)
+    axes1.annotate('25th percentile', 
+                   xy=(4.0, 0.25), xycoords='data', 
+                   ha='center', va='center', fontsize=7)
+    axes1.annotate('Median', 
+                   xy=(4.0, 0.5), xycoords='data', 
+                   ha='center', va='center', fontsize=7)
+    axes1.annotate('75th percentile', 
+                   xy=(4.0, 0.75), xycoords='data', 
+                   ha='center', va='center', fontsize=7)
+    axes1.annotate('90th percentile', 
+                   xy=(4.0, 0.9), xycoords='data', 
+                   ha='center', va='center', fontsize=7)
+    axes1.annotate('Max', xy=(4.0, 1.0), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7)
+    axes1.annotate('Min', xy=(4.0, 0.0), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7)
 
-    axes1=fig.add_axes([0.875,0.415,0.12,0.2])
-    axes1.plot([0,1],[0.5,0.5],'k', lw=2)
-    axes1.fill_between([0,1],[0.25,0.25],[0.75,0.75], color='k', alpha=0.3)
-    axes1.fill_between([0,1],[0.1,0.1],[0.9,0.9], color='k', alpha=0.3)
-    axes1.fill_between([0,1],[0,0],[1.0,1.0], color='k', alpha=0.1)
-    axes1.annotate('10th percentile', xy=(3.0, 0.1), xycoords='data', ha='center', va='center', fontsize=7)
-    axes1.annotate('25th percentile', xy=(3.0, 0.25), xycoords='data', ha='center', va='center', fontsize=7)
-    axes1.annotate('Median', xy=(3.0, 0.5), xycoords='data', ha='center', va='center', fontsize=7)
-    axes1.annotate('75th percentile', xy=(3.0, 0.75), xycoords='data', ha='center', va='center', fontsize=7)
-    axes1.annotate('90th percentile', xy=(3.0, 0.9), xycoords='data', ha='center', va='center', fontsize=7)
-    axes1.annotate('Max', xy=(3.0, 1.0), xycoords='data', ha='center', va='center', fontsize=7)
-    axes1.annotate('Min', xy=(3.0, 0.0), xycoords='data', ha='center', va='center', fontsize=7)
-    axes1.set_xlim(-1,5)
-    axes1.set_ylim(-0.2,1.2)
-    axes1.set_xticks([])
-    axes1.set_yticks([])
-    axes1.axis('off')
-
-    fig.subplots_adjust(top=0.92, bottom=0.11, right=0.85)
-    
-    for x in forecastIntAxis[1:]:
-        stats1 = {}
-        labs = ['whislo', 'q1', 'med', 'q3', 'whishi']
-        count_ = 1
-        for l in labs:
-            stats1[l] = 10**pctTech[forecastIntAxis.index(x),count_]
-            count_ += 1
-            if count_ == 2 or count_ == 5:
-                count_ += 1
-        axb[0].bxp([stats1], positions = [10**x], widths = (10**x)/8, showfliers=False, boxprops=dict(color=cmapp(0.7), lw=2), manage_ticks=False)
-        stats2 = {}
-        count_ = 1
-        for l in labs:
-            stats2[l] = 10**pctAvg[forecastIntAxis.index(x),count_]
-            count_ += 1
-            if count_ == 2:
-                count_ += 1
-        axb[1].bxp([stats2], positions = [10**x], widths = (10**x)/8, showfliers=False, boxprops=dict(color=cmapg(0.7), lw=2), manage_ticks=False)
-    axb[1].set_yscale('log', base=10)
-    axb[1].set_ylim(0.1,10)
-    axb[0].set_ylim(0.1,10)
-    axb[0].plot([0,10**10],[1,1],'k', zorder=-10)
-    axb[1].plot([0,10**10],[1,1],'k', zorder=-10)
-    axb[2].plot([1,1],[0,100**100],'k')
-    axb[2].plot([10**x for x in forecastIntAxis],countPoints, color='k', lw=2)
-    axb[2].set_ylim(0,max(np.asarray(countPoints)[:,0])*1.1)
-    ax2b.plot([10**x for x in forecastIntAxis],countTechs, color='red', lw=2)
-    axb[1].set_xlim(10**-tOrd, 10**fOrd)
-    axb[2].set_ylim(0,max(max(countPoints[:,0])*1.1, ax[2].get_ylim()[1]))
-
-    figb.legend(handles=legend_elements, loc='lower center', ncol=3)
-
-    axes1=figb.add_axes([0.875,0.415,0.12,0.2])
     axes1.plot([0,1],[0.5,0.5],'k', lw=1)
     axes1.plot([0,1,1,0,0],[0.25,0.25,0.75,0.75,0.25], lw=2, color='k')
-    # axes1.fill_between([0,1],[0.25,0.25],[0.75,0.75], color='k', alpha=0.3)
-    # axes1.fill_between([0,1],[0.1,0.1],[0.9,0.9], color='k', alpha=0.3)
+    axes1.plot([0,1],[0.5,0.5], lw=2, color='darkorange')
     axes1.plot([0,1],[0,0], color='k', lw=1)
     axes1.plot([0,1],[1,1], color='k', lw=1)
     axes1.plot([0.5,0.5],[0,0.25], color='k', lw=1)
     axes1.plot([0.5,0.5],[0.75,1], color='k', lw=1)
-    axes1.annotate('25th percentile', xy=(3.0, 0.25), xycoords='data', ha='center', va='center', fontsize=7)
-    axes1.annotate('Median', xy=(3.0, 0.5), xycoords='data', ha='center', va='center', fontsize=7)
-    axes1.annotate('75th percentile', xy=(3.0, 0.75), xycoords='data', ha='center', va='center', fontsize=7)
-    axes1.annotate('Max', xy=(3.0, 1.0), xycoords='data', ha='center', va='center', fontsize=7)
-    axes1.annotate('Min', xy=(3.0, 0.0), xycoords='data', ha='center', va='center', fontsize=7)
+
     axes1.set_xlim(-1,5)
     axes1.set_ylim(-0.2,1.2)
     axes1.set_xticks([])
     axes1.set_yticks([])
     axes1.axis('off')
 
-    figb.subplots_adjust(top=0.92, bottom=0.11, right=0.85)
-    return fig, ax, figb, axb
+    fig.subplots_adjust(top=0.92, bottom=0.11, right=0.8)
+
+    return fig, ax
+
+def summaryBoxplots(trForOrds, fErrsTech, fErrsAvg, Ranges):
+
+    # create figure
+    dim = int(len(trForOrds)**0.5)
+    fig, ax = plt.subplots(dim, dim, figsize=(9,8), sharey=True)
+    countax = 0 # counter for axes
+
+    # for each provided training and forecast horizon pair
+    for tf in trForOrds:
+
+        # get training and forecast horizons
+        tOrd = tf[0]
+        fOrd = tf[1]
+        counth = 0 # counter for horizons
+
+        # list to store custom xticks and boxplots positions 
+        # (obtained at first pass)
+        if tf == trForOrds[0]:
+            xticks = []
+
+        # iterate over elements of Ranges
+        for r in range(len(Ranges)):
+
+            # if Ranges' element is in the examined horizon
+            if Ranges[r] in trForOrds:
+
+                # asymmetric horizons are dealt with a single case
+                if Ranges[r][0] > Ranges[r][1]:
+                    continue
+                
+                # if the horizon is not covered skip to the next
+                # but consider asymmetric ones
+                if (Ranges[r][0] < tOrd or Ranges[r][1] < fOrd) and \
+                    not(Ranges[r][0]>=fOrd and Ranges[r][1]>=tOrd):
+                    counth += 1
+                    continue
+
+                # get error for that horizon
+                dferrTech = fErrsTech[r]
+                dferrAvg = fErrsAvg[r]
+                Techs = dferrTech['Tech'].unique()
+
+                # if the horizon is not symmetric
+                if Ranges[r][0] != Ranges[r][1]:
+
+                    # get the symmetric horizon and its errors
+                    r2 = Ranges.index([Ranges[r][1], Ranges[r][0]])
+                    dferrTech2 = fErrsTech[r2]
+
+                    # get list of technologies in both horizons
+                    # and derive intersections
+                    Techs = dferrTech['Tech'].unique()
+                    Techs2 = dferrTech2['Tech'].unique()
+                    Techs = np.intersect1d(Techs, Techs2)
+
+                    # keep only technologies in the intersection
+                    dferrTech = dferrTech.loc[\
+                        dferrTech['Tech'].isin(Techs)]
+                    dferrAvg = dferrAvg.loc[\
+                        dferrAvg['Tech'].isin(Techs)]
+                
+                # if the horizon is not the examined one
+                # select the original horizon and filter
+                # based on the technologies that are in
+                # the larger horizon
+                if not(Ranges[r] == tf):
+                    dferrTech = fErrsTech[Ranges.index(tf)]
+                    dferrAvg = fErrsAvg[Ranges.index(tf)]
+                    dferrTech = dferrTech.loc[\
+                        dferrTech['Tech'].isin(Techs)]
+                    dferrAvg = dferrAvg.loc[\
+                        dferrAvg['Tech'].isin(Techs)]
+            
+                # compute percentiles and boxplots stats
+                pctTech = analysisFunctions\
+                    .computeTechWeightedPercentiles(dferrTech)
+                pctAvg = analysisFunctions\
+                    .computeTechWeightedPercentiles(dferrAvg)
+                statsTech = analysisFunctions\
+                    .computeBoxplots(np.array([[0,*pctTech]]),
+                                    [0], positions=[1,3,4,5,7])
+                statsAvg = analysisFunctions\
+                    .computeBoxplots(np.array([[0,*pctAvg]]),
+                                    [0], positions=[1,3,4,5,7])
+
+                # plot boxplots
+                ax[countax//dim][countax%dim].bxp(
+                    [statsTech[0]], 
+                    positions=[3*counth],
+                    showfliers=False,
+                    boxprops=dict(color=cmapp(0.7), lw=2),
+                    manage_ticks=False,
+                    widths=0.8)
+                ax[countax//dim][countax%dim].bxp(
+                    [statsAvg[0]], 
+                    positions=[3*counth+1],
+                    showfliers=False,
+                    boxprops=dict(color=cmapg(0.7), lw=2),
+                    manage_ticks=False,
+                    widths=0.8)
+
+                    # save xticks
+                if tf == trForOrds[0] and \
+                    Ranges[r][0] <= Ranges[r][1]:
+                    xticks.append([3*counth+0.5,
+                            '['+str(Ranges[r][0]) + \
+                                ',' + str(Ranges[r][1])+']' + \
+                                    '\nT=' + \
+                                        str(dferrTech['Tech'].nunique())])
+
+                # update horizons counter
+                counth += 1
+        
+        # set scale, lims and ticks
+        ax[countax//dim][countax%dim].plot([-10,100],[1,1], 'k', zorder=-10)
+        ax[countax//dim][countax%dim].set_yscale('log', base=10)
+        ax[countax//dim][countax%dim].set_ylim(0.1, 10)
+        ax[countax//dim][countax%dim].set_xlim(-0.5, xticks[-1][0]+1)
+        ax[countax//dim][countax%dim].set_xticks(
+            [x[0] for x in xticks], [x[1] for x in xticks])
+        
+        #update axes counter
+        countax += 1
+
+    # # figure annotations
+    # ax[1][0].annotate('Training interval',
+    #         xy=(0.05, .5), xycoords='figure fraction',
+    #         horizontalalignment='center', verticalalignment='center',
+    #         fontsize=12,
+    #         rotation=90)
+    # count = 0
+    # for l in ax:
+    #     ax[count][0].annotate("$10^{{{}}}$".format(l[0]),
+    #             xy=(-.4, .5), xycoords='axes fraction',
+    #             horizontalalignment='center', verticalalignment='center',
+    #             # fontsize=20
+    #             )
+    #     count += 1
+    # ax[0][1].annotate('Forecast interval',
+    #             xy=(.5, 1.3), xycoords='axes fraction',
+    #             horizontalalignment='center', verticalalignment='center',
+    #             fontsize=12
+    #             )
+    # count = 0
+    # for l in [0.5,1,2]:
+    #     ax[0][count].annotate("$10^{{{}}}$".format(l),
+    #             xy=(.5, 1.1), xycoords='axes fraction',
+    #             horizontalalignment='center', verticalalignment='center',
+    #             # fontsize=20
+    #             )
+    #     count += 1
+
+    return fig, ax
+

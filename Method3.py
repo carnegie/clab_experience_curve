@@ -2,67 +2,15 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
-import seaborn, scipy
+import scipy, analysisFunctions
 
 df = pd.read_csv('ExpCurves.csv')
-# df = pd.read_csv('NormalizedExpCurves.csv')
 
-sectors = {'Energy':['Wind_Turbine_2_(Germany)', 'Fotovoltaica',
-                    'Crude_Oil', 'Photovoltaics_2', 
-                    'Onshore_Gas_Pipeline', 'Wind_Electricity',
-                    'Photovoltaics_4','Geothermal_Electricity',
-                    'Solar_Thermal','Nuclear_Electricity',
-                    'Solar_Thermal_Electricity', 'Electric_Power',
-                    'SCGT', 'Photovoltaics', 
-                    'Solar_Water_Heaters', 'Wind_Turbine_(Denmark)',
-                    'CCGT_Power','Nuclear_Power_(OECD)',
-                    'CCGT_Electricity', 'Offshore_Gas_Pipeline',
-                    'Wind_Power'], 
-        'Chemicals':['Titanium_Sponge','CarbonDisulfide',
-                    'Primary_Aluminum', 'Acrylonitrile',
-                    'HydrofluoricAcid','PolyesterFiber',
-                    'SodiumHydrosulfite', 'EthylAlcohol',
-                    'Ethanol_2', 'Cyclohexane',
-                    'Polyvinylchloride','PolyethyleneLD',
-                    'Trichloroethane', 'Polypropylene',
-                    'Pentaerythritol','Ethylene_2',
-                    'VinylAcetate', 'CarbonBlack',
-                    'Aniline', 'PhthalicAnhydride',
-                    'Magnesium', 'MaleicAnhydride',
-                    'TitaniumDioxide', 'Paraxylene',
-                    'Ammonia', 'VinylChloride',
-                    'Sorbitol', 'Styrene',
-                    'Aluminum', 'Polystyrene',
-                    'Phenol', 'BisphenolA',
-                    'EthyleneGlycol', 'Methanol',
-                    'PolyethyleneHD', 'Low_Density_Polyethylene',
-                    'Urea', 'Sodium',
-                    'Ethanolamine', 'SodiumChlorate',
-                    'Primary_Magnesium', 'NeopreneRubber',
-                    'Ethylene', 'AcrylicFiber',
-                    'Formaldehyde', 'Benzene',
-                    'Ethanol_(Brazil)', 'IsopropylAlcohol',
-                    'Motor_Gasoline', 'Caprolactam'],
-        'Hardware': ['Transistor', 'DRAM', 
-                     'Hard_Disk_Drive', 'Laser_Diode'],
-        'Consumer goods': ['Monochrome_Television', 'Automotive_(US)' ,
-                           'Electric_Range', 'Free_Standing_Gas_Range'],
-        'Food': ['Milk_(US)', 'Refined_Cane_Sugar',
-                 'Wheat_(US)', 'Beer_(Japan)',
-                 'Corn_(US)'],
-        'Genomics':['Shotgun_Sanger_DNA_Sequencing', 'Capillary_DNA_Sequencing']
-}
-sectorsColor = {'Energy':'royalblue', 'Chemicals':'black',
-               'Hardware':'red', 'Consumer goods':'forestgreen',
-               'Food':'cyan', 'Genomics':'darkmagenta'}
-sectorsinv = {v:k for k, vlist in sectors.items() for v in vlist}
-df['Sector'] = [sectorsinv[tech] for tech in df['Tech']]
-
-method='regression'
+df['Sector'] = [analysisFunctions.sectorsinv[tech] for tech in df['Tech']]
+method = 'regression'
 
 # get slope for all technologies
 slopes = []
-# slopes_pl = []
 for tech in df['Tech'].unique():
     sel = df.loc[df['Tech']==tech]
     x = np.log10(sel['Cumulative production'].values)

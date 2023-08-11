@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+import scipy
 
 ### sectors dictionary
 sectors = {'Energy':['Wind_Turbine_2_(Germany)', 'Fotovoltaica',
@@ -66,10 +67,10 @@ def splitData(sel, fraction, points):
     if points == True:
         # separate calibration and validation datasets 
         # based on number of points
-        x_cal = x[:round(x.shape[0]*fraction)]
-        x_val = x[round(x.shape[0]*fraction):]
-        y_cal = y[:round(y.shape[0]*fraction)]
-        y_val = y[round(y.shape[0]*fraction):]
+        x_cal = x[:round(x.shape[0]*fraction)+1]
+        x_val = x[round(x.shape[0]*fraction)+1:]
+        y_cal = y[:round(y.shape[0]*fraction)+1]
+        y_val = y[round(y.shape[0]*fraction)+1:]
     
     else:
         # separate calibration and validation datasets 
@@ -430,3 +431,82 @@ def dataToPercentilesArray(df, ordOfMag,
     
     return pct, breaks, centered, \
             countPoints, countTechs, stats
+
+def performTPairedTest(errpred, errpred2):
+    # compute RMSE and difference in RMSE
+    RMSEdiff = []
+    for t,a in zip(errpred, errpred2):
+        e1 = np.mean([x**2 for x in t])**0.5
+        e2 = np.mean([x**2 for x in a])**0.5
+        RMSEdiff.append(e1 - e2)
+    RMSEdiff = pd.DataFrame(RMSEdiff, columns=['diff'])
+    N = RMSEdiff['diff'].nunique()
+
+    # report statistics and p-value
+    print('Paired t-test: null hypothesis ' + \
+          'rejected if value is outside [' + \
+        str(scipy.stats.t.ppf(0.025, N-1).round(3)) + \
+            ',' + str(scipy.stats.t.ppf(0.975, N-1).round(3))+']')
+    mu = np.mean(RMSEdiff['diff'].values)
+    std = np.std(RMSEdiff['diff'].values) / (RMSEdiff.shape[0])**0.5
+    print('\t The value is ', mu/std)
+    print('\t The p-value is ', scipy.stats.t.sf(np.abs(mu/std), N-1)*2)
+
+    return mu/std, scipy.stats.t.ppf(0.025, N-1), scipy.stats.t.ppf(0.975, N-1)
+
+def performWilcoxonSignedRankTest(errpred, errpred2):
+    # compute RMSE and difference in RMSE
+    RMSEdiff = []
+    for t,a in zip(errpred, errpred2):
+        e1 = np.mean([x**2 for x in t])**0.5
+        e2 = np.mean([x**2 for x in a])**0.5
+        RMSEdiff.append(e1 - e2)
+    RMSEdiff = pd.DataFrame(RMSEdiff, columns=['diff'])
+    N = RMSEdiff['diff'].nunique()
+
+    # rank RMSE differences
+    print('Wilcoxon signed rank test: null hypothesis rejected if value is outside [-1.96,1.96]')
+    RMSEdiff['abs'] = np.abs(RMSEdiff['diff'].values)
+    RMSEdiff = RMSEdiff.sort_values(by='abs', ascending=True)
+    RMSEdiff = RMSEdiff.reset_index()
+    Rp, Rm = 0, 0
+    count = 0
+    for i in range(RMSEdiff.shape[0]):
+        if RMSEdiff['diff'].values[i] > 0:
+            Rp += i+1
+            count += 1
+        elif RMSEdiff['diff'].values[i] == 0:
+            Rp += 1/2*(i+1)
+            Rm += 1/2*(i+1)
+        else:
+            Rm += i+1
+
+        ## uncomment below to understand how it works
+        ## these lines print:
+        ## 1) the difference in RMSE
+        ## 2) the sum of ranks for the positive difference
+        ## 3) the sum of ranks for the negative difference
+        ## 4) the count of times where average slope is better
+        ## 5) the total count of technologies
+        print(RMSEdiff['diff'].values[i],
+            '\t',
+            Rp,
+            '\t',
+            Rm,
+            '\t',
+            count, 
+            '\t',
+            i+1)
+    # import seaborn as sns
+    # import matplotlib.pyplot as plt
+    # fig, ax = plt.subplots()
+    # sns.kdeplot(RMSEdiff['diff'].values, ax=ax)
+    # ax.plot(RMSEdiff['diff'].values,[0 for x in RMSEdiff['diff'].values], 'o')
+    # plt.show()
+
+    # compute statistics and report it
+    T = min(Rp,Rm)
+    z = (T - 1/4*N*(N+1)) / ((1/24*N*(N+1)*(2*N+1))**0.5)
+    print('\tThe value is ', z)
+    print('\t The p-value is ', scipy.stats.norm.sf(np.abs(z))*2)
+    return z

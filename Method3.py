@@ -6,7 +6,34 @@ import scipy, analysisFunctions
 
 df = pd.read_csv('ExpCurves.csv')
 
+### SELECT SCRIPT OPTIONS
+# fraction of dataset used for calibration
+fraction = 1/2
+# split the dataset based on points (True) 
+# or cumulative production interval (False)
+points = True
+# include nuclear technologies (True) or not (False)
+nuclearIncluded = True
+
+if nuclearIncluded == False:
+    df = df.loc[~(df['Tech'].str.contains('Nuclear'))]
+
 df['Sector'] = [analysisFunctions.sectorsinv[tech] for tech in df['Tech']]
+sectorTech = [analysisFunctions\
+              .sectorsinv[tech] for tech in df['Tech'].unique()]
+
+# compute regression model and predicition errors for each technology
+LR_cal, LR_val, slopesall, \
+    uc, cpCal, cpVal, \
+    ucpred, errpred, ucpred2, errpred2 = \
+        analysisFunctions.computeRegPredError(df, fraction, points)
+
+analysisFunctions.performTPairedTest(errpred, errpred2)
+
+analysisFunctions.performWilcoxonSignedRankTest(errpred, errpred2)
+
+exit()
+
 method = 'regression'
 
 # get slope for all technologies
@@ -37,13 +64,13 @@ for tech in df['Tech'].unique():
     y = np.log10(sel['Unit cost'].values)
     H = len(x)
     # calibrate model over first set of points
-    for i in range(H):
+    # for i in range(H):
         # for N in range(0 - 1*(i==0), -1, -1):
-        for N in range(i-1, -1, -1):
-    # for i in range(round(H/2),round(H/2)+1):
+        # for N in range(i-1, -1, -1):
+    for i in range(round(H/2),round(H/2)+1):
     # for i in range(round(0.9*H),H):
     # for i in range(H-2,H):
-        # for N in range(0, -1, -1):
+        for N in range(0, -1, -1):
             slope = (y[i] - y[N]) /\
                 (x[i] - x[N])
             # add linear regression method
@@ -53,9 +80,9 @@ for tech in df['Tech'].unique():
                 slope = result.params[1]
             # compute error associated using slope M points after midpoint
             for M in range(i+1, H):
-                pred =  y[i] + slope * (x[M] - x[i])
-                # if method=='regression':
-                # 	pred = result.params[0] + slope * x[M]
+                # pred =  y[i] + slope * (x[M] - x[i])
+                if method=='regression':
+                    pred = result.params[0] + slope * x[M]
                 pred2 =  y[i] + slopeall * (x[M] - x[i])
                 error = (y[M] - (pred))
                 error2 = (y[M] - (pred2))
@@ -72,12 +99,9 @@ print('Paired t-test: null hypothesis rejected if value is outside [' + \
       str(scipy.stats.t.ppf(0.025, N-1).round(3))+ ','+str(scipy.stats.t.ppf(0.975, N-1).round(3))+']')
 mu = np.mean(RMSEdiff['diff'].values)
 std = np.std(RMSEdiff['diff'].values) / (RMSEdiff.shape[0])**0.5
-print(mu, std)
 print('\t The value is ', mu/std)
-# print('The mean difference is ', mu)   
-# print('\t The confidence interval for the mean is (', mu-1.990*std,', ', mu+1.990*std,')')
 
-
+exit()
 print('Wilcoxon signed rank test: null hypothesis rejected if value is outside [-1.96,1.96]')
 RMSEdiff['abs'] = np.abs(RMSEdiff['diff'].values)
 RMSEdiff = RMSEdiff.sort_values(by='abs', ascending=True)

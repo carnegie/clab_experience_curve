@@ -25,6 +25,7 @@ df['Sector'] = [analysisFunctions.sectorsinv[tech] for tech in df['Tech']]
 sectorTech = [analysisFunctions\
               .sectorsinv[tech] for tech in df['Tech'].unique()]
 
+# compute regression model and predicition errors for each technology
 LR_cal, LR_val, slopesall, \
     uc, cpCal, cpVal, \
     ucpred, errpred, ucpred2, errpred2 = \

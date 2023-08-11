@@ -52,7 +52,7 @@ for tOrd in trOrds:
         plottingFunctions.plotForecastErrors(dferrTech, dferrAvg, 
                                              fOrd, samplingPoints,
         # for training errors to be included, uncomment the following line
-                                             trainErr, tOrd
+                                            #  trainErr, tOrd
                                              )
         
         # store data in lists for later use

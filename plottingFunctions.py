@@ -451,10 +451,15 @@ def plotForecastErrors(dferrTech, dferrAvg,
     ax[2].set_xlabel(
         'Predicted cumulative production / Current cumulative production')
     ax[2].set_ylabel('Number of points to estimate error')
-    ax[2].set_ylim(0, 
-                   max(
-                    max([*countPointsTech,*countPoints])*1.1, 
-                        ax[2].get_ylim()[1]))
+    ax[2].set_ylim(0, max(max(countPointsTech)*1.1, ax[2].get_ylim()[1]))
+    if trainErr is not None:
+        ax[2].set_ylim(0, 
+                    max(
+                        max(countPoints)*1.1, 
+                            ax[2].get_ylim()[1]))
+
+        
+
 
     if trainErr is not None:
         legend_elements = [
@@ -651,33 +656,27 @@ def summaryBoxplots(trForOrds, fErrsTech, fErrsAvg, Ranges):
         #update axes counter
         countax += 1
 
-    # # figure annotations
-    # ax[1][0].annotate('Training interval',
-    #         xy=(0.05, .5), xycoords='figure fraction',
-    #         horizontalalignment='center', verticalalignment='center',
-    #         fontsize=12,
-    #         rotation=90)
-    # count = 0
-    # for l in ax:
-    #     ax[count][0].annotate("$10^{{{}}}$".format(l[0]),
-    #             xy=(-.4, .5), xycoords='axes fraction',
-    #             horizontalalignment='center', verticalalignment='center',
-    #             # fontsize=20
-    #             )
-    #     count += 1
-    # ax[0][1].annotate('Forecast interval',
-    #             xy=(.5, 1.3), xycoords='axes fraction',
-    #             horizontalalignment='center', verticalalignment='center',
-    #             fontsize=12
-    #             )
-    # count = 0
-    # for l in [0.5,1,2]:
-    #     ax[0][count].annotate("$10^{{{}}}$".format(l),
-    #             xy=(.5, 1.1), xycoords='axes fraction',
-    #             horizontalalignment='center', verticalalignment='center',
-    #             # fontsize=20
-    #             )
-    #     count += 1
+    ## figure annotations
+    ax[0][0].annotate('Training interval',
+            xy=(0.025, .5), xycoords='figure fraction',
+            horizontalalignment='center', verticalalignment='center',
+            fontsize=12,
+            rotation=90)
+    for l in range(dim):
+        ax[l][0].annotate("$10^{{{}}}$".format(trForOrds[l*dim][0]),
+                xy=(-.1*dim, .5), xycoords='axes fraction',
+                horizontalalignment='center', verticalalignment='center',
+                )
+    ax[0][0].annotate('Forecast interval',
+                xy=(.5, .975), xycoords='figure fraction',
+                horizontalalignment='center', verticalalignment='center',
+                fontsize=12
+                )
+    for l in range(dim):
+        ax[0][l].annotate("$10^{{{}}}$".format(trForOrds[l][1]),
+                xy=(.5, 1.1), xycoords='axes fraction',
+                horizontalalignment='center', verticalalignment='center',
+                )
 
     return fig, ax
 

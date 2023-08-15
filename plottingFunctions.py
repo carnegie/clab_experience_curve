@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import statsmodels.api as sm
-import matplotlib
+import matplotlib, cmcrameri
 import analysisFunctions
 
 # set color to be used to represent tech-specific slope
@@ -13,59 +13,44 @@ cmapg = matplotlib.colormaps['Greens']
 
 # produce scatter figure with R2 values for 
 # early slope and late slope
-def scatterFigure(LR_cal, LR_val, sectorsList):
+def scatterFigure(LR_cal, LR_val, length, title):
 
+    length = 10**np.array(length)
+    cmap = cmcrameri.cm.batlow
+    norm = matplotlib.colors.LogNorm(vmin=min(length), vmax=max(length))
     # create figure and plot iteratively
-    figscatter , axscatter = plt.subplots(figsize=(8,6))
-    for item in zip(LR_cal, LR_val, sectorsList):
-        axscatter.scatter(item[0], item[1], 
-                    color = analysisFunctions.sectorsColor[item[2]],
-                    alpha = 0.4)
+    figscatter , axscatter = plt.subplots(figsize=(8,7))
+    vals = axscatter.scatter(LR_cal, LR_val, c=length,
+                      norm = norm,
+                      cmap = cmap,
+                      alpha = 0.7,
+                      lw = 0,
+                      s = 50)
     
     # compute R2
     if len(LR_cal) > 2:
         model = sm.OLS(LR_val, sm.add_constant(LR_cal))
         result = model.fit()
-        axscatter.annotate('R2 = ' + str(round(result.rsquared,2)) + \
-                '\n N = ' + str(len(LR_cal)),
-                (-1.5,1))
+        # axscatter.annotate('N = ' + str(len(LR_cal)),
+        #         (-1.5,1))
+        print('Explained variance (R2) = ',result.rsquared)
     
     # plotting graphics
     axscatter.plot([0,0],[-3,3], color='k', alpha=0.8, lw=0.2, zorder=-30)
     axscatter.plot([-3,3],[0,0], color='k', alpha=0.8, lw=0.2, zorder=-30)
     axscatter.set_xlim((-2,2))
     axscatter.set_ylim((-2,2))
-    axscatter.set_xlabel('First half slope')
-    axscatter.set_ylabel('Second half slope')
+    axscatter.set_xlabel('First part slope')
+    axscatter.set_ylabel('Second part slope')
     axscatter.set_xlim((-2,2))
     axscatter.set_ylim((-2,2))
-    figscatter.subplots_adjust(bottom=0.1, top=0.9, left=0.0)
     axscatter.set_aspect('equal', 'box')
-    if not(all([x==sectorsList[0] for x in sectorsList])):
-        legend_elements = [
-            matplotlib.lines.Line2D(\
-                [0],[0], lw=0, color='royalblue',
-                marker='o', label='Energy'),
-            matplotlib.lines.Line2D(\
-                [0],[0], lw=0, color='black', 
-                marker='o', label='Chemicals'),
-            matplotlib.lines.Line2D(\
-                [0],[0], lw=0, color='red', 
-                marker='o', label='Hardware'),  
-            matplotlib.lines.Line2D(\
-                [0],[0], lw=0, color='forestgreen', 
-                marker='o', label='Consumer goods'),
-            matplotlib.lines.Line2D(\
-                [0],[0], lw=0, color='cyan', 
-                marker='o', label='Food'),
-            matplotlib.lines.Line2D(\
-                [0],[0], lw=0, color='darkmagenta', 
-                marker='o', label='Genomics')
-        ]
-        figscatter.legend(handles=legend_elements, 
-                          loc='center right', title='Sector')
-    else:
-        axscatter.set_title(sectorsList[0])
+    cbar = figscatter.colorbar(vals, 
+                            cmap=cmap, norm=norm, 
+                            orientation='horizontal', shrink = 0.6)
+    cbar.set_label('Final cumulative production / Initial cumulative production')
+    axscatter.set_title(title+' (N = '+str(len(LR_cal))+')')
+    figscatter.tight_layout()
     return figscatter, axscatter
     
 # produce large plots:
@@ -273,8 +258,8 @@ def barSectorMSE(errpred, errpred2, sectorsList):
     ax[1][0].set_xticks([0,1],['Technology-specific','Average slope'])
     ax[1][1].set_xticks([0,1],['Technology-specific','Average slope'])
     ax[1][2].set_xticks([0,1],['Technology-specific','Average slope'])
-    ax[0][0].set_ylabel('Number of technologies with lower MSE')
-    ax[1][0].set_ylabel('Number of technologies with lower MSE')
+    ax[0][0].set_ylabel('Technologies with lower MSE')
+    ax[1][0].set_ylabel('Technologies with lower MSE')
     return fig, ax
 
 # produce a figure plotting orders of magnitude available for each technology

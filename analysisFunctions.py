@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-import scipy
+import scipy, seaborn
 
 ### sectors dictionary
 sectors = {'Energy':['Wind_Turbine_2_(Germany)', 'Fotovoltaica',
@@ -53,6 +53,12 @@ sectors = {'Energy':['Wind_Turbine_2_(Germany)', 'Fotovoltaica',
 sectorsColor = {'Energy':'royalblue', 'Chemicals':'black',
                'Hardware':'red', 'Consumer goods':'forestgreen',
                'Food':'cyan', 'Genomics':'darkmagenta'}
+
+cmap = seaborn.color_palette("colorblind")
+sectorsColor = {'Energy': cmap[0], 'Chemicals': cmap[1],
+               'Hardware': cmap[2], 'Consumer goods': cmap[3],
+               'Food': cmap[4], 'Genomics': cmap[8]}
+
 sectorsinv = {v:k for k, vlist in sectors.items() for v in vlist}
 
 # read cumulative production and unit cost

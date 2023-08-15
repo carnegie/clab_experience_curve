@@ -16,7 +16,7 @@ fraction = 1/2
 # or cumulative production interval (False)
 points = True
 # include nuclear technologies (True) or not (False)
-nuclearIncluded = True
+nuclearIncluded = False
 
 if nuclearIncluded == False:
     df = df.loc[~(df['Tech'].str.contains('Nuclear'))]
@@ -36,22 +36,29 @@ print("Average Wright's exponent: ",np.mean(slopesall),
         " per doubling of cumulative production: ", 
     100 * (1 - 2**(np.mean(slopesall))), "%")
 
+# get length of cumulative production intervals
+length = []
+for tech in df['Tech'].unique():
+    cp = df.loc[df['Tech'] == tech,'Cumulative production'].values
+    length.append(np.log10(cp[-1]) - np.log10(cp[0]))
+
 # Figure 1: plot scatter of calibration and validation slopes
-plottingFunctions.scatterFigure(LR_cal, LR_val, sectorTech)
+plottingFunctions.scatterFigure(LR_cal, LR_val, 
+                                length, title='All Technologies')
 plt.show()
 
 ## supplementary figures
 for sector in df['Sector'].unique():
     LR_cal_ = []
     LR_val_ = []
-    sectorTech_ = []
-    for item in zip(LR_cal, LR_val, sectorTech):
-        if item[2] == sector:
+    length_ = []
+    for item in zip(LR_cal, LR_val, length, df['Tech'].unique()):
+        if item[3] in analysisFunctions.sectors[sector]:
             LR_cal_.append(item[0])
             LR_val_.append(item[1])
-            sectorTech_.append(item[2])
-    plottingFunctions.scatterFigure(LR_cal_, LR_val_, sectorTech_)
-
+            length_.append(item[2])
+    plottingFunctions.scatterFigure(LR_cal_, LR_val_, 
+                                    length_, title=sector)
 
 plottingFunctions.gridPlots(uc, cpCal, cpVal, 
                             ucpred, errpred, ucpred2, errpred2)

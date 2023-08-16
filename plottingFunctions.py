@@ -308,8 +308,8 @@ def plotOrdersOfMagnitude(df):
     return fig, ax
 
 def plotPercentiles(centered, pct, 
-                    countPoints, countTechs, 
-                    color, ax1, ax2, ax2b = None,
+                    countPoints = None, countTechs = None, 
+                    color = 'k', ax1 = None, ax2 = None, ax2b = None,
                     ):
     ax1.plot(\
         [10**x for x in centered],10**pct[:,4], 
@@ -320,13 +320,14 @@ def plotPercentiles(centered, pct,
             10**pct[:,1+r], 10**pct[:,-r-1], 
             alpha=0.1+0.2*r, color=color, zorder=-2-r, lw=0)
     ax1.plot([1,1],[0,100**100],'k', zorder=-2)
-    ax2.plot([10**x for x in centered], countPoints, 
-                color='k', lw=2, zorder=-2)
-    ax2.set_ylim(0,max(countPoints)*1.1)
-    if ax2b is None:
-        ax2b = ax2.twinx()
-    ax2b.plot([10**x for x in centered], countTechs, 
-                color='red', lw=2, zorder=-2)    
+    if ax2 is not None:
+        ax2.plot([10**x for x in centered], countPoints, 
+                    color='k', lw=2, zorder=-2)
+        ax2.set_ylim(0,max(countPoints)*1.1)
+        if ax2b is None:
+            ax2b = ax2.twinx()
+        ax2b.plot([10**x for x in centered], countTechs, 
+                    color='red', lw=2, zorder=-2)    
     return ax2b
 
 def plotBoxplotsArray(centered, stats, color, ax):
@@ -336,9 +337,164 @@ def plotBoxplotsArray(centered, stats, color, ax):
                 showfliers=False, boxprops=dict(color=color, lw=2), 
                 manage_ticks=False)
 
+
+def plotForecastErrorGrid(fErrsTech, fErrsAvg, Ranges, 
+                            tfOrds, samplingPoints):
+    # create figure
+    fig, ax = plt.subplots(2,4, sharex='col', sharey=True, figsize=(12,7))
+
+    # iterate over order of magnitude of interest
+    for tf in tfOrds:
+
+        # prepare axes
+        ax1 = ax[int(tfOrds.index(tf)/2)][(2*tfOrds.index(tf))%4]
+        ax2 = ax[int(tfOrds.index(tf)/2)][(2*tfOrds.index(tf))%4+1]
+
+        # select data
+        dferrTech = fErrsTech[Ranges.index(tf)]
+        dferrAvg = fErrsAvg[Ranges.index(tf)]
+
+        # get data to be plotted
+        pctTech, _, forecastIntAxis, \
+            _, _, statsTech = \
+                analysisFunctions.\
+                    dataToPercentilesArray(dferrTech,
+                                        tf[1], samplingPoints)
+        pctAvg, _, _, \
+            _, _, statsAvg = \
+                analysisFunctions.\
+                    dataToPercentilesArray(dferrAvg,
+                                        tf[1], samplingPoints)
+        
+        plotPercentiles(forecastIntAxis, pctTech,
+                          color = cmapp(0.7), ax1 = ax1)
+        plotPercentiles(forecastIntAxis, pctAvg,
+                          color = cmapg(0.7), ax1 = ax2)
+        plotBoxplotsArray(forecastIntAxis[1:-1], statsTech[1:-1], 
+                        color = cmapp(0.7), ax = ax1)
+        plotBoxplotsArray(forecastIntAxis[1:-1], statsAvg[1:-1], 
+                        color = cmapg(0.7), ax = ax2)
+
+        ax1.plot([1,1e10],[1,1],'k', zorder=-10)
+        ax2.plot([1,1e10],[1,1],'k', zorder=-10)
+        ax1.set_xscale('log', base=10)
+        ax1.set_yscale('log', base=10)
+        ax2.set_xscale('log', base=10)
+        ax2.set_yscale('log', base=10)
+        ax1.set_ylim(0.1,10)
+        ax2.set_ylim(0.1,10)
+        ax1.set_xlim(10**0, 10**tf[1])
+        ax2.set_xlim(10**0, 10**tf[1])
+        ax1.annotate('Technology-specific', 
+                     xy=(1.1, 6), 
+                     color=cmapp(0.7),
+                     ha='left')
+        ax2.annotate('Average slope', 
+                     xy=(1.1, 6), 
+                     color=cmapg(0.7),
+                     ha='left')
+
+    ax[0][0].set_ylabel('Error (Actual/Predicted)')
+    ax[1][0].set_ylabel('Error (Actual/Predicted)')
+    ax[1][0].annotate('Future cumulative production' +\
+                      ' / Current cumulative production',
+                      xy=(0.5,0.05),
+                        xycoords='figure fraction',
+                        ha='center',
+                        va='center')
+    
+    ax[0][0].annotate('Forecast horizon',
+                      xy=(0.5,0.975),
+                        xycoords='figure fraction',
+                        ha='center',
+                        va='center')
+    ax[0][0].annotate('Training horizon',
+                      xy=(0.025,0.5),
+                        xycoords='figure fraction',
+                        ha='center',
+                        va='center',
+                        rotation=90)
+
+    ax[0][0].annotate('$10^{0.5}$',
+                      xy=(0.305,0.925),
+                        xycoords='figure fraction',
+                        ha='center',
+                        va='center')
+    ax[0][0].annotate('$10^1$',
+                      xy=(0.695,0.925),
+                        xycoords='figure fraction',
+                        ha='center',
+                        va='center')
+    ax[0][0].annotate('$10^{0.5}$',
+                      xy=(-0.45,0.5),
+                        xycoords='axes fraction',
+                        ha='center',
+                        va='center')
+    ax[1][0].annotate('$10^1$',
+                      xy=(-0.45,0.5),
+                        xycoords='axes fraction',
+                        ha='center',
+                        va='center')
+    
+    ax[0][2].minorticks_off()
+    ax[0][3].minorticks_off()
+    ax[1][2].minorticks_off()
+    ax[1][3].minorticks_off()
+    
+    axes1=fig.add_axes([0.9,0.415,0.08,0.2])
+    axes1.plot([-0.5,1.5],[0.5,0.5],'k', lw=2)
+    axes1.fill_between([-0.5,1.5],[0.25,0.25],[0.75,0.75], 
+                       color='k', alpha=0.3)
+    axes1.fill_between([-.5,1.5],[0.1,0.1],[0.9,0.9], 
+                       color='k', alpha=0.3)
+    axes1.fill_between([-.5,1.5],[0,0],[1.0,1.0], 
+                       color='k', alpha=0.1)
+    axes1.annotate('10th percentile', 
+                   xy=(4.0, 0.1), xycoords='data', 
+                   ha='center', va='center', fontsize=7)
+    axes1.annotate('25th percentile', 
+                   xy=(4.0, 0.25), xycoords='data', 
+                   ha='center', va='center', fontsize=7)
+    axes1.annotate('Median', 
+                   xy=(4.0, 0.5), xycoords='data', 
+                   ha='center', va='center', fontsize=7)
+    axes1.annotate('75th percentile', 
+                   xy=(4.0, 0.75), xycoords='data', 
+                   ha='center', va='center', fontsize=7)
+    axes1.annotate('90th percentile', 
+                   xy=(4.0, 0.9), xycoords='data', 
+                   ha='center', va='center', fontsize=7)
+    axes1.annotate('Max', xy=(4.0, 1.0), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7)
+    axes1.annotate('Min', xy=(4.0, 0.0), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7)
+
+    axes1.plot([0,1],[0.5,0.5],'k', lw=1)
+    axes1.plot([0,1,1,0,0],[0.25,0.25,0.75,0.75,0.25], lw=2, color='k')
+    axes1.plot([0,1],[0.5,0.5], lw=2, color='darkorange')
+    axes1.plot([0,1],[0,0], color='k', lw=1)
+    axes1.plot([0,1],[1,1], color='k', lw=1)
+    axes1.plot([0.5,0.5],[0,0.25], color='k', lw=1)
+    axes1.plot([0.5,0.5],[0.75,1], color='k', lw=1)
+
+    axes1.set_xlim(-1,5)
+    axes1.set_ylim(-0.2,1.2)
+    axes1.set_xticks([])
+    axes1.set_yticks([])
+    axes1.axis('off')
+
+    fig.tight_layout()
+    fig.subplots_adjust(left=0.125, right=0.875)
+    return fig, ax
+
+        
+
 def plotForecastErrors(dferrTech, dferrAvg,
                        fOrd, samplingPoints,
-                       trainErr = None, tOrd = None):
+                       trainErr = None, tOrd = None,
+                       ):
 
     # create figures
     if trainErr is None:
@@ -362,6 +518,7 @@ def plotForecastErrors(dferrTech, dferrAvg,
                         color = 'b', ax1 = ax[0], ax2 = ax[2])
         plotBoxplotsArray(trainIntAxis, stats, 
                         color = 'b', ax = ax[0])
+        
     else:
         ax2b = None
 
@@ -385,10 +542,17 @@ def plotForecastErrors(dferrTech, dferrAvg,
                           countPointsTech, countTechsTech,
                           color = cmapg(0.7), ax1 = ax[1], 
                           ax2 = ax[2], ax2b = ax2b)
-    plotBoxplotsArray(forecastIntAxis, statsTech, 
+    plotBoxplotsArray(forecastIntAxis[1:-1], statsTech[1:-1], 
                         color = cmapp(0.7), ax = ax[0])
-    plotBoxplotsArray(forecastIntAxis, statsAvg, 
+    plotBoxplotsArray(forecastIntAxis[1:-1], statsAvg[1:-1], 
                         color = cmapg(0.7), ax = ax[1])
+    
+    ylabs = ax2b.get_yticklabels()
+    print(ylabs)
+
+    ax2b.yaxis.set_major_locator(
+        matplotlib.ticker.MaxNLocator(integer=True))
+    ax2b.minorticks_off()
 
     # labeling and annotating graphs
     if tOrd is not None:
@@ -411,11 +575,11 @@ def plotForecastErrors(dferrTech, dferrAvg,
                        va='bottom', fontsize=12)
         ax[2].set_xlim(10**-tOrd, 10**fOrd)
         ax[2].annotate('Training', xy=(10**(-tOrd/2), 6), 
-                       xycoords='data', ha='center', 
-                       va='bottom', fontsize=12)
+                    xycoords='data', ha='center', 
+                    va='bottom', fontsize=12)
         ax[2].annotate('Forecast', xy=(10**(+fOrd/5), 6), 
-                       xycoords='data', ha='center', 
-                       va='bottom', fontsize=12)
+                    xycoords='data', ha='center', 
+                    va='bottom', fontsize=12)
     else:
         ax[0].set_xlim(10**0, 10**fOrd)
         ax[1].set_xlim(10**0, 10**fOrd)
@@ -441,9 +605,7 @@ def plotForecastErrors(dferrTech, dferrAvg,
         ax[2].set_ylim(0, 
                     max(
                         max(countPoints)*1.1, 
-                            ax[2].get_ylim()[1]))
-
-        
+                            ax[2].get_ylim()[1]))        
 
 
     if trainErr is not None:

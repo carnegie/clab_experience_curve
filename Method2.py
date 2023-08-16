@@ -20,9 +20,7 @@ forOrds = [0.5,1,2]
 # used for plotting functions
 samplingPoints = 5
 
-# Figure 2: plot of forecast errors
-# (most of the figures in this loop 
-# are for the supplementary material)
+# supplementary figures : plots of forecast errors
 
 # initialize lists to be used to store data
 tErrs = []
@@ -48,7 +46,7 @@ for tOrd in trOrds:
         #       dferrTech['Tech'].nunique())
         # print(trainErr['Tech'].unique())
 
-        # plot forecast errors (lines and boxplots)
+        # # plot forecast errors (lines and boxplots)
         plottingFunctions.plotForecastErrors(dferrTech, dferrAvg, 
                                              fOrd, samplingPoints,
         # for training errors to be included, uncomment the following line
@@ -60,6 +58,14 @@ for tOrd in trOrds:
         fErrsTech.append(dferrTech)
         fErrsAvg.append(dferrAvg)
         Ranges.append([tOrd, fOrd])
+
+# Figure 2
+trForOrds = [[0.5, 0.5],
+             [0.5, 1],
+             [1, 0.5],
+             [1, 1] ]
+fig, ax = plottingFunctions.plotForecastErrorGrid(fErrsTech, fErrsAvg, 
+                                         Ranges, trForOrds, samplingPoints,)
 
 # Figure 3: summary boxplots
 # select orders of magnitude (training and forecast) to be included

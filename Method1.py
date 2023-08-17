@@ -28,8 +28,23 @@ sectorTech = [analysisFunctions\
 # compute regression model and predicition errors for each technology
 LR_cal, LR_val, slopesall, \
     uc, cpCal, cpVal, \
-    ucpred, errpred, ucpred2, errpred2 = \
+    ucpred, errpred, ucpred2, errpred2, \
+    slopeErr, slopeErr2 = \
         analysisFunctions.computeRegPredError(df, fraction, points)
+
+import seaborn
+fig, ax = plt.subplots(1,1, sharex=True, sharey=True)
+slopeErrDf = pd.DataFrame({'slopeErr':[*slopeErr,*slopeErr2],
+                            'Method':[*['Tech' for x in slopeErr],
+                                      *['Average' for x in slopeErr2]]})
+seaborn.violinplot(slopeErrDf, hue='Method',
+                   split=True, ax=ax, color='purple',
+                   inner='stick')
+# seaborn.violinplot(slopeErr2, x=1, ax=ax, color='green')
+print(sum(np.abs(slopeErr)))
+print(sum(np.abs(slopeErr2)))
+ax.set_xlim(-3,3)
+plt.show()
 
 print("Average Wright's exponent: ",np.mean(slopesall), 
     "\nAverage percentage cost reduction" + \

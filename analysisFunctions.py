@@ -128,6 +128,7 @@ def computeRegPredError(df, fraction, points):
     uc, cpCal, cpVal, ucpred, \
         errpred, ucpred2, errpred2 = [], [], [], [], \
                                         [], [], []
+    slopeErr1, slopeErr2 = [], []
 
     for tech in df['Tech'].unique():
 
@@ -177,10 +178,14 @@ def computeRegPredError(df, fraction, points):
         # (error is maintained in log space)
         errpred2.append(np.log10(ucpred2[-1][1:]) - \
             np.log10(sel['Unit cost'].values[len(x_cal):]))
+        
+        slopeErr1.append(result_val.params[1] - slope)
+        slopeErr2.append(result_val.params[1] - slopeall)
 
     return LR_cal, LR_val, slopesall, \
             uc, cpCal, cpVal, \
-            ucpred, errpred, ucpred2, errpred2
+            ucpred, errpred, ucpred2, errpred2, \
+            slopeErr1, slopeErr2
 
 # compute R2 values using Monte Carlo sampling with replacement
 def computeR2MonteCarlo(LR_cal, LR_val, techsList, iter=1000):
@@ -279,9 +284,9 @@ def computeErrors(df, trainingOrdMag, forecastOrdMag):
 
                     #### NEED TO DISCUSS THESE LINES 
                     
-                    pred =  y[i] + slope * (x[i:M+1] - x[i])
+                    # pred =  y[i] + slope * (x[i:M+1] - x[i])
                     
-                    # pred =  result.predict(sm.add_constant(x[i:M+1]))
+                    pred =  result.predict(sm.add_constant(x[i:M+1]))
 
                     pred2 =  y[i] + slopeall * (x[i:M+1] - x[i])
                     
@@ -321,7 +326,7 @@ def builtBreakCenteredArrays(ordOfMag, npoints, training=False):
 
 
 # def compute Technology weighted percentiles
-def computeTechWeightedPercentiles(df, percentiles=[0,10,25,50,75,90,100]):
+def computeTechWeightedPercentiles(df, percentiles=[0,5,25,50,75,95,100]):
 
     df = df.copy()
     # count data points per technology and assign inverse weight
@@ -345,7 +350,7 @@ def computeTechWeightedPercentiles(df, percentiles=[0,10,25,50,75,90,100]):
 
 # compute percentiles of forecast errors at specified points
 def computePercentilesArray(dferr, breaks,
-                             percentiles=[0,10,25,50,75,90,100], 
+                             percentiles=[0,5,25,50,75,95,100], 
                              training=False):
     
     # initialize lists to count points, 
@@ -437,6 +442,8 @@ def dataToPercentilesArray(df, ordOfMag,
     
     return pct, breaks, centered, \
             countPoints, countTechs, stats
+
+# def computeSlopeErrors(df, fraction, points)
 
 def performTPairedTest(errpred, errpred2):
     # compute RMSE and difference in RMSE

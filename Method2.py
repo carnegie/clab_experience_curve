@@ -46,11 +46,11 @@ for tOrd in trOrds:
         #       dferrTech['Tech'].nunique())
         # print(trainErr['Tech'].unique())
 
-        # # plot forecast errors (lines and boxplots)
+        # # # plot forecast errors (lines and boxplots)
         plottingFunctions.plotForecastErrors(dferrTech, dferrAvg, 
                                              fOrd, samplingPoints,
         # for training errors to be included, uncomment the following line
-                                            #  trainErr, tOrd
+                                             trainErr, tOrd
                                              )
         
         # store data in lists for later use

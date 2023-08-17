@@ -24,8 +24,9 @@ def scatterFigure(LR_cal, LR_val, length, title):
                       norm = norm,
                       cmap = cmap,
                       alpha = 0.7,
-                      lw = 0,
-                      s = 50)
+                      lw = 0.2,
+                      s = 50,
+                      edgecolor='k')
     
     # compute R2
     if len(LR_cal) > 2:
@@ -441,33 +442,34 @@ def plotForecastErrorGrid(fErrsTech, fErrsAvg, Ranges,
     ax[1][2].minorticks_off()
     ax[1][3].minorticks_off()
     
-    axes1=fig.add_axes([0.9,0.415,0.08,0.2])
+    axes1=fig.add_axes([0.9,0.35,0.08,0.3])
     axes1.plot([-0.5,1.5],[0.5,0.5],'k', lw=2)
     axes1.fill_between([-0.5,1.5],[0.25,0.25],[0.75,0.75], 
                        color='k', alpha=0.3)
-    axes1.fill_between([-.5,1.5],[0.1,0.1],[0.9,0.9], 
+    axes1.fill_between([-.5,1.5],[0.05,0.05],[0.95,0.95], 
                        color='k', alpha=0.3)
     axes1.fill_between([-.5,1.5],[0,0],[1.0,1.0], 
                        color='k', alpha=0.1)
-    axes1.annotate('10th percentile', 
-                   xy=(4.0, 0.1), xycoords='data', 
-                   ha='center', va='center', fontsize=7)
-    axes1.annotate('25th percentile', 
-                   xy=(4.0, 0.25), xycoords='data', 
-                   ha='center', va='center', fontsize=7)
-    axes1.annotate('Median', 
-                   xy=(4.0, 0.5), xycoords='data', 
-                   ha='center', va='center', fontsize=7)
-    axes1.annotate('75th percentile', 
-                   xy=(4.0, 0.75), xycoords='data', 
-                   ha='center', va='center', fontsize=7)
-    axes1.annotate('90th percentile', 
-                   xy=(4.0, 0.9), xycoords='data', 
-                   ha='center', va='center', fontsize=7)
-    axes1.annotate('Max', xy=(4.0, 1.0), 
+    axes1.plot([1.5,2,2,1.5],[0.25,0.25,0.75,0.75], color='k',
+               linestyle='--',lw=0.5)
+    axes1.plot([1.5,4,4,1.5],[0.05,0.05,0.95,0.95], color='k',
+               linestyle='--',lw=0.5)
+
+    axes1.annotate('50%', xy=(3, 0.5), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7,
+                   rotation=90)
+    axes1.annotate('90%', xy=(5, 0.5), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7,
+                   rotation=90)
+    axes1.annotate('Median', xy=(-2.5, 0.5), 
                    xycoords='data', ha='center', 
                    va='center', fontsize=7)
-    axes1.annotate('Min', xy=(4.0, 0.0), 
+    axes1.annotate('Max', xy=(0.5, 1.1), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7)
+    axes1.annotate('Min', xy=(0.5, -0.1), 
                    xycoords='data', ha='center', 
                    va='center', fontsize=7)
 
@@ -479,8 +481,8 @@ def plotForecastErrorGrid(fErrsTech, fErrsAvg, Ranges,
     axes1.plot([0.5,0.5],[0,0.25], color='k', lw=1)
     axes1.plot([0.5,0.5],[0.75,1], color='k', lw=1)
 
-    axes1.set_xlim(-1,5)
-    axes1.set_ylim(-0.2,1.2)
+    axes1.set_xlim(-3.5,5)
+    axes1.set_ylim(-0.5,1.5)
     axes1.set_xticks([])
     axes1.set_yticks([])
     axes1.axis('off')
@@ -547,9 +549,6 @@ def plotForecastErrors(dferrTech, dferrAvg,
     plotBoxplotsArray(forecastIntAxis[1:-1], statsAvg[1:-1], 
                         color = cmapg(0.7), ax = ax[1])
     
-    ylabs = ax2b.get_yticklabels()
-    print(ylabs)
-
     ax2b.yaxis.set_major_locator(
         matplotlib.ticker.MaxNLocator(integer=True))
     ax2b.minorticks_off()
@@ -631,33 +630,32 @@ def plotForecastErrors(dferrTech, dferrAvg,
                             ]
         fig.legend(handles=legend_elements, loc='lower center', ncol=2)      
 
-    axes1=fig.add_axes([0.825,0.415,0.15,0.2])
-    axes1.plot([-1,2],[0.5,0.5],'k', lw=2)
-    axes1.fill_between([-1,2],[0.25,0.25],[0.75,0.75], 
+    axes1=fig.add_axes([0.85,0.35,0.125,0.3])
+    axes1.plot([-0.5,1.5],[0.5,0.5],'k', lw=2)
+    axes1.fill_between([-0.5,1.5],[0.25,0.25],[0.75,0.75], 
                        color='k', alpha=0.3)
-    axes1.fill_between([-1,2],[0.1,0.1],[0.9,0.9], 
+    axes1.fill_between([-.5,1.5],[0.05,0.05],[0.95,0.95], 
                        color='k', alpha=0.3)
-    axes1.fill_between([-1,2],[0,0],[1.0,1.0], 
+    axes1.fill_between([-.5,1.5],[0,0],[1.0,1.0], 
                        color='k', alpha=0.1)
-    axes1.annotate('10th percentile', 
-                   xy=(4.0, 0.1), xycoords='data', 
-                   ha='center', va='center', fontsize=7)
-    axes1.annotate('25th percentile', 
-                   xy=(4.0, 0.25), xycoords='data', 
-                   ha='center', va='center', fontsize=7)
-    axes1.annotate('Median', 
-                   xy=(4.0, 0.5), xycoords='data', 
-                   ha='center', va='center', fontsize=7)
-    axes1.annotate('75th percentile', 
-                   xy=(4.0, 0.75), xycoords='data', 
-                   ha='center', va='center', fontsize=7)
-    axes1.annotate('90th percentile', 
-                   xy=(4.0, 0.9), xycoords='data', 
-                   ha='center', va='center', fontsize=7)
-    axes1.annotate('Max', xy=(4.0, 1.0), 
+    axes1.plot([1.5,2,2,1.5],[0.25,0.25,0.75,0.75], color='k',
+               linestyle='--',lw=0.5)
+    axes1.plot([1.5,4,4,1.5],[0.05,0.05,0.95,0.95], color='k',
+               linestyle='--',lw=0.5)
+
+    axes1.annotate('50%', xy=(3, 0.5), 
                    xycoords='data', ha='center', 
                    va='center', fontsize=7)
-    axes1.annotate('Min', xy=(4.0, 0.0), 
+    axes1.annotate('90%', xy=(5, 0.5), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7)
+    axes1.annotate('Median', xy=(-2.5, 0.5), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7)
+    axes1.annotate('Max', xy=(0.5, 1.1), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7)
+    axes1.annotate('Min', xy=(0.5, -0.1), 
                    xycoords='data', ha='center', 
                    va='center', fontsize=7)
 
@@ -669,8 +667,8 @@ def plotForecastErrors(dferrTech, dferrAvg,
     axes1.plot([0.5,0.5],[0,0.25], color='k', lw=1)
     axes1.plot([0.5,0.5],[0.75,1], color='k', lw=1)
 
-    axes1.set_xlim(-1,5)
-    axes1.set_ylim(-0.2,1.2)
+    axes1.set_xlim(-3.5,5)
+    axes1.set_ylim(-0.5,1.5)
     axes1.set_xticks([])
     axes1.set_yticks([])
     axes1.axis('off')

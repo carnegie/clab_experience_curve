@@ -34,13 +34,8 @@ LR_cal, LR_val, slopesall, \
 
 import seaborn
 fig, ax = plt.subplots(1,1, sharex=True, sharey=True)
-slopeErrDf = pd.DataFrame({'slopeErr':[*slopeErr,*slopeErr2],
-                            'Method':[*['Tech' for x in slopeErr],
-                                      *['Average' for x in slopeErr2]]})
-seaborn.violinplot(slopeErrDf, hue='Method',
-                   split=True, ax=ax, color='purple',
-                   inner='stick')
-# seaborn.violinplot(slopeErr2, x=1, ax=ax, color='green')
+seaborn.kdeplot(slopeErr, ax=ax, color='purple', bw_adjust=0.5)
+seaborn.kdeplot(slopeErr2, ax=ax, color='green', bw_adjust=0.5)
 print(sum(np.abs(slopeErr)))
 print(sum(np.abs(slopeErr2)))
 ax.set_xlim(-3,3)

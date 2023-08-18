@@ -28,6 +28,15 @@ def scatterFigure(LR_cal, LR_val, length, title):
                       s = 50,
                       edgecolor='k')
     
+    vals = axscatter.scatter(LR_cal, LR_val, 
+                    #   c=length,
+                    #   norm = norm,
+                    #   cmap = cmap,
+                    #   alpha = 0.7,
+                      lw = 0.2,
+                      s = 50,
+                      edgecolor='k')
+    
     # compute R2
     if len(LR_cal) > 2:
         model = sm.OLS(LR_val, sm.add_constant(LR_cal))
@@ -46,10 +55,10 @@ def scatterFigure(LR_cal, LR_val, length, title):
     axscatter.set_xlim((-2,2))
     axscatter.set_ylim((-2,2))
     axscatter.set_aspect('equal', 'box')
-    cbar = figscatter.colorbar(vals, 
-                            cmap=cmap, norm=norm, 
-                            orientation='horizontal', shrink = 0.6)
-    cbar.set_label('Final cumulative production / Initial cumulative production')
+    # cbar = figscatter.colorbar(vals, 
+    #                         cmap=cmap, norm=norm, 
+    #                         orientation='horizontal', shrink = 0.6)
+    # cbar.set_label('Final cumulative production / Initial cumulative production')
     axscatter.set_title(title+' (N = '+str(len(LR_cal))+')')
     figscatter.tight_layout()
     return figscatter, axscatter
@@ -315,7 +324,7 @@ def plotPercentiles(centered, pct,
     ax1.plot(\
         [10**x for x in centered],10**pct[:,4], 
         color=color, lw=2, zorder=-2)
-    for r in range(2,-1,-1):
+    for r in range(2,0,-1):
         ax1.fill_between(\
             [10**x for x in centered], 
             10**pct[:,1+r], 10**pct[:,-r-1], 
@@ -452,8 +461,8 @@ def plotForecastErrorGrid(fErrsTech, fErrsAvg, Ranges,
                        color='k', alpha=0.3)
     axes1.fill_between([-.5,1.5],[0.05,0.05],[0.95,0.95], 
                        color='k', alpha=0.3)
-    axes1.fill_between([-.5,1.5],[0,0],[1.0,1.0], 
-                       color='k', alpha=0.1)
+    # axes1.fill_between([-.5,1.5],[0,0],[1.0,1.0], 
+    #                    color='k', alpha=0.1)
     axes1.plot([1.5,2,2,1.5],[0.25,0.25,0.75,0.75], color='k',
                linestyle='--',lw=0.5)
     axes1.plot([1.5,4,4,1.5],[0.05,0.05,0.95,0.95], color='k',
@@ -496,14 +505,20 @@ def plotForecastErrorGrid(fErrsTech, fErrsAvg, Ranges,
     return fig, ax
 
 def plotSlopeErrorGrid(fSlErrTech, fSlErrAvg, 
-                        trForOrds, Ranges):
+                        trForOrds, Ranges, vert=False):
     
     dim = int(len(trForOrds)**0.5)
 
     # create figure
     fig, ax = plt.subplots(dim, dim, sharex=True, sharey=True, figsize=(12,7))
 
-    xlim = [0,0]
+    lim = [0,0]
+
+    if vert==True:
+        positions = [1, 5]
+    else:
+        positions = [5, 1]
+
     for tf in trForOrds:
         
         # prepare axes
@@ -528,43 +543,56 @@ def plotSlopeErrorGrid(fSlErrTech, fSlErrAvg,
                             log = False)
 
         # plot boxplots and errorbars for 90% probability interval
-        ax_.bxp([statsTech[0]], positions = [3],
+        ax_.bxp([statsTech[0]], positions = [positions[0]],
                 widths = 1, showfliers=False,
                 boxprops=dict(color=cmapp(0.7), lw=2),
                 manage_ticks=False,
-                vert=False)
-        ax_.bxp([statsAvg[0]], positions = [1],
+                vert=vert)
+        ax_.bxp([statsAvg[0]], positions = [positions[1]],
                 widths = 1, showfliers=False,
                 boxprops=dict(color=cmapg(0.7), lw=2),
                 manage_ticks=False,
-                vert=False)
+                vert=vert)
         
-        ax_.errorbar(pctTech[1], 3, 0.5, c=cmapp(0.7))
-        ax_.errorbar(pctTech[5], 3, 0.5, c=cmapp(0.7))
-        ax_.errorbar(pctAvg[1], 1, 0.5, c=cmapg(0.7))
-        ax_.errorbar(pctAvg[5], 1, 0.5, c=cmapg(0.7))
-        ax_.plot([0,0],[-2,5], color='k', zorder=-10, alpha=0.25)
-        ax_.set_ylim(0,4)
-        ax_.set_yticks([1,3],['Average slope','Technology-specific'])
+        if vert == False:
+            ax_.errorbar(pctTech[1], positions[0], 0.5, c=cmapp(0.7))
+            ax_.errorbar(pctTech[5], positions[0], 0.5, c=cmapp(0.7))
+            ax_.errorbar(pctAvg[1], positions[1], 0.5, c=cmapg(0.7))
+            ax_.errorbar(pctAvg[5], positions[1], 0.5, c=cmapg(0.7))
+            ax_.plot([0,0],[-2,7], color='k', zorder=-10, alpha=0.25)
+            ax_.set_ylim(-1,7)
+            ax_.set_yticks([positions[0],positions[1]],['Technology-specific','Average slope'])
 
-        xlim[0] = min(ax_.get_xlim()[0], xlim[0])
-        xlim[1] = max(ax_.get_xlim()[1], xlim[1])
+            lim[0] = min(ax_.get_xlim()[0], lim[0])
+            lim[1] = max(ax_.get_xlim()[1], lim[1])
 
-        labs = ax_.get_yticklabels()
+            labs = ax_.get_yticklabels()
+        else:
+            ax_.errorbar(positions[0], pctTech[1], xerr=0.5, c=cmapp(0.7))
+            ax_.errorbar(positions[0], pctTech[5], xerr=0.5, c=cmapp(0.7))
+            ax_.errorbar(positions[1], pctAvg[1], xerr=0.5, c=cmapg(0.7))
+            ax_.errorbar(positions[1], pctAvg[5], xerr=0.5, c=cmapg(0.7))
+            ax_.plot([-2,7], [0,0], color='k', zorder=-10, alpha=0.25)
+            ax_.set_xlim(-1,7)
+            ax_.set_xticks([positions[0],positions[1]],['Technology-specific','Average slope'])
+
+            lim[0] = min(ax_.get_ylim()[0], lim[0])
+            lim[1] = max(ax_.get_ylim()[1], lim[1])
+
+            labs = ax_.get_xticklabels()
         if labs:
-            print(labs)
-            print(labs[0])
-            print(labs[1])
-
             labs[1].set_color(cmapp(0.7))
             labs[0].set_color(cmapg(0.7)) 
 
-    xlim[0] = min(xlim[0], -xlim[1])
-    xlim[1] = max(xlim[1], -xlim[0])
-    for ax_ in ax:
-        for ax__ in ax_:
-            ax__.set_xlim(xlim)
-
+        lim[0] = min(lim[0], -lim[1])
+        lim[1] = max(lim[1], -lim[0])
+        for ax_ in ax:
+            for ax__ in ax_:
+                if vert == False:
+                    ax__.set_xlim(lim)
+                else:
+                    ax__.set_ylim(lim)
+        
     ax[0][0].annotate('Learning rate error (Actual-Predicted) [%]',
                       xy = (0.5,0.05), xycoords='figure fraction',
                         ha='center', va='center')

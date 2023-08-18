@@ -97,6 +97,8 @@ fig, ax = plottingFunctions.plotForecastErrorGrid(fErrsTech, fErrsAvg,
 #              [2, 2]]
 fig, ax = plottingFunctions.plotSlopeErrorGrid(fSlErrTech, fSlErrAvg, 
                                                trForOrds, Ranges)
+fig, ax = plottingFunctions.plotSlopeErrorGrid(fSlErrTech, fSlErrAvg, 
+                                               trForOrds, Ranges, vert=True)
 plt.show()
 exit()
 # Figure 3: summary boxplots

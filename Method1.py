@@ -32,15 +32,6 @@ LR_cal, LR_val, slopesall, \
     slopeErr, slopeErr2 = \
         analysisFunctions.computeRegPredError(df, fraction, points)
 
-import seaborn
-fig, ax = plt.subplots(2,1, sharex=True, sharey=True)
-seaborn.boxplot(slopeErr, ax=ax[0], color='purple', orient='h')
-seaborn.boxplot(slopeErr2, ax=ax[1], color='green', orient='h')
-print(sum(np.abs(slopeErr)))
-print(sum(np.abs(slopeErr2)))
-# ax.set_xlim(-3,3)
-plt.show()
-
 print("Average Wright's exponent: ",np.mean(slopesall), 
     "\nAverage percentage cost reduction" + \
         " per doubling of cumulative production: ", 

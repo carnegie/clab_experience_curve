@@ -33,6 +33,9 @@ analysisFunctions.performTPairedTest(errpred, errpred2)
 
 analysisFunctions.performWilcoxonSignedRankTest(errpred, errpred2)
 
+analysisFunctions.performTPairedTest(slopeErrTech, slopeErrAvg)
+
+analysisFunctions.performWilcoxonSignedRankTest(slopeErrTech, slopeErrAvg)
 
 # t, t1, t2, z, z1, z2 = analysisFunctions.performMonteCarloTests(errpred, errpred2)
 
@@ -41,8 +44,8 @@ analysisFunctions.performWilcoxonSignedRankTest(errpred, errpred2)
 
 
 # repeat the analysis with changing forecast and training horizon
-trOrds = [0.5,1,2]
-forOrds = [0.5,1,2]
+trOrds = [0.5,1]
+forOrds = [0.5,1]
 for tOrd in trOrds:
     for fOrd in forOrds:
 
@@ -54,19 +57,30 @@ for tOrd in trOrds:
         columns = ['Forecast horizon', 'Error', 'Tech']
         dferrTech = pd.DataFrame(dferrTech, columns = columns)
         dferrAvg = pd.DataFrame(dferrAvg, columns=columns)
+        slopeErrTech = pd.DataFrame(slopeErrTech, columns = columns)
+        slopeErrAvg = pd.DataFrame(slopeErrAvg, columns=columns)
         
         errpred = []
         errpred2 = []
+        slopeErrTech_ = []
+        slopeErrAvg_ = []    
         for tech in dferrTech['Tech'].unique():
             errpred.append(dferrTech.loc[dferrTech['Tech']==tech, 'Error'].values)
             errpred2.append(dferrAvg.loc[dferrAvg['Tech']==tech, 'Error'].values)
-        
+            slopeErrTech_.append(slopeErrTech.loc[slopeErrTech['Tech']==tech, 'Error'].values)
+            slopeErrAvg_.append(slopeErrAvg.loc[slopeErrAvg['Tech']==tech, 'Error'].values)
+
         print('\n\n\n')
         print(tOrd, fOrd)
 
         analysisFunctions.performTPairedTest(errpred, errpred2)
 
         analysisFunctions.performWilcoxonSignedRankTest(errpred, errpred2)
+
+        analysisFunctions.performTPairedTest(slopeErrTech_, slopeErrAvg_)
+
+        analysisFunctions.performWilcoxonSignedRankTest(slopeErrTech_, slopeErrAvg_)
+
 
         # t, t1, t2, z, z1, z2 = analysisFunctions.performMonteCarloTests(errpred, errpred2)
 

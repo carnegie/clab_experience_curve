@@ -469,6 +469,10 @@ def performTPairedTest(errpred, errpred2, verbose=True):
     # compute RMSE and difference in RMSE
     RMSEdiff = []
     for t,a in zip(errpred, errpred2):
+        if not( type(t) == list ):
+            t = [t]
+        if not( type(a) == list ):
+            a = [a]
         e1 = np.mean([x**2 for x in t])**0.5
         e2 = np.mean([x**2 for x in a])**0.5
         # e1 = np.mean([x**2 for x in t])
@@ -497,6 +501,10 @@ def performWilcoxonSignedRankTest(errpred, errpred2, verbose=True):
     # compute RMSE and difference in RMSE
     RMSEdiff = []
     for t,a in zip(errpred, errpred2):
+        if not( type(t) == list ):
+            t = [t]
+        if not( type(a) == list ):
+            a = [a]
         e1 = np.mean([x**2 for x in t])**0.5
         e2 = np.mean([x**2 for x in a])**0.5
         # e1 = np.mean([x**2 for x in t])

@@ -65,10 +65,11 @@ for tech in df['Tech'].unique():
 	s = df.loc[df['Tech']==tech].copy()
 	ax[0].plot(s['Normalized cumulative production'], 
 	 s['Normalized unit cost'],
-	 color=analysisFunctions.sectorsColor[s['Sector'].values[0]],
-	 alpha=1,
+	#  color=analysisFunctions.sectorsColor[s['Sector'].values[0]],
+	 color='k',
+	 alpha=0.7,
 	 marker = 'o',
-	 markersize=0.2,
+	 markersize=0.5,
 	 lw=0.25,
 	 zorder=-s['Normalized cumulative production'].values[-1])
 	last.append(s['Normalized cumulative production'].values[-1])
@@ -95,21 +96,23 @@ for x in last:
 availsy = [
 	[avails[s][x][1] for x in range(len(avails[s])) ] 
 	for s in df['Sector'].unique() ]
-ax[1].stackplot(avail[0],availsy, colors = [analysisFunctions.sectorsColor[s] for s in df['Sector'].unique()])
-ax[1].plot(avail[0],avail[1], 'k', lw=0.5)
+# ax[1].stackplot(avail[0],availsy, colors = [analysisFunctions.sectorsColor[s] for s in df['Sector'].unique()])
+ax[1].plot(avail[0],avail[1], 'k', lw=1)
 ax[0].set_xscale('log', base=10)
 ax[0].set_yscale('log', base=10)
 ax[1].set_xlabel('Normalized cumulative production')
 ax[0].set_ylabel('Normalized unit cost')
 ax[1].set_ylabel('Technologies available')
 
-legend_elements = [
-	matplotlib.lines.Line2D([0],[0],lw=1, 
-			color = analysisFunctions.sectorsColor[sector],
-			label = sector)
-			for sector in df['Sector'].unique() ]
-fig.legend(handles=legend_elements, title='Sector', loc='center right')
-fig.subplots_adjust(right=0.8, top=0.95, bottom=0.1, hspace=0.05)
+# legend_elements = [
+# 	matplotlib.lines.Line2D([0],[0],lw=1, 
+# 			color = analysisFunctions.sectorsColor[sector],
+# 			label = sector)
+# 			for sector in df['Sector'].unique() ]
+# fig.legend(handles=legend_elements, title='Sector', loc='center right')
+# fig.subplots_adjust(right=0.8, top=0.95, bottom=0.1, hspace=0.05)
+fig.subplots_adjust(right=0.9, left=0.1, top=0.95, bottom=0.1, hspace=0.05)
+
 plt.show()
 
 exit()

@@ -179,8 +179,8 @@ def computeRegPredError(df, fraction, points):
         errpred2.append(np.log10(ucpred2[-1][1:]) - \
             np.log10(sel['Unit cost'].values[len(x_cal):]))
         
-        slopeErr1.append(result_val.params[1] - slope)
-        slopeErr2.append(result_val.params[1] - slopeall)
+        slopeErr1.append(result_val.params[1] / slope)
+        slopeErr2.append(result_val.params[1] / slopeall)
 
     return LR_cal, LR_val, slopesall, \
             uc, cpCal, cpVal, \
@@ -228,6 +228,7 @@ def computeErrors(df, trainingOrdMag, forecastOrdMag):
 
     # initialize lists to store results
     trainErr, dferrTech, dferrAvg = [], [], []
+    slopeErrTech, slopeErrAvg = [], []
 
     # iterate over all technologies
     for tech in df['Tech'].unique():
@@ -298,8 +299,26 @@ def computeErrors(df, trainingOrdMag, forecastOrdMag):
                             [x[i+idx] - x[i], error[idx], tech])
                         dferrAvg.append(
                             [x[i+idx] - x[i], error2[idx], tech])
+                        
+                    # compute slope errors and store data
 
-    return trainErr, dferrTech, dferrAvg
+                    # derive linear regression model
+                    model_n = sm.OLS(y[i:M+1], 
+                                     sm.add_constant(x[i:M+1]))
+                    result_n = model_n.fit()
+                    slope_n = result_n.params[1]
+                    slopeErrTech.append(
+                        [forecastOrdMag , 
+                        #  slope_n - slope,
+                         100*(1 - 2**slope_n) - (100*(1 - 2**slope)),
+                           tech])
+                    slopeErrAvg.append(
+                        [forecastOrdMag , 
+                        #  slope_n - slopeall,
+                         100*(1 - 2**slope_n) - (100*(1 - 2**slopeall)), 
+                         tech])
+
+    return trainErr, dferrTech, dferrAvg, slopeErrTech, slopeErrAvg
 
 # built arrays of breaks and centered breaks for forecast errors plot
 def builtBreakCenteredArrays(ordOfMag, npoints, training=False):
@@ -403,7 +422,7 @@ def computePercentilesArray(dferr, breaks,
     return pct, countPoints, countTechs
 
 # compute boxplots statistics for forecast errors
-def computeBoxplots(pct, centered, positions=None):
+def computeBoxplots(pct, centered, positions=None, log=True):
     
     # initialize list to store dicts and labels for dict
     statss = []
@@ -418,7 +437,10 @@ def computeBoxplots(pct, centered, positions=None):
         if positions is None:
             positions = [x for x in range(len(labs))]
         for l in range(len(labs)):
-            stats[labs[l]] = 10**pct[centered.index(x),positions[l]]
+            if log==True:
+                stats[labs[l]] = 10**pct[centered.index(x),positions[l]]
+            else:
+                stats[labs[l]] = pct[centered.index(x),positions[l]]
         statss.append(stats)
 
     return statss
@@ -443,54 +465,62 @@ def dataToPercentilesArray(df, ordOfMag,
     return pct, breaks, centered, \
             countPoints, countTechs, stats
 
-# def computeSlopeErrors(df, fraction, points)
-
-def performTPairedTest(errpred, errpred2):
+def performTPairedTest(errpred, errpred2, verbose=True):
     # compute RMSE and difference in RMSE
     RMSEdiff = []
     for t,a in zip(errpred, errpred2):
         e1 = np.mean([x**2 for x in t])**0.5
         e2 = np.mean([x**2 for x in a])**0.5
+        # e1 = np.mean([x**2 for x in t])
+        # e2 = np.mean([x**2 for x in a])
+        # e1 = np.mean([np.abs(x) for x in t])
+        # e2 = np.mean([np.abs(x) for x in a])
         RMSEdiff.append(e1 - e2)
     RMSEdiff = pd.DataFrame(RMSEdiff, columns=['diff'])
     N = RMSEdiff['diff'].nunique()
 
     # report statistics and p-value
-    print('Paired t-test: null hypothesis ' + \
-          'rejected if value is outside [' + \
-        str(scipy.stats.t.ppf(0.025, N-1).round(3)) + \
-            ',' + str(scipy.stats.t.ppf(0.975, N-1).round(3))+']')
+    if verbose==True:
+        print('Paired t-test: null hypothesis ' + \
+            'rejected if value is outside [' + \
+            str(scipy.stats.t.ppf(0.025, N-1).round(3)) + \
+                ',' + str(scipy.stats.t.ppf(0.975, N-1).round(3))+']')
     mu = np.mean(RMSEdiff['diff'].values)
     std = np.std(RMSEdiff['diff'].values) / (RMSEdiff.shape[0])**0.5
-    print('\t The value is ', mu/std)
-    print('\t The p-value is ', scipy.stats.t.sf(np.abs(mu/std), N-1)*2)
+    if verbose==True:
+        print('\t The value is ', mu/std)
+        print('\t The p-value is ', scipy.stats.t.sf(np.abs(mu/std), N-1)*2)
 
     return mu/std, scipy.stats.t.ppf(0.025, N-1), scipy.stats.t.ppf(0.975, N-1)
 
-def performWilcoxonSignedRankTest(errpred, errpred2):
+def performWilcoxonSignedRankTest(errpred, errpred2, verbose=True):
     # compute RMSE and difference in RMSE
     RMSEdiff = []
     for t,a in zip(errpred, errpred2):
         e1 = np.mean([x**2 for x in t])**0.5
         e2 = np.mean([x**2 for x in a])**0.5
+        # e1 = np.mean([x**2 for x in t])
+        # e2 = np.mean([x**2 for x in a])
+        # e1 = np.mean([np.abs(x) for x in t])
+        # e2 = np.mean([np.abs(x) for x in a])
         RMSEdiff.append(e1 - e2)
     RMSEdiff = pd.DataFrame(RMSEdiff, columns=['diff'])
     N = RMSEdiff['diff'].nunique()
 
     # rank RMSE differences
-    print('Wilcoxon signed rank test: null hypothesis rejected if value is outside [-1.96,1.96]')
+    if verbose==True:
+        print('Wilcoxon signed rank test: null hypothesis'+\
+              ' rejected if value is outside [-1.96,1.96]')
     RMSEdiff['abs'] = np.abs(RMSEdiff['diff'].values)
     RMSEdiff = RMSEdiff.sort_values(by='abs', ascending=True)
     RMSEdiff = RMSEdiff.reset_index()
     Rp, Rm = 0, 0
-    count = 0
     for i in range(RMSEdiff.shape[0]):
         if RMSEdiff['diff'].values[i] > 0:
             Rp += i+1
-            count += 1
         elif RMSEdiff['diff'].values[i] == 0:
-            Rp += 1/2*(i+1)
-            Rm += 1/2*(i+1)
+            Rp += 0#1/2*(i+1)
+            Rm += 0# 1/2*(i+1)
         else:
             Rm += i+1
 
@@ -501,15 +531,15 @@ def performWilcoxonSignedRankTest(errpred, errpred2):
         ## 3) the sum of ranks for the negative difference
         ## 4) the count of times where average slope is better
         ## 5) the total count of technologies
-        print(RMSEdiff['diff'].values[i],
-            '\t',
-            Rp,
-            '\t',
-            Rm,
-            '\t',
-            count, 
-            '\t',
-            i+1)
+        # print(RMSEdiff['diff'].values[i],
+        #     '\t',
+        #     Rp,
+        #     '\t',
+        #     Rm,
+        #     '\t',
+        #     count, 
+        #     '\t',
+        #     i+1)
     # import seaborn as sns
     # import matplotlib.pyplot as plt
     # fig, ax = plt.subplots()
@@ -520,6 +550,38 @@ def performWilcoxonSignedRankTest(errpred, errpred2):
     # compute statistics and report it
     T = min(Rp,Rm)
     z = (T - 1/4*N*(N+1)) / ((1/24*N*(N+1)*(2*N+1))**0.5)
-    print('\tThe value is ', z)
-    print('\t The p-value is ', scipy.stats.norm.sf(np.abs(z))*2)
+    if verbose==True:
+        print('\tThe value is ', z)
+        print('\t The p-value is ', scipy.stats.norm.sf(np.abs(z))*2)
     return z
+
+
+def performMonteCarloTests(errpred, errpred2):
+    t,z = [], []
+    for iter in range(1000):
+        idx = np.random.randint(0, len(errpred), len(errpred))
+        errpred_ =[errpred[x] for x in idx]
+        errpred2_ = [errpred2[x] for x in idx]
+
+        t.append(performTPairedTest(errpred_, errpred2_, 
+                                    verbose=False)[0])
+
+        z.append(performWilcoxonSignedRankTest(errpred_, errpred2_, 
+                                            verbose=False))
+
+    N = len(errpred_)
+
+    # report mean statistics and corresponding p-value
+    print('Paired t-test: null hypothesis ' + \
+          'rejected if value is outside [' + \
+        str(scipy.stats.t.ppf(0.025, N-1).round(3)) + \
+            ',' + str(scipy.stats.t.ppf(0.975, N-1).round(3))+']')
+    print('\t The value is ',np.mean(t))
+    print('\t The p-value is ', scipy.stats.t.sf(np.abs(np.mean(t)), N-1)*2)
+
+    print('Wilcoxon signed rank test: null hypothesis rejected if value is outside [-1.96,1.96]')
+    print('\tThe value is ', np.mean(z))
+    print('\t The p-value is ', scipy.stats.norm.sf(np.abs(np.mean(z)))*2)
+
+    return t, scipy.stats.t.ppf(0.025, N-1).round(3), \
+        scipy.stats.t.ppf(0.975, N-1).round(3), z, -1.96, 1.96

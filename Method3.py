@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
-import scipy, analysisFunctions
+import scipy, analysisFunctions, plottingFunctions
 
 df = pd.read_csv('ExpCurves.csv')
 
@@ -13,7 +13,7 @@ fraction = 1/2
 # or cumulative production interval (False)
 points = True
 # include nuclear technologies (True) or not (False)
-nuclearIncluded = True
+nuclearIncluded = False
 
 if nuclearIncluded == False:
     df = df.loc[~(df['Tech'].str.contains('Nuclear'))]
@@ -25,14 +25,57 @@ sectorTech = [analysisFunctions\
 # compute regression model and predicition errors for each technology
 LR_cal, LR_val, slopesall, \
     uc, cpCal, cpVal, \
-    ucpred, errpred, ucpred2, errpred2 = \
+    ucpred, errpred, ucpred2, errpred2, \
+    slopeErrTech, slopeErrAvg = \
         analysisFunctions.computeRegPredError(df, fraction, points)
 
 analysisFunctions.performTPairedTest(errpred, errpred2)
 
 analysisFunctions.performWilcoxonSignedRankTest(errpred, errpred2)
 
+
+# t, t1, t2, z, z1, z2 = analysisFunctions.performMonteCarloTests(errpred, errpred2)
+
+# plottingFunctions.plotBoxplotPvalues(t, t1, t2, z, z1, z2)
+# plt.show()
+
+
+# repeat the analysis with changing forecast and training horizon
+trOrds = [0.5,1,2]
+forOrds = [0.5,1,2]
+for tOrd in trOrds:
+    for fOrd in forOrds:
+
+        # compute points errors for each training and forecast range 
+        trainErr, dferrTech, dferrAvg, \
+            slopeErrTech, slopeErrAvg = \
+            analysisFunctions.computeErrors(df, tOrd, fOrd)
+
+        columns = ['Forecast horizon', 'Error', 'Tech']
+        dferrTech = pd.DataFrame(dferrTech, columns = columns)
+        dferrAvg = pd.DataFrame(dferrAvg, columns=columns)
+        
+        errpred = []
+        errpred2 = []
+        for tech in dferrTech['Tech'].unique():
+            errpred.append(dferrTech.loc[dferrTech['Tech']==tech, 'Error'].values)
+            errpred2.append(dferrAvg.loc[dferrAvg['Tech']==tech, 'Error'].values)
+        
+        print('\n\n\n')
+        print(tOrd, fOrd)
+
+        analysisFunctions.performTPairedTest(errpred, errpred2)
+
+        analysisFunctions.performWilcoxonSignedRankTest(errpred, errpred2)
+
+        # t, t1, t2, z, z1, z2 = analysisFunctions.performMonteCarloTests(errpred, errpred2)
+
+        # plottingFunctions.plotBoxplotPvalues(t, t1, t2, z, z1, z2)
+
+        plt.show()
+
 exit()
+
 
 method = 'regression'
 

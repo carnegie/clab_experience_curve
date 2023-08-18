@@ -341,15 +341,19 @@ def plotBoxplotsArray(centered, stats, color, ax):
 
 def plotForecastErrorGrid(fErrsTech, fErrsAvg, Ranges, 
                             tfOrds, samplingPoints):
+    
+    dim = int(len(tfOrds)**0.5)
+    print(dim)
+
     # create figure
-    fig, ax = plt.subplots(2,4, sharex='col', sharey=True, figsize=(12,7))
+    fig, ax = plt.subplots(dim,2*dim, sharex='col', sharey=True, figsize=(12,7))
 
     # iterate over order of magnitude of interest
     for tf in tfOrds:
 
         # prepare axes
-        ax1 = ax[int(tfOrds.index(tf)/2)][(2*tfOrds.index(tf))%4]
-        ax2 = ax[int(tfOrds.index(tf)/2)][(2*tfOrds.index(tf))%4+1]
+        ax1 = ax[int(tfOrds.index(tf)/dim)][(2*tfOrds.index(tf))%(2*dim)]
+        ax2 = ax[int(tfOrds.index(tf)/dim)][(2*tfOrds.index(tf))%(2*dim)+1]
 
         # select data
         dferrTech = fErrsTech[Ranges.index(tf)]
@@ -395,8 +399,8 @@ def plotForecastErrorGrid(fErrsTech, fErrsAvg, Ranges,
                      color=cmapg(0.7),
                      ha='left')
 
-    ax[0][0].set_ylabel('Error (Actual/Predicted)')
-    ax[1][0].set_ylabel('Error (Actual/Predicted)')
+    for x in range(dim):
+        ax[x][0].set_ylabel('Error (Actual/Predicted)')
     ax[1][0].annotate('Future cumulative production' +\
                       ' / Current cumulative production',
                       xy=(0.5,0.05),
@@ -417,13 +421,13 @@ def plotForecastErrorGrid(fErrsTech, fErrsAvg, Ranges,
                         rotation=90)
 
     ax[0][0].annotate('$10^{0.5}$',
-                      xy=(0.305,0.925),
-                        xycoords='figure fraction',
+                      xy=(1.1,1.1),
+                        xycoords='axes fraction',
                         ha='center',
                         va='center')
-    ax[0][0].annotate('$10^1$',
-                      xy=(0.695,0.925),
-                        xycoords='figure fraction',
+    ax[0][2].annotate('$10^1$',
+                      xy=(1.1,1.1),
+                        xycoords='axes fraction',
                         ha='center',
                         va='center')
     ax[0][0].annotate('$10^{0.5}$',
@@ -491,7 +495,157 @@ def plotForecastErrorGrid(fErrsTech, fErrsAvg, Ranges,
     fig.subplots_adjust(left=0.125, right=0.875)
     return fig, ax
 
+def plotSlopeErrorGrid(fSlErrTech, fSlErrAvg, 
+                        trForOrds, Ranges):
+    
+    dim = int(len(trForOrds)**0.5)
+
+    # create figure
+    fig, ax = plt.subplots(dim, dim, sharex=True, sharey=True, figsize=(12,7))
+
+    xlim = [0,0]
+    for tf in trForOrds:
         
+        # prepare axes
+        ax_ = ax[int(trForOrds.index(tf)/dim)][trForOrds.index(tf)%dim]
+
+        # select data
+        slopeErrTech = fSlErrTech[Ranges.index(tf)]
+        slopeErrAvg = fSlErrAvg[Ranges.index(tf)]
+
+        # compute percentiles and boxplots stats
+        pctTech = analysisFunctions\
+            .computeTechWeightedPercentiles(slopeErrTech)
+        pctAvg = analysisFunctions\
+            .computeTechWeightedPercentiles(slopeErrAvg)
+        statsTech = analysisFunctions\
+            .computeBoxplots(np.array([[0,*pctTech]]),
+                            [0], positions=[1,3,4,5,7],
+                            log = False)
+        statsAvg = analysisFunctions\
+            .computeBoxplots(np.array([[0,*pctAvg]]),
+                            [0], positions=[1,3,4,5,7],
+                            log = False)
+
+        # plot boxplots and errorbars for 90% probability interval
+        ax_.bxp([statsTech[0]], positions = [3],
+                widths = 1, showfliers=False,
+                boxprops=dict(color=cmapp(0.7), lw=2),
+                manage_ticks=False,
+                vert=False)
+        ax_.bxp([statsAvg[0]], positions = [1],
+                widths = 1, showfliers=False,
+                boxprops=dict(color=cmapg(0.7), lw=2),
+                manage_ticks=False,
+                vert=False)
+        
+        ax_.errorbar(pctTech[1], 3, 0.5, c=cmapp(0.7))
+        ax_.errorbar(pctTech[5], 3, 0.5, c=cmapp(0.7))
+        ax_.errorbar(pctAvg[1], 1, 0.5, c=cmapg(0.7))
+        ax_.errorbar(pctAvg[5], 1, 0.5, c=cmapg(0.7))
+        ax_.plot([0,0],[-2,5], color='k', zorder=-10, alpha=0.25)
+        ax_.set_ylim(0,4)
+        ax_.set_yticks([1,3],['Average slope','Technology-specific'])
+
+        xlim[0] = min(ax_.get_xlim()[0], xlim[0])
+        xlim[1] = max(ax_.get_xlim()[1], xlim[1])
+
+        labs = ax_.get_yticklabels()
+        if labs:
+            print(labs)
+            print(labs[0])
+            print(labs[1])
+
+            labs[1].set_color(cmapp(0.7))
+            labs[0].set_color(cmapg(0.7)) 
+
+    xlim[0] = min(xlim[0], -xlim[1])
+    xlim[1] = max(xlim[1], -xlim[0])
+    for ax_ in ax:
+        for ax__ in ax_:
+            ax__.set_xlim(xlim)
+
+    ax[0][0].annotate('Learning rate error (Actual-Predicted) [%]',
+                      xy = (0.5,0.05), xycoords='figure fraction',
+                        ha='center', va='center')
+    
+    axes1=fig.add_axes([0.85,0.35,0.125,0.3])
+    axes1.plot([1.5,2,2,1.5],[0.25,0.25,0.75,0.75], color='k',
+               linestyle='--',lw=0.5)
+    axes1.plot([1.5,4,4,1.5],[0.05,0.05,0.95,0.95], color='k',
+               linestyle='--',lw=0.5)
+
+    axes1.annotate('50%', xy=(3, 0.5), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7,
+                   rotation=90)
+    axes1.annotate('90%', xy=(5, 0.5), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7,
+                   rotation=90)
+    axes1.annotate('Median', xy=(-2.5, 0.5), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7)
+    axes1.annotate('Max', xy=(0.5, 1.1), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7)
+    axes1.annotate('Min', xy=(0.5, -0.1), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7)
+
+    axes1.plot([0,1],[0.5,0.5],'k', lw=1)
+    axes1.plot([0,1,1,0,0],[0.25,0.25,0.75,0.75,0.25], lw=2, color='k')
+    axes1.plot([0,1],[0.5,0.5], lw=2, color='darkorange')
+    axes1.plot([.25,.75],[0,0], color='k', lw=1)
+    axes1.plot([0.25,.75],[1,1], color='k', lw=1)
+    axes1.plot([0.5,0.5],[0,0.25], color='k', lw=1)
+    axes1.plot([0.5,0.5],[0.75,1], color='k', lw=1)
+    axes1.plot([0,1],[0.05,0.05], color='k', lw=1)
+    axes1.plot([0,1],[0.95,0.95], color='k', lw=1)
+
+    axes1.set_xlim(-3.5,5)
+    axes1.set_ylim(-0.5,1.5)
+    axes1.set_xticks([])
+    axes1.set_yticks([])
+    axes1.axis('off')
+
+
+    ax[0][0].annotate('Forecast horizon',
+                      xy=(0.5,0.975),
+                        xycoords='figure fraction',
+                        ha='center',
+                        va='center')
+    ax[0][0].annotate('Training horizon',
+                      xy=(0.025,0.5),
+                        xycoords='figure fraction',
+                        ha='center',
+                        va='center',
+                        rotation=90)
+
+    ax[0][0].annotate('$10^{0.5}$',
+                      xy=(0.5,1.1),
+                        xycoords='axes fraction',
+                        ha='center',
+                        va='center')
+    ax[0][1].annotate('$10^1$',
+                      xy=(0.5,1.1),
+                        xycoords='axes fraction',
+                        ha='center',
+                        va='center')
+    ax[0][0].annotate('$10^{0.5}$',
+                      xy=(-0.45,0.5),
+                        xycoords='axes fraction',
+                        ha='center',
+                        va='center')
+    ax[1][0].annotate('$10^1$',
+                      xy=(-0.45,0.5),
+                        xycoords='axes fraction',
+                        ha='center',
+                        va='center')    
+    
+    fig.subplots_adjust(left=0.2, right=0.8)
+
+    return fig, ax
 
 def plotForecastErrors(dferrTech, dferrAvg,
                        fOrd, samplingPoints,
@@ -822,6 +976,22 @@ def summaryBoxplots(trForOrds, fErrsTech, fErrsAvg, Ranges):
                 xy=(.5, 1.1), xycoords='axes fraction',
                 horizontalalignment='center', verticalalignment='center',
                 )
+
+    return fig, ax
+
+def plotBoxplotPvalues(t, t1, t2, z, z1, z2):
+    
+    fig, ax = plt.subplots(1,2, figsize=(12,5))
+    
+    ax[0].boxplot(t, vert=False, showfliers=False)
+    ax[0].plot([t1,t1],[0.5,1.5], 'r--', lw=1)
+    ax[0].plot([t2,t2],[0.5,1.5], 'r--', lw=1)
+    ax[0].set_title('Paired t-test')
+
+    ax[1].boxplot(z, vert=False, showfliers=False)
+    ax[1].plot([z1,z1], [0.5,1.5], 'r--', lw=1)
+    ax[1].plot([z2,z2], [0.5,1.5], 'r--', lw=1)
+    ax[1].set_title('Wilcoxon signed ranks test')
 
     return fig, ax
 

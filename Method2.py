@@ -67,7 +67,7 @@ for tOrd in trOrds:
         fSlErrTech.append(slopeErrTech)
         fSlErrAvg.append(slopeErrAvg)
         Ranges.append([tOrd, fOrd])
-
+# exit()
 # Figure 2
 trForOrds = [[0.5, 0.5],
              [0.5, 1],
@@ -82,9 +82,8 @@ trForOrds = [[0.5, 0.5],
 #              [2, 0.5],
 #              [2, 1],
 #              [2, 2]]
-fig, ax = plottingFunctions.plotForecastErrorGrid(fErrsTech, fErrsAvg, 
-                                         Ranges, trForOrds, samplingPoints,)
-
+# fig, ax = plottingFunctions.plotForecastErrorGrid(fErrsTech, fErrsAvg, 
+#                                          Ranges, trForOrds, samplingPoints,)
 
 # trForOrds = [[0.5, 0.5],
 #              [0.5, 1],
@@ -95,10 +94,15 @@ fig, ax = plottingFunctions.plotForecastErrorGrid(fErrsTech, fErrsAvg,
 #              [2, 0.5],
 #              [2, 1],
 #              [2, 2]]
-fig, ax = plottingFunctions.plotSlopeErrorGrid(fSlErrTech, fSlErrAvg, 
-                                               trForOrds, Ranges)
-fig, ax = plottingFunctions.plotSlopeErrorGrid(fSlErrTech, fSlErrAvg, 
-                                               trForOrds, Ranges, vert=True)
+fig, ax = plottingFunctions.plotForecastSlopeError(fErrsTech, fErrsAvg, 
+                                                fSlErrTech, fSlErrAvg,
+                                                [1,1], Ranges, 
+                                                samplingPoints, vert=True)
+# fig, ax = plottingFunctions.plotSlopeErrorGrid(fSlErrTech, fSlErrAvg, 
+#                                                trForOrds, Ranges, vert=True)
+fig, ax = plottingFunctions.plotRankTechnologies(fErrsTech, fErrsAvg,
+                                                 fSlErrTech, fSlErrAvg,
+                                                 [1,1], Ranges)
 plt.show()
 exit()
 # Figure 3: summary boxplots

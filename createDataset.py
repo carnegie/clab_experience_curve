@@ -17,7 +17,7 @@ for file in os.listdir(datafolder):
 	# read file and drop nan
 	f = pd.read_csv(datafolder+os.path.sep+file)
 	f = f.dropna()
-	
+
 	# compute cumulative sum of units produce 
 	# and normalize price and cumulative units produced
 	f['Normalized cumulative production'] = f[f.columns[3]] /\
@@ -54,24 +54,51 @@ df_ = df[['Tech','Normalized cumulative production',
 df['Sector'] = [analysisFunctions.sectorsinv[tech] for tech in df['Tech']]
 
 # uncomment for SM figure
-df = df.loc[~(df['Tech'].str.contains('Nuclear'))].copy()
+# df = df.loc[~(df['Tech'].str.contains('Nuclear'))].copy()
+selTechs = ['Wind_Turbine_2_(Germany)', 'Fotovoltaica', 'Photovoltaics_2',
+ 'Onshore_Gas_Pipeline', 'Titanium_Sponge', 'Wind_Electricity', 'Milk_(US)',
+ 'Transistor', 'Primary_Aluminum', 'Photovoltaics_4', 'PolyesterFiber',
+ 'Geothermal_Electricity', 'Solar_Thermal', 'DRAM', 'Ethanol_2',
+ 'Monochrome_Television', 'Polyvinylchloride', 'PolyethyleneLD',
+ 'Solar_Thermal_Electricity', 'Polypropylene', 'Laser_Diode',
+ 'Electric_Power', 'Shotgun_Sanger_DNA_Sequencing',
+ 'Capillary_DNA_Sequencing', 'Paraxylene', 'SCGT', 'Automotive_(US)',
+ 'Photovoltaics', 'Solar_Water_Heaters', 'Wind_Turbine_(Denmark)',
+ 'Corn_(US)', 'PolyethyleneHD', 'Hard_Disk_Drive', 'Low_Density_Polyethylene',
+ 'Primary_Magnesium', 'Ethylene' ,'Wheat_(US)', 'Offshore_Gas_Pipeline',
+ 'Ethanol_(Brazil)', 'Wind_Power', 'Polystyrene', 'Beer_(Japan)']
+selTechs = ['Wind_Turbine_2_(Germany)', 'Fotovoltaica', 'Photovoltaics_2',
+ 'Titanium_Sponge', 'Wind_Electricity', 'Transistor', 'Photovoltaics_4',
+ 'DRAM', 'Ethanol_2', 'Monochrome_Television', 'Laser_Diode',
+ 'Capillary_DNA_Sequencing', 'Photovoltaics', 'Solar_Water_Heaters',
+ 'Wind_Turbine_(Denmark)', 'Hard_Disk_Drive', 'Primary_Magnesium',
+ 'Wheat_(US)', 'Wind_Power', 'Polystyrene']
+# df = df.loc[df['Tech'].isin(selTechs)]
 
 # plot normalized cost and cumulative production by sector
 fig, ax = plt.subplots(2,1, sharex=True, 
-		       height_ratios=[1,0.2],
+		       height_ratios=[1,0.4],
 			   figsize = (9,8))
 last = []
 for tech in df['Tech'].unique():
 	s = df.loc[df['Tech']==tech].copy()
+	if tech in selTechs:
+		color = 'C4'
+		alpha=0.8
+		zorder = 0
+	else:
+		color = 'C9'
+		alpha = 0.8
+		zorder = -s['Normalized cumulative production'].values[-1]
 	ax[0].plot(s['Normalized cumulative production'], 
 	 s['Normalized unit cost'],
 	#  color=analysisFunctions.sectorsColor[s['Sector'].values[0]],
-	 color='k',
-	 alpha=0.7,
+	 color=color,
+	 alpha=alpha,
 	 marker = 'o',
 	 markersize=0.5,
 	 lw=0.25,
-	 zorder=-s['Normalized cumulative production'].values[-1])
+	 zorder=zorder)
 	last.append(s['Normalized cumulative production'].values[-1])
 last.sort()
 # create total technologies availabilities
@@ -81,21 +108,38 @@ for x in last:
 avail = np.array(avail).transpose()
 # create sectoral availabilities
 avails = {}
-for sector in df['Sector'].unique():
-	avails[sector] = [
-		[1, df.loc[df['Sector']==sector, 'Tech'].nunique()]
-					]
+# for sector in df['Sector'].unique():
+# 	avails[sector] = [
+# 		[1, df.loc[df['Sector']==sector, 'Tech'].nunique()]
+# 					]
+# for x in last:
+# 	s = df.loc[
+# 		df['Normalized cumulative production']==x,'Sector'].values[0]
+# 	for ss in df['Sector'].unique():
+# 		if s == ss:
+# 			avails[ss].append([x, avails[ss][-1][1] - 1])
+# 		else:
+# 			avails[ss].append([x, avails[ss][-1][1]])
+avails['sel'] = [[1, len(selTechs)]]
 for x in last:
 	s = df.loc[
-		df['Normalized cumulative production']==x,'Sector'].values[0]
-	for ss in df['Sector'].unique():
-		if s == ss:
-			avails[ss].append([x, avails[ss][-1][1] - 1])
-		else:
-			avails[ss].append([x, avails[ss][-1][1]])
+		df['Normalized cumulative production']==x,'Tech'].values[0]
+	if s in selTechs:
+		avails['sel'].append([x, avails['sel'][-1][1] - 1])
+	else:
+		avails['sel'].append([x, avails['sel'][-1][1]])
+avails['nonsel'] = [[1, df['Tech'].nunique() - len(selTechs)]]
+for x in last:
+	s = df.loc[
+		df['Normalized cumulative production']==x,'Tech'].values[0]
+	if s in selTechs:
+		avails['nonsel'].append([x, avails['nonsel'][-1][1]])
+	else:
+		avails['nonsel'].append([x, avails['nonsel'][-1][1] - 1])			
 availsy = [
 	[avails[s][x][1] for x in range(len(avails[s])) ] 
-	for s in df['Sector'].unique() ]
+	for s in ['sel','nonsel'] ]
+ax[1].stackplot(avail[0],availsy, colors = ['C4','C9'])
 # ax[1].stackplot(avail[0],availsy, colors = [analysisFunctions.sectorsColor[s] for s in df['Sector'].unique()])
 ax[1].plot(avail[0],avail[1], 'k', lw=1)
 ax[0].set_xscale('log', base=10)
@@ -103,7 +147,30 @@ ax[0].set_yscale('log', base=10)
 ax[1].set_xlabel('Normalized cumulative production')
 ax[0].set_ylabel('Normalized unit cost')
 ax[1].set_ylabel('Technologies available')
-
+# ax[1].annotate('Selected technologies (20) are required to have at least one point that:'+\
+# 	       '\n\t - is preceded by points for at least one order of magnitude of cumulative production'+\
+# 			'\n\t - is followed by points for at least one order of magnitude or cumulative production',
+# 			xy=(200,30),
+# 			xycoords='data',
+# 			ha='left',
+# 			va='bottom',
+# 			color='C4')
+# ax[1].annotate('Selected technologies',
+# 			xy=(10**6,10),
+# 			xycoords='data',
+# 			ha='center',
+# 			va='center',
+# 			color='C4',
+# 			fontsize=11
+# 			)
+ax[0].annotate('Selected technologies',
+			xy=(10**6,0.5),
+			xycoords='data',
+			ha='center',
+			va='center',
+			color='C4',
+			fontsize=11
+			)
 # legend_elements = [
 # 	matplotlib.lines.Line2D([0],[0],lw=1, 
 # 			color = analysisFunctions.sectorsColor[sector],

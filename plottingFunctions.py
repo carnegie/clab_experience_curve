@@ -5,34 +5,39 @@ import statsmodels.api as sm
 import matplotlib, cmcrameri
 import analysisFunctions
 
-# set color to be used to represent tech-specific slope
+sns.color_palette('colorblind')
+# # set color to be used to represent tech-specific slope
 cmapp = matplotlib.colormaps['Purples']
-# set color to be used to represent average slope
+cmapp = '#750FFA'
+cmapp = 'C0'
+# # set color to be used to represent average slope
 cmapg = matplotlib.colormaps['Greens']
-
+cmapg = '#057825'
+# cmapg = 'C2'
 
 # produce scatter figure with R2 values for 
 # early slope and late slope
-def scatterFigure(LR_cal, LR_val, length, title):
+def scatterFigure(LR_cal, LR_val, selected=None, title=None):
 
-    length = 10**np.array(length)
-    cmap = cmcrameri.cm.batlow
-    norm = matplotlib.colors.LogNorm(vmin=min(length), vmax=max(length))
     # create figure and plot iteratively
     figscatter , axscatter = plt.subplots(figsize=(8,7))
-    vals = axscatter.scatter(LR_cal, LR_val, c=length,
-                      norm = norm,
-                      cmap = cmap,
-                      alpha = 0.7,
-                      lw = 0.2,
-                      s = 50,
-                      edgecolor='k')
+    colors = ['C9' for x in range(len(LR_cal))]
+    print(selected)
+    for x in selected:
+        colors[x] = 'C4'
+    # vals = axscatter.scatter(LR_cal, LR_val,
+    #                 #   norm = norm,
+    #                 #   cmap = cmap,
+    #                   alpha = 0.7,
+    #                   lw = 0.2,
+    #                   s = 50,
+    #                   edgecolor='k')
     
-    vals = axscatter.scatter(LR_cal, LR_val, 
+    vals = axscatter.scatter(LR_cal, LR_val,  c=colors,
                     #   c=length,
                     #   norm = norm,
                     #   cmap = cmap,
-                    #   alpha = 0.7,
+                      alpha = 0.8,
                       lw = 0.2,
                       s = 50,
                       edgecolor='k')
@@ -44,7 +49,29 @@ def scatterFigure(LR_cal, LR_val, length, title):
         # axscatter.annotate('N = ' + str(len(LR_cal)),
         #         (-1.5,1))
         print('Explained variance (R2) = ',result.rsquared)
-    
+
+    # compute R2
+    if len(LR_cal) > 2:
+        model = sm.OLS([LR_val[i] for i in selected], 
+                       sm.add_constant([LR_cal[i] for i in selected]))
+        result = model.fit()
+        # axscatter.annotate('N = ' + str(len(LR_cal)),
+        #         (-1.5,1))
+        print('Explained variance (R2) for selected techs = ',result.rsquared)
+
+
+    axscatter.annotate('Selected technologies',
+                       (1,-0.2),
+                       ha='center',
+                       va='center',
+                       color='C4',
+                       fontsize=11)
+    # axscatter.annotate('Non selected technologies',
+    #                    (1.2,-0.4),
+    #                    ha='center',
+    #                    va='center',
+    #                    color='C9')
+
     # plotting graphics
     axscatter.plot([0,0],[-3,3], color='k', alpha=0.8, lw=0.2, zorder=-30)
     axscatter.plot([-3,3],[0,0], color='k', alpha=0.8, lw=0.2, zorder=-30)
@@ -345,6 +372,7 @@ def plotBoxplotsArray(centered, stats, color, ax):
         ax.bxp([stats[idx]], positions = [10**centered[idx]], 
                 widths = (10**centered[idx])/12,
                 showfliers=False, boxprops=dict(color=color, lw=2), 
+                medianprops=dict(color='#931621', lw=2, zorder=-1),
                 manage_ticks=False)
 
 
@@ -381,13 +409,13 @@ def plotForecastErrorGrid(fErrsTech, fErrsAvg, Ranges,
                                         tf[1], samplingPoints)
         
         plotPercentiles(forecastIntAxis, pctTech,
-                          color = cmapp(0.7), ax1 = ax1)
+                          color = cmapp, ax1 = ax1)
         plotPercentiles(forecastIntAxis, pctAvg,
-                          color = cmapg(0.7), ax1 = ax2)
+                          color = cmapg, ax1 = ax2)
         plotBoxplotsArray(forecastIntAxis[1:-1], statsTech[1:-1], 
-                        color = cmapp(0.7), ax = ax1)
+                        color = cmapp, ax = ax1)
         plotBoxplotsArray(forecastIntAxis[1:-1], statsAvg[1:-1], 
-                        color = cmapg(0.7), ax = ax2)
+                        color = cmapg, ax = ax2)
 
         ax1.plot([1,1e10],[1,1],'k', zorder=-10)
         ax2.plot([1,1e10],[1,1],'k', zorder=-10)
@@ -401,15 +429,15 @@ def plotForecastErrorGrid(fErrsTech, fErrsAvg, Ranges,
         ax2.set_xlim(10**0, 10**tf[1])
         ax1.annotate('Technology-specific', 
                      xy=(1.1, 6), 
-                     color=cmapp(0.7),
+                     color=cmapp,
                      ha='left')
         ax2.annotate('Average slope', 
                      xy=(1.1, 6), 
-                     color=cmapg(0.7),
+                     color=cmapg,
                      ha='left')
 
     for x in range(dim):
-        ax[x][0].set_ylabel('Error (Actual/Predicted)')
+        ax[x][0].set_ylabel('Unit cost error (actual/predicted)')
     ax[1][0].annotate('Future cumulative production' +\
                       ' / Current cumulative production',
                       xy=(0.5,0.05),
@@ -450,17 +478,22 @@ def plotForecastErrorGrid(fErrsTech, fErrsAvg, Ranges,
                         ha='center',
                         va='center')
     
-    ax[0][2].minorticks_off()
-    ax[0][3].minorticks_off()
-    ax[1][2].minorticks_off()
-    ax[1][3].minorticks_off()
+    # ax[0][2].minorticks_off()
+    # ax[0][3].minorticks_off()
+    # ax[1][2].minorticks_off()
+    # ax[1][3].minorticks_off()
+
+    # ax[0][2].xminortickslabels([1,10],ax[0][2].get_xticklabels()[[0,-1]])
+    # ax[0][3].xminortickslabels([1,10],ax[0][2].get_xticklabels()[[0,-1]])
+    ax[1][2].xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    ax[1][3].xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
     
     axes1=fig.add_axes([0.9,0.35,0.08,0.3])
-    axes1.plot([-0.5,1.5],[0.5,0.5],'k', lw=2)
+    axes1.plot([-0.5,1.5],[0.5,0.5],'k', lw=2, zorder=-2)
     axes1.fill_between([-0.5,1.5],[0.25,0.25],[0.75,0.75], 
-                       color='k', alpha=0.3)
+                       color='k', alpha=0.3, zorder=-10)
     axes1.fill_between([-.5,1.5],[0.05,0.05],[0.95,0.95], 
-                       color='k', alpha=0.3)
+                       color='k', alpha=0.3, zorder=-10)
     # axes1.fill_between([-.5,1.5],[0,0],[1.0,1.0], 
     #                    color='k', alpha=0.1)
     axes1.plot([1.5,2,2,1.5],[0.25,0.25,0.75,0.75], color='k',
@@ -486,9 +519,9 @@ def plotForecastErrorGrid(fErrsTech, fErrsAvg, Ranges,
                    xycoords='data', ha='center', 
                    va='center', fontsize=7)
 
-    axes1.plot([0,1],[0.5,0.5],'k', lw=1)
+    # axes1.plot([0,1],[0.5,0.5],'k', lw=1)
     axes1.plot([0,1,1,0,0],[0.25,0.25,0.75,0.75,0.25], lw=2, color='k')
-    axes1.plot([0,1],[0.5,0.5], lw=2, color='darkorange')
+    axes1.plot([0,1],[0.5,0.5], lw=2, color='#931621', zorder=-1)
     axes1.plot([0,1],[0,0], color='k', lw=1)
     axes1.plot([0,1],[1,1], color='k', lw=1)
     axes1.plot([0.5,0.5],[0,0.25], color='k', lw=1)
@@ -545,20 +578,38 @@ def plotSlopeErrorGrid(fSlErrTech, fSlErrAvg,
         # plot boxplots and errorbars for 90% probability interval
         ax_.bxp([statsTech[0]], positions = [positions[0]],
                 widths = 1, showfliers=False,
-                boxprops=dict(color=cmapp(0.7), lw=2),
+                boxprops=dict(color=cmapp, lw=2),
                 manage_ticks=False,
+                medianprops=dict(color='#931621', lw=2, zorder=-1),
                 vert=vert)
         ax_.bxp([statsAvg[0]], positions = [positions[1]],
                 widths = 1, showfliers=False,
-                boxprops=dict(color=cmapg(0.7), lw=2),
+                boxprops=dict(color=cmapg, lw=2),
                 manage_ticks=False,
+                medianprops=dict(color='#931621', lw=2, zorder=-1),
                 vert=vert)
         
         if vert == False:
-            ax_.errorbar(pctTech[1], positions[0], 0.5, c=cmapp(0.7))
-            ax_.errorbar(pctTech[5], positions[0], 0.5, c=cmapp(0.7))
-            ax_.errorbar(pctAvg[1], positions[1], 0.5, c=cmapg(0.7))
-            ax_.errorbar(pctAvg[5], positions[1], 0.5, c=cmapg(0.7))
+            ax_.errorbar(pctTech[1], positions[0], 0.5, c=cmapp)
+            ax_.errorbar(pctTech[5], positions[0], 0.5, c=cmapp)
+            ax_.errorbar(pctAvg[1], positions[1], 0.5, c=cmapg)
+            ax_.errorbar(pctAvg[5], positions[1], 0.5, c=cmapg)
+            ax_.fill_between([pctTech[1],pctTech[5]],
+                             [positions[0]-0.5,positions[0]-0.5], 
+                             [positions[0]+0.5,positions[0]+0.5], 
+                             color=cmapp, alpha=0.1)
+            ax_.fill_between([pctTech[2],pctTech[4]],
+                             [positions[0]-0.5,positions[0]-0.5], 
+                             [positions[0]+0.5,positions[0]+0.5], 
+                             color=cmapp, alpha=0.4)
+            ax_.fill_between([pctAvg[1],pctAvg[5]],
+                             [positions[1]-0.5,positions[1]-0.5], 
+                             [positions[1]+0.5,positions[1]+0.5], 
+                             color=cmapg, alpha=0.1)
+            ax_.fill_between([pctAvg[2],pctAvg[4]],
+                             [positions[1]-0.5,positions[1]-0.5], 
+                             [positions[1]+0.5,positions[1]+0.5], 
+                             color=cmapg, alpha=0.4)
             ax_.plot([0,0],[-2,7], color='k', zorder=-10, alpha=0.25)
             ax_.set_ylim(-1,7)
             ax_.set_yticks([positions[0],positions[1]],['Technology-specific','Average slope'])
@@ -568,10 +619,26 @@ def plotSlopeErrorGrid(fSlErrTech, fSlErrAvg,
 
             labs = ax_.get_yticklabels()
         else:
-            ax_.errorbar(positions[0], pctTech[1], xerr=0.5, c=cmapp(0.7))
-            ax_.errorbar(positions[0], pctTech[5], xerr=0.5, c=cmapp(0.7))
-            ax_.errorbar(positions[1], pctAvg[1], xerr=0.5, c=cmapg(0.7))
-            ax_.errorbar(positions[1], pctAvg[5], xerr=0.5, c=cmapg(0.7))
+            ax_.errorbar(positions[0], pctTech[1], xerr=0.5, c=cmapp)
+            ax_.errorbar(positions[0], pctTech[5], xerr=0.5, c=cmapp)
+            ax_.errorbar(positions[1], pctAvg[1], xerr=0.5, c=cmapg)
+            ax_.errorbar(positions[1], pctAvg[5], xerr=0.5, c=cmapg)
+            ax_.fill_between([positions[0]-0.5,positions[0]+0.5], 
+                             [pctTech[1],pctTech[1]],
+                             [pctTech[5],pctTech[5]],
+                             color=cmapp, alpha=0.1)
+            ax_.fill_between([positions[0]-0.5,positions[0]+0.5], 
+                             [pctTech[2],pctTech[2]],
+                             [pctTech[4],pctTech[4]],
+                             color=cmapp, alpha=0.4)
+            ax_.fill_between([positions[1]-0.5,positions[1]+0.5], 
+                             [pctAvg[1],pctAvg[1]],
+                             [pctAvg[5],pctAvg[5]],
+                             color=cmapg, alpha=0.1)
+            ax_.fill_between([positions[1]-0.5,positions[1]+0.5], 
+                             [pctAvg[2],pctAvg[2]],
+                             [pctAvg[4],pctAvg[4]],
+                             color=cmapg, alpha=0.4)            
             ax_.plot([-2,7], [0,0], color='k', zorder=-10, alpha=0.25)
             ax_.set_xlim(-1,7)
             ax_.set_xticks([positions[0],positions[1]],['Technology-specific','Average slope'])
@@ -581,8 +648,8 @@ def plotSlopeErrorGrid(fSlErrTech, fSlErrAvg,
 
             labs = ax_.get_xticklabels()
         if labs:
-            labs[1].set_color(cmapp(0.7))
-            labs[0].set_color(cmapg(0.7)) 
+            labs[1].set_color(cmapg)
+            labs[0].set_color(cmapp) 
 
         lim[0] = min(lim[0], -lim[1])
         lim[1] = max(lim[1], -lim[0])
@@ -594,7 +661,7 @@ def plotSlopeErrorGrid(fSlErrTech, fSlErrAvg,
                     ax__.set_ylim(lim)
         
     ax[0][0].annotate('Learning rate error (Actual-Predicted) [%]',
-                      xy = (0.5,0.05), xycoords='figure fraction',
+                      xy = (0.5,0.04), xycoords='figure fraction',
                         ha='center', va='center')
     
     axes1=fig.add_axes([0.85,0.35,0.125,0.3])
@@ -621,9 +688,9 @@ def plotSlopeErrorGrid(fSlErrTech, fSlErrAvg,
                    xycoords='data', ha='center', 
                    va='center', fontsize=7)
 
-    axes1.plot([0,1],[0.5,0.5],'k', lw=1)
+    # axes1.plot([0,1],[0.5,0.5],'k', lw=1)
     axes1.plot([0,1,1,0,0],[0.25,0.25,0.75,0.75,0.25], lw=2, color='k')
-    axes1.plot([0,1],[0.5,0.5], lw=2, color='darkorange')
+    axes1.plot([0,1],[0.5,0.5], lw=2, color='#931621', zorder=-1)
     axes1.plot([.25,.75],[0,0], color='k', lw=1)
     axes1.plot([0.25,.75],[1,1], color='k', lw=1)
     axes1.plot([0.5,0.5],[0,0.25], color='k', lw=1)
@@ -675,6 +742,244 @@ def plotSlopeErrorGrid(fSlErrTech, fSlErrAvg,
 
     return fig, ax
 
+def plotForecastSlopeError(fErrsTech, fErrsAvg, 
+                           fSlErrTech, fSlErrAvg,
+                            tf, Ranges, 
+                            samplingPoints, vert=True):
+    # open figure
+    fig, ax = plt.subplots(1,4, width_ratios=[1,1,0.175,1.25], figsize=(12,4))
+
+    # prepare axes
+    ax1 = ax[0]
+    ax2 = ax[1]
+
+    # select data
+    dferrTech = fErrsTech[Ranges.index(tf)]
+    dferrAvg = fErrsAvg[Ranges.index(tf)]
+
+    # get data to be plotted
+    pctTech, _, forecastIntAxis, \
+        _, _, statsTech = \
+            analysisFunctions.\
+                dataToPercentilesArray(dferrTech,
+                                    tf[1], samplingPoints)
+    pctAvg, _, _, \
+        _, _, statsAvg = \
+            analysisFunctions.\
+                dataToPercentilesArray(dferrAvg,
+                                    tf[1], samplingPoints)
+    
+    plotPercentiles(forecastIntAxis, pctTech,
+                        color = cmapp, ax1 = ax1)
+    plotPercentiles(forecastIntAxis, pctAvg,
+                        color = cmapg, ax1 = ax2)
+    plotBoxplotsArray(forecastIntAxis[1:-1], statsTech[1:-1], 
+                    color = cmapp, ax = ax1)
+    plotBoxplotsArray(forecastIntAxis[1:-1], statsAvg[1:-1], 
+                    color = cmapg, ax = ax2)
+
+    ax1.plot([1,1e10],[1,1],'k', zorder=-10)
+    ax2.plot([1,1e10],[1,1],'k', zorder=-10)
+    ax1.set_xscale('log', base=10)
+    ax1.set_yscale('log', base=10)
+    ax2.set_xscale('log', base=10)
+    ax2.set_yscale('log', base=10)
+    ax1.set_ylim(0.1,10)
+    ax2.set_ylim(0.1,10)
+    ax1.set_xlim(10**0, 10**tf[1])
+    ax2.set_xlim(10**0, 10**tf[1])
+    ax1.annotate('Technology-specific', 
+                    xy=(1.1, 6), 
+                    color=cmapp,
+                    ha='left')
+    ax2.annotate('Average slope', 
+                    xy=(1.1, 6), 
+                    color=cmapg,
+                    ha='left')
+
+    ax[0].xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    ax[1].xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    ax[0].set_ylabel('Unit cost error (actual/predicted)')
+    ax[0].annotate('Future cumulative production'+\
+                   ' / Current cumulative production',
+                   (1.1,-.2), ha='center', va='center')
+    
+    ax2.set_yticklabels([])
+
+    lim = [0,0]
+
+    if vert==True:
+        positions = [1, 5]
+    else:
+        positions = [5, 1]
+
+    ax[2].axis('off')
+
+    ax_ = ax[3]
+    # select data
+    slopeErrTech = fSlErrTech[Ranges.index(tf)]
+    slopeErrAvg = fSlErrAvg[Ranges.index(tf)]
+
+    # compute percentiles and boxplots stats
+    pctTech = analysisFunctions\
+        .computeTechWeightedPercentiles(slopeErrTech)
+    pctAvg = analysisFunctions\
+        .computeTechWeightedPercentiles(slopeErrAvg)
+    statsTech = analysisFunctions\
+        .computeBoxplots(np.array([[0,*pctTech]]),
+                        [0], positions=[1,3,4,5,7],
+                        log = False)
+    statsAvg = analysisFunctions\
+        .computeBoxplots(np.array([[0,*pctAvg]]),
+                        [0], positions=[1,3,4,5,7],
+                        log = False)
+
+    # plot boxplots and errorbars for 90% probability interval
+    ax_.bxp([statsTech[0]], positions = [positions[0]],
+            widths = 1, showfliers=False,
+            boxprops=dict(color=cmapp, lw=2),
+            manage_ticks=False,
+            medianprops=dict(color='#931621', lw=2, zorder=-1),
+            vert=vert)
+    ax_.bxp([statsAvg[0]], positions = [positions[1]],
+            widths = 1, showfliers=False,
+            boxprops=dict(color=cmapg, lw=2),
+            manage_ticks=False,
+            medianprops=dict(color='#931621', lw=2, zorder=-1),
+            vert=vert)
+    
+    if vert == False:
+        ax_.errorbar(pctTech[1], positions[0], 0.5, c=cmapp)
+        ax_.errorbar(pctTech[5], positions[0], 0.5, c=cmapp)
+        ax_.errorbar(pctAvg[1], positions[1], 0.5, c=cmapg)
+        ax_.errorbar(pctAvg[5], positions[1], 0.5, c=cmapg)
+        ax_.fill_between([pctTech[1],pctTech[5]],
+                            [positions[0]-0.5,positions[0]-0.5], 
+                            [positions[0]+0.5,positions[0]+0.5], 
+                            color=cmapp, alpha=0.1,
+                            zorder=-2)
+        ax_.fill_between([pctTech[2],pctTech[4]],
+                            [positions[0]-0.5,positions[0]-0.5], 
+                            [positions[0]+0.5,positions[0]+0.5], 
+                            color=cmapp, alpha=0.4,
+                            zorder=-2)
+        ax_.fill_between([pctAvg[1],pctAvg[5]],
+                            [positions[1]-0.5,positions[1]-0.5], 
+                            [positions[1]+0.5,positions[1]+0.5], 
+                            color=cmapg, alpha=0.1,
+                            zorder=-2)
+        ax_.fill_between([pctAvg[2],pctAvg[4]],
+                            [positions[1]-0.5,positions[1]-0.5], 
+                            [positions[1]+0.5,positions[1]+0.5], 
+                            color=cmapg, alpha=0.4,
+                            zorder=-2)
+        ax_.plot([0,0],[-2,7], color='k', zorder=-10, alpha=0.25)
+        ax_.set_ylim(-1,7)
+        ax_.set_yticks([positions[0],positions[1]],['Technology-specific','Average slope'])
+        ax_.set_xlabel('Learning rate error (Actual-Predicted) [%]')
+
+        lim[0] = min(ax_.get_xlim()[0], lim[0])
+        lim[1] = max(ax_.get_xlim()[1], lim[1])
+
+        labs = ax_.get_yticklabels()
+    else:
+        ax_.errorbar(positions[0], pctTech[1], xerr=0.5, c=cmapp)
+        ax_.errorbar(positions[0], pctTech[5], xerr=0.5, c=cmapp)
+        ax_.errorbar(positions[1], pctAvg[1], xerr=0.5, c=cmapg)
+        ax_.errorbar(positions[1], pctAvg[5], xerr=0.5, c=cmapg)
+        ax_.fill_between([positions[0]-0.5,positions[0]+0.5], 
+                            [pctTech[1],pctTech[1]],
+                            [pctTech[5],pctTech[5]],
+                            color=cmapp, alpha=0.1,
+                            zorder=-2)
+        ax_.fill_between([positions[0]-0.5,positions[0]+0.5], 
+                            [pctTech[2],pctTech[2]],
+                            [pctTech[4],pctTech[4]],
+                            color=cmapp, alpha=0.4,
+                            zorder=-2)
+        ax_.fill_between([positions[1]-0.5,positions[1]+0.5], 
+                            [pctAvg[1],pctAvg[1]],
+                            [pctAvg[5],pctAvg[5]],
+                            color=cmapg, alpha=0.1,
+                            zorder=-2)
+        ax_.fill_between([positions[1]-0.5,positions[1]+0.5], 
+                            [pctAvg[2],pctAvg[2]],
+                            [pctAvg[4],pctAvg[4]],
+                            color=cmapg, alpha=0.4,
+                            zorder=-2)            
+        ax_.plot([-2,7], [0,0], color='k', zorder=-10, alpha=0.25)
+        ax_.set_xlim(-1,7)
+        ax_.set_xticks([positions[0],positions[1]],['Technology-specific','Average slope'])
+        ax_.set_ylabel('Learning rate error (Actual-Predicted) [%]')
+        lim[0] = min(ax_.get_ylim()[0], lim[0])
+        lim[1] = max(ax_.get_ylim()[1], lim[1])
+
+        labs = ax_.get_xticklabels()
+    if labs:
+        labs[1].set_color(cmapg)
+        labs[0].set_color(cmapp) 
+
+    lim[0] = min(lim[0], -lim[1])
+    lim[1] = max(lim[1], -lim[0])
+    if vert == False:
+        ax_.set_xlim(lim)
+    else:
+        ax_.set_ylim(lim)
+        
+    # ax[0][0].annotate('Learning rate error (Actual-Predicted) [%]',
+    #                   xy = (0.5,0.04), xycoords='figure fraction',
+    #                     ha='center', va='center')
+
+    axes1=fig.add_axes([0.9,0.25,0.08,0.5])
+    axes1.plot([-0.5,1.5],[0.5,0.5],'k', lw=2, zorder=-2)
+    axes1.fill_between([-0.5,1.5],[0.25,0.25],[0.75,0.75], 
+                       color='k', alpha=0.3, zorder=-10)
+    axes1.fill_between([-.5,1.5],[0.05,0.05],[0.95,0.95], 
+                       color='k', alpha=0.3, zorder=-10)
+    # axes1.fill_between([-.5,1.5],[0,0],[1.0,1.0], 
+    #                    color='k', alpha=0.1)
+    axes1.plot([1.5,2,2,1.5],[0.25,0.25,0.75,0.75], color='k',
+               linestyle='--',lw=0.5)
+    axes1.plot([1.5,4,4,1.5],[0.05,0.05,0.95,0.95], color='k',
+               linestyle='--',lw=0.5)
+
+    axes1.annotate('50%', xy=(3, 0.5), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7,
+                   rotation=90)
+    axes1.annotate('90%', xy=(5, 0.5), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7,
+                   rotation=90)
+    axes1.annotate('Median', xy=(-2.5, 0.5), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7)
+    axes1.annotate('Max', xy=(0.5, 1.1), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7)
+    axes1.annotate('Min', xy=(0.5, -0.1), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7)
+
+    # axes1.plot([0,1],[0.5,0.5],'k', lw=1)
+    axes1.plot([0,1,1,0,0],[0.25,0.25,0.75,0.75,0.25], lw=2, color='k')
+    axes1.plot([0,1],[0.5,0.5], lw=2, color='#931621', zorder=-1)
+    axes1.plot([0,1],[0,0], color='k', lw=1)
+    axes1.plot([0,1],[1,1], color='k', lw=1)
+    axes1.plot([0.5,0.5],[0,0.25], color='k', lw=1)
+    axes1.plot([0.5,0.5],[0.75,1], color='k', lw=1)
+
+    axes1.set_xlim(-3.5,5)
+    axes1.set_ylim(-0.5,1.5)
+    axes1.set_xticks([])
+    axes1.set_yticks([])
+    axes1.axis('off')
+
+    plt.subplots_adjust(bottom=0.1, left=0.075, right=0.875, wspace=0.15)
+
+    return fig, ax
+
+
 def plotForecastErrors(dferrTech, dferrAvg,
                        fOrd, samplingPoints,
                        trainErr = None, tOrd = None,
@@ -720,16 +1025,16 @@ def plotForecastErrors(dferrTech, dferrAvg,
 
     ax2b = plotPercentiles(forecastIntAxis, pctTech,
                           countPointsTech, countTechsTech,
-                          color = cmapp(0.7), ax1 = ax[0], 
+                          color = cmapp, ax1 = ax[0], 
                           ax2 = ax[2], ax2b = ax2b)
     ax2b = plotPercentiles(forecastIntAxis, pctAvg,
                           countPointsTech, countTechsTech,
-                          color = cmapg(0.7), ax1 = ax[1], 
+                          color = cmapg, ax1 = ax[1], 
                           ax2 = ax[2], ax2b = ax2b)
     plotBoxplotsArray(forecastIntAxis[1:-1], statsTech[1:-1], 
-                        color = cmapp(0.7), ax = ax[0])
+                        color = cmapp, ax = ax[0])
     plotBoxplotsArray(forecastIntAxis[1:-1], statsAvg[1:-1], 
-                        color = cmapg(0.7), ax = ax[1])
+                        color = cmapg, ax = ax[1])
     
     ax2b.yaxis.set_major_locator(
         matplotlib.ticker.MaxNLocator(integer=True))
@@ -794,32 +1099,32 @@ def plotForecastErrors(dferrTech, dferrAvg,
             matplotlib.lines.Line2D(\
                 [0], [0], color='b', lw=2, label='Training error'),
             matplotlib.lines.Line2D(\
-                [0], [0], color=cmapp(0.7), lw=2, 
+                [0], [0], color=cmapp, lw=2, 
                 label='Forecast error - Technology-specific'),
             matplotlib.lines.Line2D(\
-                [0], [0], color=cmapg(0.7), lw=2, 
+                [0], [0], color=cmapg, lw=2, 
                 label='Forecast error - Average slope'),
                             ]
         fig.legend(handles=legend_elements, loc='lower center', ncol=3)
     else:
         legend_elements = [
             matplotlib.lines.Line2D(\
-                [0], [0], color=cmapp(0.7), lw=2, 
+                [0], [0], color=cmapp, lw=2, 
                 label='Forecast error - Technology-specific'),
             matplotlib.lines.Line2D(\
-                [0], [0], color=cmapg(0.7), lw=2, 
+                [0], [0], color=cmapg, lw=2, 
                 label='Forecast error - Average slope'),
                             ]
         fig.legend(handles=legend_elements, loc='lower center', ncol=2)      
 
     axes1=fig.add_axes([0.85,0.35,0.125,0.3])
-    axes1.plot([-0.5,1.5],[0.5,0.5],'k', lw=2)
+    axes1.plot([-0.5,1.5],[0.5,0.5],'k', lw=2, zorder=-2)
     axes1.fill_between([-0.5,1.5],[0.25,0.25],[0.75,0.75], 
-                       color='k', alpha=0.3)
+                       color='k', alpha=0.3, zorder=-10)
     axes1.fill_between([-.5,1.5],[0.05,0.05],[0.95,0.95], 
-                       color='k', alpha=0.3)
+                       color='k', alpha=0.2, zorder=-10)
     axes1.fill_between([-.5,1.5],[0,0],[1.0,1.0], 
-                       color='k', alpha=0.1)
+                       color='k', alpha=0.1, zorder=-10)
     axes1.plot([1.5,2,2,1.5],[0.25,0.25,0.75,0.75], color='k',
                linestyle='--',lw=0.5)
     axes1.plot([1.5,4,4,1.5],[0.05,0.05,0.95,0.95], color='k',
@@ -841,9 +1146,9 @@ def plotForecastErrors(dferrTech, dferrAvg,
                    xycoords='data', ha='center', 
                    va='center', fontsize=7)
 
-    axes1.plot([0,1],[0.5,0.5],'k', lw=1)
+    # axes1.plot([0,1],[0.5,0.5],'k', lw=1)
     axes1.plot([0,1,1,0,0],[0.25,0.25,0.75,0.75,0.25], lw=2, color='k')
-    axes1.plot([0,1],[0.5,0.5], lw=2, color='darkorange')
+    axes1.plot([0,1],[0.5,0.5], lw=2, color='#931621', zorder=-1)
     axes1.plot([0,1],[0,0], color='k', lw=1)
     axes1.plot([0,1],[1,1], color='k', lw=1)
     axes1.plot([0.5,0.5],[0,0.25], color='k', lw=1)
@@ -949,15 +1254,17 @@ def summaryBoxplots(trForOrds, fErrsTech, fErrsAvg, Ranges):
                     [statsTech[0]], 
                     positions=[3*counth],
                     showfliers=False,
-                    boxprops=dict(color=cmapp(0.7), lw=2),
+                    boxprops=dict(color=cmapp, lw=2),
                     manage_ticks=False,
+                    medianprops=dict(color='#931621', lw=2, zorder=-1),
                     widths=0.8)
                 ax[countax//dim][countax%dim].bxp(
                     [statsAvg[0]], 
                     positions=[3*counth+1],
                     showfliers=False,
-                    boxprops=dict(color=cmapg(0.7), lw=2),
+                    boxprops=dict(color=cmapg, lw=2),
                     manage_ticks=False,
+                    medianprops=dict(color='#931621', lw=2, zorder=-1),
                     widths=0.8)
 
                     # save xticks

@@ -54,10 +54,10 @@ sectorsColor = {'Energy':'royalblue', 'Chemicals':'black',
                'Hardware':'red', 'Consumer goods':'forestgreen',
                'Food':'cyan', 'Genomics':'darkmagenta'}
 
-cmap = seaborn.color_palette("colorblind")
-sectorsColor = {'Energy': cmap[0], 'Chemicals': cmap[1],
-               'Hardware': cmap[2], 'Consumer goods': cmap[3],
-               'Food': cmap[4], 'Genomics': cmap[8]}
+# cmap = seaborn.color_palette("colorblind")
+# sectorsColor = {'Energy': cmap[0], 'Chemicals': cmap[1],
+#                'Hardware': cmap[2], 'Consumer goods': cmap[3],
+#                'Food': cmap[4], 'Genomics': cmap[8]}
 
 sectorsinv = {v:k for k, vlist in sectors.items() for v in vlist}
 
@@ -283,8 +283,6 @@ def computeErrors(df, trainingOrdMag, forecastOrdMag):
                     # compute forecast error associated 
                     # using slope M points after midpoint
 
-                    #### NEED TO DISCUSS THESE LINES 
-                    
                     # pred =  y[i] + slope * (x[i:M+1] - x[i])
                     
                     pred =  result.predict(sm.add_constant(x[i:M+1]))

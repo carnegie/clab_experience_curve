@@ -29,13 +29,13 @@ LR_cal, LR_val, slopesall, \
     slopeErrTech, slopeErrAvg = \
         analysisFunctions.computeRegPredError(df, fraction, points)
 
-analysisFunctions.performTPairedTest(errpred, errpred2)
+# analysisFunctions.performTPairedTest(errpred, errpred2)
 
-analysisFunctions.performWilcoxonSignedRankTest(errpred, errpred2)
+# analysisFunctions.performWilcoxonSignedRankTest(errpred, errpred2)
 
-analysisFunctions.performTPairedTest(slopeErrTech, slopeErrAvg)
+# analysisFunctions.performTPairedTest(slopeErrTech, slopeErrAvg)
 
-analysisFunctions.performWilcoxonSignedRankTest(slopeErrTech, slopeErrAvg)
+# analysisFunctions.performWilcoxonSignedRankTest(slopeErrTech, slopeErrAvg)
 
 # t, t1, t2, z, z1, z2 = analysisFunctions.performMonteCarloTests(errpred, errpred2)
 
@@ -44,8 +44,9 @@ analysisFunctions.performWilcoxonSignedRankTest(slopeErrTech, slopeErrAvg)
 
 
 # repeat the analysis with changing forecast and training horizon
-trOrds = [0.5,1]
-forOrds = [0.5,1]
+trOrds = [0.5, 1, 2]
+forOrds = [0.5, 1, 2]
+
 for tOrd in trOrds:
     for fOrd in forOrds:
 
@@ -60,6 +61,7 @@ for tOrd in trOrds:
         slopeErrTech = pd.DataFrame(slopeErrTech, columns = columns)
         slopeErrAvg = pd.DataFrame(slopeErrAvg, columns=columns)
         
+
         errpred = []
         errpred2 = []
         slopeErrTech_ = []
@@ -72,6 +74,7 @@ for tOrd in trOrds:
 
         print('\n\n\n')
         print(tOrd, fOrd)
+        print(dferrTech['Tech'].nunique(), ' Techs')
 
         analysisFunctions.performTPairedTest(errpred, errpred2)
 
@@ -85,8 +88,6 @@ for tOrd in trOrds:
         # t, t1, t2, z, z1, z2 = analysisFunctions.performMonteCarloTests(errpred, errpred2)
 
         # plottingFunctions.plotBoxplotPvalues(t, t1, t2, z, z1, z2)
-
-        plt.show()
 
 exit()
 

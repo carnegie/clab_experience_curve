@@ -65,7 +65,7 @@ sectorsinv = {v:k for k, vlist in sectors.items() for v in vlist}
 # split them into calibration and validation datasets
 # according to the options defined in the main script
 def splitData(sel, fraction, points):
-    
+
     # read cumulative production and unit cost
     x = np.log10(sel['Cumulative production'].values)
     y = np.log10(sel['Unit cost'].values)
@@ -150,7 +150,11 @@ def computeRegPredError(df, fraction, points):
         
         # store slopes
         LR_cal.append(result_cal.params[1])
-        LR_val.append(result_val.params[1])
+        if result_val.params.shape[0] == 2:
+            LR_val.append(result_val.params[1])
+        else:
+            LR_val.append(result_val.params[0])
+        # LR_val.append(result_val.params[1])
 
         # append data to lists
         uc.append(10**y)
@@ -179,8 +183,12 @@ def computeRegPredError(df, fraction, points):
         errpred2.append(np.log10(ucpred2[-1][1:]) - \
             np.log10(sel['Unit cost'].values[len(x_cal):]))
         
-        slopeErr1.append(result_val.params[1] / slope)
-        slopeErr2.append(result_val.params[1] / slopeall)
+        if result_val.params.shape[0] == 2:
+            slopeErr1.append(result_val.params[1] / slope)
+            slopeErr2.append(result_val.params[1] / slopeall)
+        else:
+            slopeErr1.append(result_val.params[0] / slope)
+            slopeErr2.append(result_val.params[0] / slopeall)
 
     return LR_cal, LR_val, slopesall, \
             uc, cpCal, cpVal, \

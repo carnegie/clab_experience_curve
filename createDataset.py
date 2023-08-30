@@ -180,6 +180,60 @@ ax[0].annotate('Selected technologies',
 # fig.subplots_adjust(right=0.8, top=0.95, bottom=0.1, hspace=0.05)
 fig.subplots_adjust(right=0.9, left=0.1, top=0.95, bottom=0.1, hspace=0.05)
 
+
+cmap = seaborn.color_palette("colorblind")
+sectorsColor = {'Energy': cmap[0], 'Chemicals': cmap[1],
+               'Hardware': cmap[2], 'Consumer goods': cmap[3],
+               'Food': cmap[4], 'Genomics': cmap[8]}
+
+plt.figure(figsize=(9,7.5))
+for tech in df['Tech'].unique():
+	plt.plot(df.loc[df['Tech']==tech,'Cumulative production'],
+			df.loc[df['Tech']==tech,'Unit cost'],
+			alpha=0.75,
+			lw=0.5,
+			marker='o',
+			markersize=0.5,
+			color=sectorsColor[df.loc[df['Tech']==tech,'Sector'].values[0]])
+plt.xscale('log', base=10)
+plt.yscale('log', base=10)
+plt.xlabel('Cumulative production')
+plt.ylabel('Unit cost')
+legend_elements = [matplotlib.lines.Line2D([0],[0],lw=0.5, marker='o', 
+			 color=sectorsColor['Energy'], label='Energy',
+			 markersize=2.5),
+			 matplotlib.lines.Line2D([0],[0],lw=0.5, marker='o',
+			 color=sectorsColor['Chemicals'], label='Chemicals',
+			 markersize=2.5),
+			 matplotlib.lines.Line2D([0],[0],lw=0.5, marker='o',
+			 color=sectorsColor['Hardware'], label='Hardware',
+			 markersize=2.5),
+			 matplotlib.lines.Line2D([0],[0],lw=0.5, marker='o',
+			 color=sectorsColor['Consumer goods'], label='Consumer goods',
+			 markersize=2.5),
+			 matplotlib.lines.Line2D([0],[0],lw=0.5, marker='o',
+			 color=sectorsColor['Food'], label='Food',
+			 markersize=2.5),
+			 matplotlib.lines.Line2D([0],[0],lw=0.5, marker='o',
+			 color=sectorsColor['Genomics'], label='Genomics',
+			 markersize=2.5),]
+plt.gcf().legend(handles=legend_elements, title='Sectors', ncol=2, loc='lower center')
+plt.subplots_adjust(bottom=0.2)
+plt.figure(figsize=(9,7.5))
+for tech in df['Tech'].unique():
+	plt.plot(df.loc[df['Tech']==tech,'Year'],
+			df.loc[df['Tech']==tech,'Unit cost'],
+			alpha=0.75,
+			lw=0.5,
+			marker='o',
+			markersize=0.5,
+			color=sectorsColor[df.loc[df['Tech']==tech,'Sector'].values[0]])
+# plt.xscale('log', base=10)
+plt.yscale('log', base=10)
+plt.xlabel('Cumulative production')
+plt.ylabel('Unit cost')
+plt.gcf().legend(handles=legend_elements, title='Sectors', ncol=2, loc='lower center')
+plt.subplots_adjust(bottom=0.2)
 plt.show()
 
 exit()

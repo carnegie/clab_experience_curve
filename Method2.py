@@ -69,22 +69,23 @@ for tOrd in trOrds:
         Ranges.append([tOrd, fOrd])
 # exit()
 # Figure 2
-trForOrds = [[0.5, 0.5],
-             [0.5, 1],
-             [1, 0.5],
-             [1, 1] ]
 # trForOrds = [[0.5, 0.5],
 #              [0.5, 1],
-#              [0.5, 2],
 #              [1, 0.5],
-#              [1, 1] ,
-#              [1, 2],
-#              [2, 0.5],
-#              [2, 1],
-#              [2, 2]]
-# fig, ax = plottingFunctions.plotForecastErrorGrid(fErrsTech, fErrsAvg, 
-#                                          Ranges, trForOrds, samplingPoints,)
-
+            #  [1, 1] ]
+trForOrds = [[0.5, 0.5],
+             [0.5, 1],
+             [0.5, 2],
+             [1, 0.5],
+             [1, 1] ,
+             [1, 2],
+             [2, 0.5],
+             [2, 1],
+             [2, 2]]
+fig, ax = plottingFunctions.plotForecastErrorGrid(fErrsTech, fErrsAvg, 
+                                         Ranges, trForOrds, samplingPoints,)
+plt.show()
+exit()
 # trForOrds = [[0.5, 0.5],
 #              [0.5, 1],
 #              [0.5, 2],

@@ -11,18 +11,6 @@ seaborn.set_palette('colorblind')
 df = pd.read_csv('ExpCurves.csv')
 
 selTechs = ['Wind_Turbine_2_(Germany)', 'Fotovoltaica', 'Photovoltaics_2',
- 'Onshore_Gas_Pipeline', 'Titanium_Sponge', 'Wind_Electricity', 'Milk_(US)',
- 'Transistor', 'Primary_Aluminum', 'Photovoltaics_4', 'PolyesterFiber',
- 'Geothermal_Electricity', 'Solar_Thermal', 'DRAM', 'Ethanol_2',
- 'Monochrome_Television', 'Polyvinylchloride', 'PolyethyleneLD',
- 'Solar_Thermal_Electricity', 'Polypropylene', 'Laser_Diode',
- 'Electric_Power', 'Shotgun_Sanger_DNA_Sequencing',
- 'Capillary_DNA_Sequencing', 'Paraxylene', 'SCGT', 'Automotive_(US)',
- 'Photovoltaics', 'Solar_Water_Heaters', 'Wind_Turbine_(Denmark)',
- 'Corn_(US)', 'PolyethyleneHD', 'Hard_Disk_Drive', 'Low_Density_Polyethylene',
- 'Primary_Magnesium', 'Ethylene' ,'Wheat_(US)', 'Offshore_Gas_Pipeline',
- 'Ethanol_(Brazil)', 'Wind_Power', 'Polystyrene', 'Beer_(Japan)']
-selTechs = ['Wind_Turbine_2_(Germany)', 'Fotovoltaica', 'Photovoltaics_2',
  'Titanium_Sponge', 'Wind_Electricity', 'Transistor', 'Photovoltaics_4',
  'DRAM', 'Ethanol_2', 'Monochrome_Television', 'Laser_Diode',
  'Capillary_DNA_Sequencing', 'Photovoltaics', 'Solar_Water_Heaters',
@@ -36,7 +24,7 @@ fraction = 1/2
 # or cumulative production interval (False)
 points = True
 # include nuclear technologies (True) or not (False)
-nuclearIncluded = True
+nuclearIncluded = False
 
 if nuclearIncluded == False:
     df = df.loc[~(df['Tech'].str.contains('Nuclear'))]
@@ -58,10 +46,10 @@ print("Average Wright's exponent: ",np.mean(slopesall),
     100 * (1 - 2**(np.mean(slopesall))), "%")
 
 # # get length of cumulative production intervals
-# length = []
-# for tech in df['Tech'].unique():
-#     cp = df.loc[df['Tech'] == tech,'Cumulative production'].values
-#     length.append(np.log10(cp[-1]) - np.log10(cp[0]))
+length = []
+for tech in df['Tech'].unique():
+    cp = df.loc[df['Tech'] == tech,'Cumulative production'].values
+    length.append(np.log10(cp[-1]) - np.log10(cp[0]))
 
 
 
@@ -83,7 +71,7 @@ for sector in df['Sector'].unique():
             LR_val_.append(item[1])
             length_.append(item[2])
     plottingFunctions.scatterFigure(LR_cal_, LR_val_, 
-                                    length_, title=sector)
+                                    title=sector)
 
 plottingFunctions.gridPlots(uc, cpCal, cpVal, 
                             ucpred, errpred, ucpred2, errpred2)

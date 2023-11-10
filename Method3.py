@@ -13,7 +13,7 @@ fraction = 1/2
 # or cumulative production interval (False)
 points = True
 # include nuclear technologies (True) or not (False)
-nuclearIncluded = False
+nuclearIncluded = True
 
 if nuclearIncluded == False:
     df = df.loc[~(df['Tech'].str.contains('Nuclear'))]
@@ -22,12 +22,12 @@ df['Sector'] = [analysisFunctions.sectorsinv[tech] for tech in df['Tech']]
 sectorTech = [analysisFunctions\
               .sectorsinv[tech] for tech in df['Tech'].unique()]
 
-# compute regression model and predicition errors for each technology
-LR_cal, LR_val, slopesall, \
-    uc, cpCal, cpVal, \
-    ucpred, errpred, ucpred2, errpred2, \
-    slopeErrTech, slopeErrAvg = \
-        analysisFunctions.computeRegPredError(df, fraction, points)
+# # compute regression model and predicition errors for each technology
+# LR_cal, LR_val, slopesall, \
+#     uc, cpCal, cpVal, \
+#     ucpred, errpred, ucpred2, errpred2, \
+#     slopeErrTech, slopeErrAvg = \
+#         analysisFunctions.computeRegPredError(df, fraction, points)
 
 # analysisFunctions.performTPairedTest(errpred, errpred2)
 
@@ -52,7 +52,7 @@ for tOrd in trOrds:
 
         # compute points errors for each training and forecast range 
         trainErr, dferrTech, dferrAvg, \
-            slopeErrTech, slopeErrAvg = \
+            slopeErrTech, slopeErrAvg, _, _ = \
             analysisFunctions.computeErrors(df, tOrd, fOrd)
 
         columns = ['Forecast horizon', 'Error', 'Tech']
@@ -61,33 +61,30 @@ for tOrd in trOrds:
         slopeErrTech = pd.DataFrame(slopeErrTech, columns = columns)
         slopeErrAvg = pd.DataFrame(slopeErrAvg, columns=columns)
         
-
         errpred = []
         errpred2 = []
         slopeErrTech_ = []
-        slopeErrAvg_ = []    
-        for tech in dferrTech['Tech'].unique():
+        slopeErrAvg_ = []
+        # for tech in dferrTech['Tech'].unique():
+        for tech in ['Fotovoltaica','Transistor','DRAM','Hard_Disk_Drive']:
             errpred.append(dferrTech.loc[dferrTech['Tech']==tech, 'Error'].values)
             errpred2.append(dferrAvg.loc[dferrAvg['Tech']==tech, 'Error'].values)
-            slopeErrTech_.append(slopeErrTech.loc[slopeErrTech['Tech']==tech, 'Error'].values)
-            slopeErrAvg_.append(slopeErrAvg.loc[slopeErrAvg['Tech']==tech, 'Error'].values)
+            # slopeErrTech_.append(slopeErrTech.loc[slopeErrTech['Tech']==tech, 'Error'].values)
+            # slopeErrAvg_.append(slopeErrAvg.loc[slopeErrAvg['Tech']==tech, 'Error'].values)
 
         print('\n\n\n')
         print(tOrd, fOrd)
         print(dferrTech['Tech'].nunique(), ' Techs')
-
+        if dferrTech['Tech'].nunique() <= 1:
+            print('Not enough technologies')
+            continue
         analysisFunctions.performTPairedTest(errpred, errpred2)
 
         analysisFunctions.performWilcoxonSignedRankTest(errpred, errpred2)
 
-        analysisFunctions.performTPairedTest(slopeErrTech_, slopeErrAvg_)
+        # analysisFunctions.performTPairedTest(slopeErrTech_, slopeErrAvg_)
 
-        analysisFunctions.performWilcoxonSignedRankTest(slopeErrTech_, slopeErrAvg_)
-
-
-        # t, t1, t2, z, z1, z2 = analysisFunctions.performMonteCarloTests(errpred, errpred2)
-
-        # plottingFunctions.plotBoxplotPvalues(t, t1, t2, z, z1, z2)
+        # analysisFunctions.performWilcoxonSignedRankTest(slopeErrTech_, slopeErrAvg_)
 
 exit()
 

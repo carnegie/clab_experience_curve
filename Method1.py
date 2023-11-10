@@ -24,7 +24,7 @@ fraction = 1/2
 # or cumulative production interval (False)
 points = True
 # include nuclear technologies (True) or not (False)
-nuclearIncluded = False
+nuclearIncluded = True
 
 if nuclearIncluded == False:
     df = df.loc[~(df['Tech'].str.contains('Nuclear'))]

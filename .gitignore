@@ -1,1 +1,5 @@
 .DS_Store
+.DS_Store
+figs/.DS_Store
+figs/*
+ErrorDataset.csv

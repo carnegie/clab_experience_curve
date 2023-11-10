@@ -234,9 +234,21 @@ def computeR2MonteCarlo(LR_cal, LR_val, techsList, iter=1000):
 # using technology-specific and average slopes
 def computeErrors(df, trainingOrdMag, forecastOrdMag):
 
+    maxTrainingOrdMag = (trainingOrdMag == 0.5) * trainingOrdMag*2 + \
+        (trainingOrdMag > 0.5) * (trainingOrdMag + 1)
+    maxForecastOrdMag = (forecastOrdMag == 0.5) * forecastOrdMag*2 + \
+        (forecastOrdMag > 0.5) * (forecastOrdMag + 1)
+
+    minTrainingOrdMag = (trainingOrdMag > 0.5) * trainingOrdMag/2
+    minForecastOrdMag = (forecastOrdMag > 0.5) * forecastOrdMag/2
+
+
     # initialize lists to store results
     trainErr, dferrTech, dferrAvg = [], [], []
     slopeErrTech, slopeErrAvg = [], []
+    slopevals = []
+    fpvals = []
+    obspred = []
 
     # iterate over all technologies
     for tech in df['Tech'].unique():
@@ -265,7 +277,7 @@ def computeErrors(df, trainingOrdMag, forecastOrdMag):
                 N -= 1
             
             # if training range is large enough
-            if x[i] - x[N] >= trainingOrdMag:
+            if x[i] - x[N] >= trainingOrdMag and x[i] - x[N] < maxTrainingOrdMag:
 
                 # use M to explore the forecast range 
                 # (M ranges from i+1 to H-1)
@@ -274,7 +286,7 @@ def computeErrors(df, trainingOrdMag, forecastOrdMag):
                     M += 1
 
                 # if training and forecast ranges are large enough
-                if x[M] - x[i] >= forecastOrdMag:
+                if x[M] - x[i] >= forecastOrdMag and x[M] - x[i] < maxForecastOrdMag:
                    
                     # derive linear regression model
                     model = sm.OLS(y[N:i+1], sm.add_constant(x[N:i+1]))
@@ -291,20 +303,32 @@ def computeErrors(df, trainingOrdMag, forecastOrdMag):
                     # compute forecast error associated 
                     # using slope M points after midpoint
 
-                    # pred =  y[i] + slope * (x[i:M+1] - x[i])
+                    pred =  y[i] + slope * (x[i:M+1] - x[i])
                     
-                    pred =  result.predict(sm.add_constant(x[i:M+1]))
+                    # pred =  result.predict(sm.add_constant(x[i:M+1]))
 
                     pred2 =  y[i] + slopeall * (x[i:M+1] - x[i])
+
+                    # pred2 =  np.mean(y[N:i+1] - slopeall * x[N:i+1]) + slopeall * (x[i:M+1])
+                    # pred2 =  intercept + slopeall * (x[i:M+1])
                     
                     # compute errors and store data
                     error = (y[i:M+1] - (pred)) 
                     error2 = (y[i:M+1] - (pred2)) 
                     for idx in range(len(error)):
-                        dferrTech.append(
-                            [x[i+idx] - x[i], error[idx], tech])
-                        dferrAvg.append(
-                            [x[i+idx] - x[i], error2[idx], tech])
+                        if x[i+idx] - x[i]>-1:
+                            dferrTech.append(
+                                [x[i+idx] - x[i], error[idx], tech,
+                                 result.f_pvalue
+                                ])
+                            dferrAvg.append(
+                                [x[i+idx] - x[i], error2[idx], tech])
+                            obspred.append([x[i+idx] - x[i], 
+                                            y[i+idx] - y[i], 
+                                            pred[idx] - y[i], 
+                                            pred2[idx] - y[i],
+                                            tech])
+
                         
                     # compute slope errors and store data
 
@@ -315,16 +339,18 @@ def computeErrors(df, trainingOrdMag, forecastOrdMag):
                     slope_n = result_n.params[1]
                     slopeErrTech.append(
                         [forecastOrdMag , 
-                        #  slope_n - slope,
-                         100*(1 - 2**slope_n) - (100*(1 - 2**slope)),
+                         slope_n - slope,
+                        #  100*(1 - 2**slope_n) - (100*(1 - 2**slope)),
                            tech])
                     slopeErrAvg.append(
                         [forecastOrdMag , 
-                        #  slope_n - slopeall,
-                         100*(1 - 2**slope_n) - (100*(1 - 2**slopeall)), 
+                         slope_n - slopeall,
+                        #  100*(1 - 2**slope_n) - (100*(1 - 2**slopeall)), 
                          tech])
+                    slopevals.append([slope_n, slope, slopeall, tech])
 
-    return trainErr, dferrTech, dferrAvg, slopeErrTech, slopeErrAvg
+    return trainErr, dferrTech, dferrAvg, \
+            slopeErrTech, slopeErrAvg, slopevals, obspred
 
 # built arrays of breaks and centered breaks for forecast errors plot
 def builtBreakCenteredArrays(ordOfMag, npoints, training=False):
@@ -340,7 +366,11 @@ def builtBreakCenteredArrays(ordOfMag, npoints, training=False):
         centered.append(0)
     
     else:
-        breaks = np.linspace(0-ordOfMag/npoints, ordOfMag, npoints+2)
+        breaks = [-ordOfMag/npoints]
+        while breaks[-1] < ordOfMag:
+            breaks.append(breaks[-1] + ordOfMag/npoints)
+        breaks = np.array(breaks)
+        # breaks = np.linspace(0-ordOfMag/npoints, ordOfMag, npoints+2)
         centered = [0]
         for idx in range(1,len(breaks)-1):
             centered.append(breaks[idx]+\
@@ -408,7 +438,7 @@ def computePercentilesArray(dferr, breaks,
             sel = dferr.loc[\
                     (dferr['Forecast horizon']>breaks[i]) &\
                     (dferr['Forecast horizon']<=breaks[i+1])].copy()
-        
+        # print(sel.count()[0], breaks[i], sel['Tech'].nunique())
         # if no data is selected, append NaNs
         if sel.shape[0] == 0:
             pct.append([breaks[i],np.nan,np.nan,np.nan,np.nan,np.nan])
@@ -471,22 +501,41 @@ def dataToPercentilesArray(df, ordOfMag,
     return pct, breaks, centered, \
             countPoints, countTechs, stats
 
-def performTPairedTest(errpred, errpred2, verbose=True):
-    # compute RMSE and difference in RMSE
+# compute RMSE and difference in RMSE
+def computeRMSEdiff(errpred, errpred2):
+
     RMSEdiff = []
+
     for t,a in zip(errpred, errpred2):
+        # check if list is available
+        # if single value make it a list of a single element
         if not( type(t) == list ):
             t = [t]
         if not( type(a) == list ):
             a = [a]
+
+        # compute metric for technology
         e1 = np.mean([x**2 for x in t])**0.5
         e2 = np.mean([x**2 for x in a])**0.5
         # e1 = np.mean([x**2 for x in t])
         # e2 = np.mean([x**2 for x in a])
         # e1 = np.mean([np.abs(x) for x in t])
         # e2 = np.mean([np.abs(x) for x in a])
+
+        # append difference in metric
         RMSEdiff.append(e1 - e2)
+    
+    # build dataframe
     RMSEdiff = pd.DataFrame(RMSEdiff, columns=['diff'])
+
+    return RMSEdiff    
+
+def performTPairedTest(errpred, errpred2, verbose=True):
+
+    # compute RMSE and difference in RMSE
+    RMSEdiff = computeRMSEdiff(errpred, errpred2)
+
+    # get number of samples
     N = RMSEdiff['diff'].nunique()
 
     # report statistics and p-value
@@ -495,8 +544,12 @@ def performTPairedTest(errpred, errpred2, verbose=True):
             'rejected if value is outside [' + \
             str(scipy.stats.t.ppf(0.025, N-1).round(3)) + \
                 ',' + str(scipy.stats.t.ppf(0.975, N-1).round(3))+']')
+    
+    # compute mu and std 
     mu = np.mean(RMSEdiff['diff'].values)
     std = np.std(RMSEdiff['diff'].values) / (RMSEdiff.shape[0])**0.5
+
+    # report statistic and p-value
     if verbose==True:
         print('\t The value is ', mu/std)
         print('\t The p-value is ', scipy.stats.t.sf(np.abs(mu/std), N-1)*2)
@@ -504,21 +557,11 @@ def performTPairedTest(errpred, errpred2, verbose=True):
     return mu/std, scipy.stats.t.ppf(0.025, N-1), scipy.stats.t.ppf(0.975, N-1)
 
 def performWilcoxonSignedRankTest(errpred, errpred2, verbose=True):
+
     # compute RMSE and difference in RMSE
-    RMSEdiff = []
-    for t,a in zip(errpred, errpred2):
-        if not( type(t) == list ):
-            t = [t]
-        if not( type(a) == list ):
-            a = [a]
-        e1 = np.mean([x**2 for x in t])**0.5
-        e2 = np.mean([x**2 for x in a])**0.5
-        # e1 = np.mean([x**2 for x in t])
-        # e2 = np.mean([x**2 for x in a])
-        # e1 = np.mean([np.abs(x) for x in t])
-        # e2 = np.mean([np.abs(x) for x in a])
-        RMSEdiff.append(e1 - e2)
-    RMSEdiff = pd.DataFrame(RMSEdiff, columns=['diff'])
+    RMSEdiff = computeRMSEdiff(errpred, errpred2)
+
+    # get number of samples
     N = RMSEdiff['diff'].nunique()
 
     # rank RMSE differences
@@ -528,13 +571,14 @@ def performWilcoxonSignedRankTest(errpred, errpred2, verbose=True):
     RMSEdiff['abs'] = np.abs(RMSEdiff['diff'].values)
     RMSEdiff = RMSEdiff.sort_values(by='abs', ascending=True)
     RMSEdiff = RMSEdiff.reset_index()
+
     Rp, Rm = 0, 0
     for i in range(RMSEdiff.shape[0]):
         if RMSEdiff['diff'].values[i] > 0:
             Rp += i+1
         elif RMSEdiff['diff'].values[i] == 0:
-            Rp += 0#1/2*(i+1)
-            Rm += 0# 1/2*(i+1)
+            Rp += 0
+            Rm += 0
         else:
             Rm += i+1
 
@@ -599,3 +643,37 @@ def performMonteCarloTests(errpred, errpred2):
 
     return t, scipy.stats.t.ppf(0.025, N-1).round(3), \
         scipy.stats.t.ppf(0.975, N-1).round(3), z, -1.96, 1.96
+
+def buildErrorDataset(df):
+    dfError = []
+    for tech in df['Tech'].unique():
+        print(tech)
+        slopeall = computeMeanSlope(df.loc[~(df['Tech'] == tech)].copy())
+        s = df.loc[df['Tech'] == tech].copy()
+        x = np.log10(s['Cumulative production'].values)
+        y = np.log10(s['Unit cost'].values)
+        for i in range(2,len(x)):
+            for N in range(i-1):
+                x_cal = x[N:i]
+                y_cal = y[N:i]
+                model = sm.OLS(y_cal, sm.add_constant(x_cal))
+                result = model.fit()
+                for M in range(i+1,len(x)):
+                    x_val = x[M]
+                    y_val = y[M]
+                    errtech = y_val - (y_cal[-1] + result.params[1] * (x_val-x_cal[-1]))
+                    erravg = y_val - (y_cal[-1] + slopeall * (x_val-x_cal[-1]))
+                    best = 1*(errtech**2 < erravg**2)
+                    if best == 1:
+                        best = 'Tech'
+                    else:
+                        best = 'Avg'
+                    err = errtech**2 - erravg**2
+                    fpval = result.f_pvalue
+                    if np.isnan(fpval):
+                        fpval = 0
+                    dfError.append([err, best, tech, sectorsinv[tech], x_val-x_cal[-1], \
+                        x_cal[-1]-x_cal[0], fpval ]) 
+    print('Done')
+    dfError = pd.DataFrame(dfError, columns=['Error','Best','Tech','Sector','Forecast horizon','Training horizon','F-test p-value'])
+    return dfError

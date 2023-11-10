@@ -4,6 +4,7 @@ import seaborn as sns
 import statsmodels.api as sm
 import matplotlib, cmcrameri
 import analysisFunctions
+import pandas as pd
 
 sns.color_palette('colorblind')
 # # set color to be used to represent tech-specific slope
@@ -49,6 +50,9 @@ def scatterFigure(LR_cal, LR_val, selected=None, title=None):
         # axscatter.annotate('N = ' + str(len(LR_cal)),
         #         (-1.5,1))
         print('Explained variance (R2) = ',result.rsquared)
+        model = sm.OLS([LR_val[x] for x in selected], sm.add_constant([LR_cal[x] for x in selected]))
+        result = model.fit()
+        print('Explained variance (R2) = ',result.rsquared)
 
     # # compute R2
     # if len(LR_cal) > 2:
@@ -60,12 +64,15 @@ def scatterFigure(LR_cal, LR_val, selected=None, title=None):
     #     print('Explained variance (R2) for selected techs = ',result.rsquared)
 
     if selected is not None:
-        axscatter.annotate('Selected technologies',
-                        (1,-0.2),
+        axscatter.annotate('Selected technologies: \n'+\
+                           'cumulative production range covers\n'+\
+                            ' at least two orders of magnitude',
+                        (-1,0.5),
                         ha='center',
                         va='center',
                         color='C4',
-                        fontsize=11)
+                        fontsize=11
+                        )
     # axscatter.annotate('Non selected technologies',
     #                    (1.2,-0.4),
     #                    ha='center',
@@ -75,18 +82,18 @@ def scatterFigure(LR_cal, LR_val, selected=None, title=None):
     # plotting graphics
     axscatter.plot([0,0],[-3,3], color='k', alpha=0.8, lw=0.2, zorder=-30)
     axscatter.plot([-3,3],[0,0], color='k', alpha=0.8, lw=0.2, zorder=-30)
-    axscatter.set_xlim((-2,2))
-    axscatter.set_ylim((-2,2))
-    axscatter.set_xlabel('First part slope')
-    axscatter.set_ylabel('Second part slope')
-    axscatter.set_xlim((-2,2))
-    axscatter.set_ylim((-2,2))
+    # axscatter.set_xlim((-2,2))
+    # axscatter.set_ylim((-2,2))
+    axscatter.set_xlabel('Slope of the first half of the experience curve')
+    axscatter.set_ylabel('Slope of the second half of the experience curve')
+    axscatter.set_xlim((-2,1.5))
+    axscatter.set_ylim((-2,1.5))
     axscatter.set_aspect('equal', 'box')
     # cbar = figscatter.colorbar(vals, 
     #                         cmap=cmap, norm=norm, 
     #                         orientation='horizontal', shrink = 0.6)
     # cbar.set_label('Final cumulative production / Initial cumulative production')
-    axscatter.set_title(title+' (N = '+str(len(LR_cal))+')')
+    # axscatter.set_title(title+' (N = '+str(len(LR_cal))+')')
     figscatter.tight_layout()
     return figscatter, axscatter
     
@@ -364,7 +371,7 @@ def plotPercentiles(centered, pct,
             [10**x for x in centered], 
             10**pct[:,1+r], 10**pct[:,-r-1], 
             alpha=0.1+0.2*r, color=color, zorder=-2-r, lw=0)
-    ax1.plot([1,1],[0,100**100],'k', zorder=-2)
+    # ax1.plot([1,1],[0,10],'k', zorder=-2)
     if ax2 is not None:
         ax2.plot([10**x for x in centered], countPoints, 
                     color='k', lw=2, zorder=-2)
@@ -381,7 +388,8 @@ def plotBoxplotsArray(centered, stats, color, ax):
                 widths = (10**centered[idx])/12,
                 showfliers=False, boxprops=dict(color=color, lw=2), 
                 medianprops=dict(color='#931621', lw=1.5, zorder=2),
-                manage_ticks=False)
+                manage_ticks=False,
+                capprops=dict(lw=0), whiskerprops=dict(lw=0))
 
 
 def plotForecastErrorGrid(fErrsTech, fErrsAvg, Ranges, 
@@ -561,217 +569,12 @@ def plotForecastErrorGrid(fErrsTech, fErrsAvg, Ranges,
     fig.subplots_adjust(left=0.125, right=0.875)
     return fig, ax
 
-def plotSlopeErrorGrid(fSlErrTech, fSlErrAvg, 
-                        trForOrds, Ranges, vert=False):
-    
-    dim = int(len(trForOrds)**0.5)
-
-    # create figure
-    fig, ax = plt.subplots(dim, dim, sharex=True, sharey=True, figsize=(12,7))
-
-    lim = [0,0]
-
-    if vert==True:
-        positions = [1, 5]
-    else:
-        positions = [5, 1]
-
-    for tf in trForOrds:
-        
-        # prepare axes
-        ax_ = ax[int(trForOrds.index(tf)/dim)][trForOrds.index(tf)%dim]
-
-        # select data
-        slopeErrTech = fSlErrTech[Ranges.index(tf)]
-        slopeErrAvg = fSlErrAvg[Ranges.index(tf)]
-
-        # compute percentiles and boxplots stats
-        pctTech = analysisFunctions\
-            .computeTechWeightedPercentiles(slopeErrTech)
-        pctAvg = analysisFunctions\
-            .computeTechWeightedPercentiles(slopeErrAvg)
-        statsTech = analysisFunctions\
-            .computeBoxplots(np.array([[0,*pctTech]]),
-                            [0], positions=[1,3,4,5,7],
-                            log = False)
-        statsAvg = analysisFunctions\
-            .computeBoxplots(np.array([[0,*pctAvg]]),
-                            [0], positions=[1,3,4,5,7],
-                            log = False)
-
-        # plot boxplots and errorbars for 90% probability interval
-        ax_.bxp([statsTech[0]], positions = [positions[0]],
-                widths = 1, showfliers=False,
-                boxprops=dict(color=cmapp, lw=2),
-                manage_ticks=False,
-                medianprops=dict(color='#931621', lw=1.5, zorder=2),
-                vert=vert)
-        ax_.bxp([statsAvg[0]], positions = [positions[1]],
-                widths = 1, showfliers=False,
-                boxprops=dict(color=cmapg, lw=2),
-                manage_ticks=False,
-                medianprops=dict(color='#931621', lw=1.5, zorder=2),
-                vert=vert)
-        
-        if vert == False:
-            ax_.errorbar(pctTech[1], positions[0], 0.5, c=cmapp)
-            ax_.errorbar(pctTech[5], positions[0], 0.5, c=cmapp)
-            ax_.errorbar(pctAvg[1], positions[1], 0.5, c=cmapg)
-            ax_.errorbar(pctAvg[5], positions[1], 0.5, c=cmapg)
-            ax_.fill_between([pctTech[1],pctTech[5]],
-                             [positions[0]-0.5,positions[0]-0.5], 
-                             [positions[0]+0.5,positions[0]+0.5], 
-                             color=cmapp, alpha=0.1)
-            ax_.fill_between([pctTech[2],pctTech[4]],
-                             [positions[0]-0.5,positions[0]-0.5], 
-                             [positions[0]+0.5,positions[0]+0.5], 
-                             color=cmapp, alpha=0.4)
-            ax_.fill_between([pctAvg[1],pctAvg[5]],
-                             [positions[1]-0.5,positions[1]-0.5], 
-                             [positions[1]+0.5,positions[1]+0.5], 
-                             color=cmapg, alpha=0.1)
-            ax_.fill_between([pctAvg[2],pctAvg[4]],
-                             [positions[1]-0.5,positions[1]-0.5], 
-                             [positions[1]+0.5,positions[1]+0.5], 
-                             color=cmapg, alpha=0.4)
-            ax_.plot([0,0],[-2,7], color='k', zorder=-10, alpha=0.25)
-            ax_.set_ylim(-1,7)
-            ax_.set_yticks([positions[0],positions[1]],['Technology-specific','Average slope'])
-
-            lim[0] = min(ax_.get_xlim()[0], lim[0])
-            lim[1] = max(ax_.get_xlim()[1], lim[1])
-
-            labs = ax_.get_yticklabels()
-        else:
-            ax_.errorbar(positions[0], pctTech[1], xerr=0.5, c=cmapp)
-            ax_.errorbar(positions[0], pctTech[5], xerr=0.5, c=cmapp)
-            ax_.errorbar(positions[1], pctAvg[1], xerr=0.5, c=cmapg)
-            ax_.errorbar(positions[1], pctAvg[5], xerr=0.5, c=cmapg)
-            ax_.fill_between([positions[0]-0.5,positions[0]+0.5], 
-                             [pctTech[1],pctTech[1]],
-                             [pctTech[5],pctTech[5]],
-                             color=cmapp, alpha=0.1)
-            ax_.fill_between([positions[0]-0.5,positions[0]+0.5], 
-                             [pctTech[2],pctTech[2]],
-                             [pctTech[4],pctTech[4]],
-                             color=cmapp, alpha=0.4)
-            ax_.fill_between([positions[1]-0.5,positions[1]+0.5], 
-                             [pctAvg[1],pctAvg[1]],
-                             [pctAvg[5],pctAvg[5]],
-                             color=cmapg, alpha=0.1)
-            ax_.fill_between([positions[1]-0.5,positions[1]+0.5], 
-                             [pctAvg[2],pctAvg[2]],
-                             [pctAvg[4],pctAvg[4]],
-                             color=cmapg, alpha=0.4)            
-            ax_.plot([-2,7], [0,0], color='k', zorder=-10, alpha=0.25)
-            ax_.set_xlim(-1,7)
-            ax_.set_xticks([positions[0],positions[1]],['Technology-specific','Average slope'])
-
-            lim[0] = min(ax_.get_ylim()[0], lim[0])
-            lim[1] = max(ax_.get_ylim()[1], lim[1])
-
-            labs = ax_.get_xticklabels()
-        if labs:
-            labs[1].set_color(cmapg)
-            labs[0].set_color(cmapp) 
-
-        lim[0] = min(lim[0], -lim[1])
-        lim[1] = max(lim[1], -lim[0])
-        for ax_ in ax:
-            for ax__ in ax_:
-                if vert == False:
-                    ax__.set_xlim(lim)
-                else:
-                    ax__.set_ylim(lim)
-        
-    ax[0][0].annotate('Learning rate error (Actual-Predicted) [%]',
-                      xy = (0.5,0.04), xycoords='figure fraction',
-                        ha='center', va='center')
-    
-    axes1=fig.add_axes([0.85,0.35,0.125,0.3])
-    axes1.plot([1.5,2,2,1.5],[0.25,0.25,0.75,0.75], color='k',
-               linestyle='--',lw=0.5)
-    axes1.plot([1.5,4,4,1.5],[0.05,0.05,0.95,0.95], color='k',
-               linestyle='--',lw=0.5)
-
-    axes1.annotate('50%', xy=(3, 0.5), 
-                   xycoords='data', ha='center', 
-                   va='center', fontsize=7,
-                   rotation=90)
-    axes1.annotate('90%', xy=(5, 0.5), 
-                   xycoords='data', ha='center', 
-                   va='center', fontsize=7,
-                   rotation=90)
-    axes1.annotate('Median', xy=(-2.5, 0.5), 
-                   xycoords='data', ha='center', 
-                   va='center', fontsize=7)
-    axes1.annotate('Max', xy=(0.5, 1.1), 
-                   xycoords='data', ha='center', 
-                   va='center', fontsize=7)
-    axes1.annotate('Min', xy=(0.5, -0.1), 
-                   xycoords='data', ha='center', 
-                   va='center', fontsize=7)
-
-    # axes1.plot([0,1],[0.5,0.5],'k', lw=1)
-    axes1.plot([0,1,1,0,0],[0.25,0.25,0.75,0.75,0.25], lw=2, color='k')
-    axes1.plot([0,1],[0.5,0.5], lw=2, color='#931621', zorder=-1)
-    axes1.plot([.25,.75],[0,0], color='k', lw=1)
-    axes1.plot([0.25,.75],[1,1], color='k', lw=1)
-    axes1.plot([0.5,0.5],[0,0.25], color='k', lw=1)
-    axes1.plot([0.5,0.5],[0.75,1], color='k', lw=1)
-    axes1.plot([0,1],[0.05,0.05], color='k', lw=1)
-    axes1.plot([0,1],[0.95,0.95], color='k', lw=1)
-
-    axes1.set_xlim(-3.5,5)
-    axes1.set_ylim(-0.5,1.5)
-    axes1.set_xticks([])
-    axes1.set_yticks([])
-    axes1.axis('off')
-
-
-    ax[0][0].annotate('Forecast horizon',
-                      xy=(0.5,0.975),
-                        xycoords='figure fraction',
-                        ha='center',
-                        va='center')
-    ax[0][0].annotate('Training horizon',
-                      xy=(0.025,0.5),
-                        xycoords='figure fraction',
-                        ha='center',
-                        va='center',
-                        rotation=90)
-
-    ax[0][0].annotate('$10^{0.5}$',
-                      xy=(0.5,1.1),
-                        xycoords='axes fraction',
-                        ha='center',
-                        va='center')
-    ax[0][1].annotate('$10^1$',
-                      xy=(0.5,1.1),
-                        xycoords='axes fraction',
-                        ha='center',
-                        va='center')
-    ax[0][0].annotate('$10^{0.5}$',
-                      xy=(-0.45,0.5),
-                        xycoords='axes fraction',
-                        ha='center',
-                        va='center')
-    ax[1][0].annotate('$10^1$',
-                      xy=(-0.45,0.5),
-                        xycoords='axes fraction',
-                        ha='center',
-                        va='center')    
-    
-    fig.subplots_adjust(left=0.2, right=0.8)
-
-    return fig, ax
-
 def plotForecastSlopeError(fErrsTech, fErrsAvg, 
-                           fSlErrTech, fSlErrAvg,
                             tf, Ranges, 
                             samplingPoints, vert=True):
     # open figure
-    fig, ax = plt.subplots(1,4, width_ratios=[1,1,0.175,1.25], figsize=(12,4))
+    # fig, ax = plt.subplots(1,4, width_ratios=[1,1,0.175,1.25], figsize=(12,4))
+    fig, ax = plt.subplots(1,3, sharey=True, figsize=(15,5))
 
     # prepare axes
     ax1 = ax[0]
@@ -793,33 +596,42 @@ def plotForecastSlopeError(fErrsTech, fErrsAvg,
                 dataToPercentilesArray(dferrAvg,
                                     tf[1], samplingPoints)
     
-    plotPercentiles(forecastIntAxis, pctTech,
-                        color = cmapp, ax1 = ax1)
-    plotPercentiles(forecastIntAxis, pctAvg,
-                        color = cmapg, ax1 = ax2)
-    plotBoxplotsArray(forecastIntAxis[1:-1], statsTech[1:-1], 
-                    color = cmapp, ax = ax1)
-    plotBoxplotsArray(forecastIntAxis[1:-1], statsAvg[1:-1], 
-                    color = cmapg, ax = ax2)
+    ax1.scatter(10**dferrTech['Forecast horizon'].values, 10**dferrTech['Error'].values,
+                  marker='.', color='firebrick', zorder=-2, alpha=0.05)
+    ax2.scatter(10**dferrAvg['Forecast horizon'].values, 10**dferrAvg['Error'].values,
+                  marker='.', color='firebrick', zorder=-2, alpha=0.05)
 
-    ax1.plot([1,1e10],[1,1],'k', zorder=-10)
-    ax2.plot([1,1e10],[1,1],'k', zorder=-10)
-    ax1.set_xscale('log', base=10)
+    plotPercentiles(forecastIntAxis, pctTech,
+                        color = 'firebrick', ax1 = ax1)
+    plotPercentiles(forecastIntAxis, pctAvg,
+                        color = 'firebrick', ax1 = ax2)
+    plotBoxplotsArray(forecastIntAxis[1:-1], statsTech[1:-1], 
+                    color = 'firebrick', ax = ax1)
+    plotBoxplotsArray(forecastIntAxis[1:-1], statsAvg[1:-1], 
+                    color = 'firebrick', ax = ax2)
+
+    ax1.plot([1,15],[1,1],'C0', zorder=10, lw=2)
+    ax2.plot([1,15],[1,1],'C2', zorder=10, lw=2)
+    # ax1.set_xscale('log', base=10)
     ax1.set_yscale('log', base=10)
-    ax2.set_xscale('log', base=10)
-    ax2.set_yscale('log', base=10)
-    ax1.set_ylim(0.1,10)
-    ax2.set_ylim(0.1,10)
+    # ax2.set_xscale('log', base=10)
+    # ax2.set_yscale('log', base=10)
+    # ax1.set_ylim(0.1,10)
+    # ax2.set_ylim(0.1,10)
+    ax1.set_xlabel('Cumulative production / Last observed cumulative production')
+    ax2.set_xlabel('Cumulative production / Last observed cumulative production')
     ax1.set_xlim(10**0, 10**tf[1])
     ax2.set_xlim(10**0, 10**tf[1])
-    ax1.annotate('Technology-specific', 
-                    xy=(1.1, 6), 
+    ax1.annotate('Technology-specific slope', 
+                    xy=(5, 4), fontsize=12, 
                     color=cmapp,
-                    ha='left')
+                    ha='center',
+                    va='center')
     ax2.annotate('Average slope', 
-                    xy=(1.1, 6), 
+                    xy=(5, 4), fontsize=12,
                     color=cmapg,
-                    ha='left')
+                    ha='center',
+                    va='center')
 
     ax[0].xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
     ax[1].xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
@@ -828,7 +640,7 @@ def plotForecastSlopeError(fErrsTech, fErrsAvg,
                    ' / Current cumulative production',
                    (1.1,-.2), ha='center', va='center')
     
-    ax2.set_yticklabels([])
+    # ax2.set_yticklabels([])
 
     lim = [0,0]
 
@@ -837,26 +649,23 @@ def plotForecastSlopeError(fErrsTech, fErrsAvg,
     else:
         positions = [5, 1]
 
-    ax[2].axis('off')
+    # ax[2].axis('off')
 
-    ax_ = ax[3]
-    # select data
-    slopeErrTech = fSlErrTech[Ranges.index(tf)]
-    slopeErrAvg = fSlErrAvg[Ranges.index(tf)]
+    ax_ = ax[2]
 
-    # compute percentiles and boxplots stats
-    pctTech = analysisFunctions\
-        .computeTechWeightedPercentiles(slopeErrTech)
-    pctAvg = analysisFunctions\
-        .computeTechWeightedPercentiles(slopeErrAvg)
-    statsTech = analysisFunctions\
-        .computeBoxplots(np.array([[0,*pctTech]]),
-                        [0], positions=[1,3,4,5,7],
-                        log = False)
-    statsAvg = analysisFunctions\
-        .computeBoxplots(np.array([[0,*pctAvg]]),
-                        [0], positions=[1,3,4,5,7],
-                        log = False)
+
+    pctTech = np.array(2*pctTech[1:-1]).mean(axis=0).tolist()
+    pctTech = [x for x in pctTech[1:]]
+    pctAvg = np.array(2*pctAvg[1:-1]).mean(axis=0).tolist()
+    pctAvg = [x for x in pctAvg[1:]]
+
+    statsTech_, statsAvg_ = {}, {}
+    for k in statsTech[0].keys():
+        statsTech_[k] = 10**np.mean([(2*np.log10(s[k])) for s in statsTech[1:-1]])
+        statsAvg_[k] = 10**np.mean([(2*np.log10(s[k])) for s in statsAvg[1:-1]])
+    
+    statsTech = [statsTech_]
+    statsAvg = [statsAvg_]
 
     # plot boxplots and errorbars for 90% probability interval
     ax_.bxp([statsTech[0]], positions = [positions[0]],
@@ -864,96 +673,59 @@ def plotForecastSlopeError(fErrsTech, fErrsAvg,
             boxprops=dict(color=cmapp, lw=2),
             manage_ticks=False,
             medianprops=dict(color='#931621', lw=1.5, zorder=2),
+            capprops=dict(lw=0), whiskerprops=dict(lw=0),
             vert=vert)
     ax_.bxp([statsAvg[0]], positions = [positions[1]],
             widths = 1, showfliers=False,
             boxprops=dict(color=cmapg, lw=2),
             manage_ticks=False,
             medianprops=dict(color='#931621', lw=1.5, zorder=2),
+            capprops=dict(lw=0), whiskerprops=dict(lw=0),
             vert=vert)
     
-    if vert == False:
-        ax_.errorbar(pctTech[1], positions[0], 0.5, c=cmapp)
-        ax_.errorbar(pctTech[5], positions[0], 0.5, c=cmapp)
-        ax_.errorbar(pctAvg[1], positions[1], 0.5, c=cmapg)
-        ax_.errorbar(pctAvg[5], positions[1], 0.5, c=cmapg)
-        ax_.fill_between([pctTech[1],pctTech[5]],
-                            [positions[0]-0.5,positions[0]-0.5], 
-                            [positions[0]+0.5,positions[0]+0.5], 
-                            color=cmapp, alpha=0.1,
-                            zorder=-2)
-        ax_.fill_between([pctTech[2],pctTech[4]],
-                            [positions[0]-0.5,positions[0]-0.5], 
-                            [positions[0]+0.5,positions[0]+0.5], 
-                            color=cmapp, alpha=0.4,
-                            zorder=-2)
-        ax_.fill_between([pctAvg[1],pctAvg[5]],
-                            [positions[1]-0.5,positions[1]-0.5], 
-                            [positions[1]+0.5,positions[1]+0.5], 
-                            color=cmapg, alpha=0.1,
-                            zorder=-2)
-        ax_.fill_between([pctAvg[2],pctAvg[4]],
-                            [positions[1]-0.5,positions[1]-0.5], 
-                            [positions[1]+0.5,positions[1]+0.5], 
-                            color=cmapg, alpha=0.4,
-                            zorder=-2)
-        ax_.plot([0,0],[-2,7], color='k', zorder=-10, alpha=0.25)
-        ax_.set_ylim(-1,7)
-        ax_.set_yticks([positions[0],positions[1]],['Technology-specific','Average slope'])
-        ax_.set_xlabel('Learning rate error (Actual-Predicted) [%]')
+    ax_.errorbar(positions[0], 10**pctTech[1], xerr=0.5, c=cmapp)
+    ax_.errorbar(positions[0], 10**pctTech[5], xerr=0.5, c=cmapp)
+    ax_.errorbar(positions[1], 10**pctAvg[1], xerr=0.5, c=cmapg)
+    ax_.errorbar(positions[1], 10**pctAvg[5], xerr=0.5, c=cmapg)
+    ax_.fill_between([positions[0]-0.5,positions[0]+0.5], 
+                        [10**pctTech[1],10**pctTech[1]],
+                        [10**pctTech[5],10**pctTech[5]],
+                        color=cmapp, alpha=0.1,
+                        zorder=-2)
+    ax_.fill_between([positions[0]-0.5,positions[0]+0.5], 
+                        [10**pctTech[2],10**pctTech[2]],
+                        [10**pctTech[4],10**pctTech[4]],
+                        color=cmapp, alpha=0.4,
+                        zorder=-2)
+    ax_.fill_between([positions[1]-0.5,positions[1]+0.5], 
+                        [10**pctAvg[1],10**pctAvg[1]],
+                        [10**pctAvg[5],10**pctAvg[5]],
+                        color=cmapg, alpha=0.1,
+                        zorder=-2)
+    ax_.fill_between([positions[1]-0.5,positions[1]+0.5], 
+                        [10**pctAvg[2],10**pctAvg[2]],
+                        [10**pctAvg[4],10**pctAvg[4]],
+                        color=cmapg, alpha=0.4,
+                        zorder=-2)            
+    ax_.plot([-2,7], [1,1], color='k', zorder=-10, alpha=0.25)
+    ax_.set_xlim(-1,7)
+    ax_.set_xticks([positions[0],positions[1]],['Technology-specific','Average slope'])
+    lim[0] = min(ax_.get_ylim()[0], lim[0])
+    lim[1] = max(ax_.get_ylim()[1], lim[1])
 
-        lim[0] = min(ax_.get_xlim()[0], lim[0])
-        lim[1] = max(ax_.get_xlim()[1], lim[1])
-
-        labs = ax_.get_yticklabels()
-    else:
-        ax_.errorbar(positions[0], pctTech[1], xerr=0.5, c=cmapp)
-        ax_.errorbar(positions[0], pctTech[5], xerr=0.5, c=cmapp)
-        ax_.errorbar(positions[1], pctAvg[1], xerr=0.5, c=cmapg)
-        ax_.errorbar(positions[1], pctAvg[5], xerr=0.5, c=cmapg)
-        ax_.fill_between([positions[0]-0.5,positions[0]+0.5], 
-                            [pctTech[1],pctTech[1]],
-                            [pctTech[5],pctTech[5]],
-                            color=cmapp, alpha=0.1,
-                            zorder=-2)
-        ax_.fill_between([positions[0]-0.5,positions[0]+0.5], 
-                            [pctTech[2],pctTech[2]],
-                            [pctTech[4],pctTech[4]],
-                            color=cmapp, alpha=0.4,
-                            zorder=-2)
-        ax_.fill_between([positions[1]-0.5,positions[1]+0.5], 
-                            [pctAvg[1],pctAvg[1]],
-                            [pctAvg[5],pctAvg[5]],
-                            color=cmapg, alpha=0.1,
-                            zorder=-2)
-        ax_.fill_between([positions[1]-0.5,positions[1]+0.5], 
-                            [pctAvg[2],pctAvg[2]],
-                            [pctAvg[4],pctAvg[4]],
-                            color=cmapg, alpha=0.4,
-                            zorder=-2)            
-        ax_.plot([-2,7], [0,0], color='k', zorder=-10, alpha=0.25)
-        ax_.set_xlim(-1,7)
-        ax_.set_xticks([positions[0],positions[1]],['Technology-specific','Average slope'])
-        ax_.set_ylabel('Learning rate error (Actual-Predicted) [%]')
-        lim[0] = min(ax_.get_ylim()[0], lim[0])
-        lim[1] = max(ax_.get_ylim()[1], lim[1])
-
-        labs = ax_.get_xticklabels()
+    labs = ax_.get_xticklabels()
     if labs:
         labs[1].set_color(cmapg)
         labs[0].set_color(cmapp) 
 
-    lim[0] = min(lim[0], -lim[1])
-    lim[1] = max(lim[1], -lim[0])
-    if vert == False:
-        ax_.set_xlim(lim)
-    else:
-        ax_.set_ylim(lim)
-        
-    # ax[0][0].annotate('Learning rate error (Actual-Predicted) [%]',
-    #                   xy = (0.5,0.04), xycoords='figure fraction',
-    #                     ha='center', va='center')
+    # lim[0] = min(lim[0], -lim[1])
+    # lim[1] = max(lim[1], -lim[0])
+    # if vert == False:
+    #     ax_.set_xlim(lim)
+    # else:
+    #     ax_.set_ylim(lim)
 
+    ax_.set_ylim(0.1,5)
     axes1=fig.add_axes([0.9,0.25,0.08,0.5])
     axes1.plot([-0.5,1.5],[0.5,0.5],'k', lw=2, zorder=-2)
     axes1.fill_between([-0.5,1.5],[0.25,0.25],[0.75,0.75], 
@@ -978,20 +750,20 @@ def plotForecastSlopeError(fErrsTech, fErrsAvg,
     axes1.annotate('Median', xy=(-2.5, 0.5), 
                    xycoords='data', ha='center', 
                    va='center', fontsize=7)
-    axes1.annotate('Max', xy=(0.5, 1.1), 
-                   xycoords='data', ha='center', 
-                   va='center', fontsize=7)
-    axes1.annotate('Min', xy=(0.5, -0.1), 
-                   xycoords='data', ha='center', 
-                   va='center', fontsize=7)
+    # axes1.annotate('Max', xy=(0.5, 1.1), 
+    #                xycoords='data', ha='center', 
+    #                va='center', fontsize=7)
+    # axes1.annotate('Min', xy=(0.5, -0.1), 
+    #                xycoords='data', ha='center', 
+    #                va='center', fontsize=7)
 
     # axes1.plot([0,1],[0.5,0.5],'k', lw=1)
     axes1.plot([0,1,1,0,0],[0.25,0.25,0.75,0.75,0.25], lw=2, color='k')
     axes1.plot([0,1],[0.5,0.5], lw=2, color='#931621', zorder=-1)
-    axes1.plot([0,1],[0,0], color='k', lw=1)
-    axes1.plot([0,1],[1,1], color='k', lw=1)
-    axes1.plot([0.5,0.5],[0,0.25], color='k', lw=1)
-    axes1.plot([0.5,0.5],[0.75,1], color='k', lw=1)
+    # axes1.plot([0,1],[0,0], color='k', lw=1)
+    # axes1.plot([0,1],[1,1], color='k', lw=1)
+    # axes1.plot([0.5,0.5],[0,0.25], color='k', lw=1)
+    # axes1.plot([0.5,0.5],[0.75,1], color='k', lw=1)
 
     axes1.set_xlim(-3.5,5)
     axes1.set_ylim(-0.5,1.5)
@@ -999,7 +771,7 @@ def plotForecastSlopeError(fErrsTech, fErrsAvg,
     axes1.set_yticks([])
     axes1.axis('off')
 
-    plt.subplots_adjust(bottom=0.1, left=0.075, right=0.875, wspace=0.15)
+    plt.subplots_adjust(bottom=0.15, left=0.075, right=0.875, wspace=0.15)
 
     return fig, ax
 
@@ -1355,321 +1127,756 @@ def plotBoxplotPvalues(t, t1, t2, z, z1, z2):
     return fig, ax
 
 def plotRankTechnologies(fErrsTech, fErrsAvg,
-                        fSlErrTech, fSlErrAvg,
-                        tf, Ranges):
+                        tf, Ranges, 
+                        samplingPoints, vert=True):
 
-    positions = [-0.2,0.2]
+    positions = [-1,1]
+
 
     # select data
     dferrTech = fErrsTech[Ranges.index(tf)].copy()
     dferrAvg = fErrsAvg[Ranges.index(tf)].copy()
-    slopeErrTech = fSlErrTech[Ranges.index(tf)].copy()
-    slopeErrAvg = fSlErrAvg[Ranges.index(tf)].copy()
+
+    fig, ax = plt.subplots(1,dferrTech['Tech'].nunique()+1,
+                           sharey=True, figsize=(10,8))
+
+    # get data to be plotted
+    pctTech, _, forecastIntAxis, \
+        _, _, statsTech = \
+            analysisFunctions.\
+                dataToPercentilesArray(dferrTech,
+                                    tf[1], samplingPoints)
+    pctAvg, _, _, \
+        _, _, statsAvg = \
+            analysisFunctions.\
+                dataToPercentilesArray(dferrAvg,
+                                    tf[1], samplingPoints)
+
+    pctTech = np.array(2*pctTech[1:-1]).mean(axis=0).tolist()
+    pctTech = [x for x in pctTech[1:]]
+    pctAvg = np.array(2*pctAvg[1:-1]).mean(axis=0).tolist()
+    pctAvg = [x for x in pctAvg[1:]]
+
+    statsTech_, statsAvg_ = {}, {}
+    for k in statsTech[0].keys():
+        statsTech_[k] = 10**np.mean([(2*np.log10(s[k])) for s in statsTech[1:-1]])
+        statsAvg_[k] = 10**np.mean([(2*np.log10(s[k])) for s in statsAvg[1:-1]])
     
-    dferrTech['Sector'] = [analysisFunctions.\
-                           sectorsinv[tech] for tech in dferrTech['Tech']]
-    dferrTech = dferrTech.sort_values(by=['Sector','Tech'])
+    statsTech = [statsTech_]
+    statsAvg = [statsAvg_]
 
-    fig, ax = plt.subplots(dferrTech['Tech'].nunique()+1,2,
-                           sharex='col', figsize=(10,8))
+    ax_ = ax[0]
+    # plot boxplots and errorbars for 90% probability interval
+    ax_.bxp([statsTech[0]], positions = [positions[0]],
+            widths = 1, showfliers=False,
+            boxprops=dict(color=cmapp, lw=2),
+            manage_ticks=False,
+            medianprops=dict(color='#931621', lw=1.5, zorder=2),
+            capprops=dict(lw=0), whiskerprops=dict(lw=0),
+            vert=vert)
+    ax_.bxp([statsAvg[0]], positions = [positions[1]],
+            widths = 1, showfliers=False,
+            boxprops=dict(color=cmapg, lw=2),
+            manage_ticks=False,
+            medianprops=dict(color='#931621', lw=1.5, zorder=2),
+            capprops=dict(lw=0), whiskerprops=dict(lw=0),
+            vert=vert)
+    
+    ax_.errorbar(positions[0], 10**pctTech[1], xerr=0.5, c=cmapp)
+    ax_.errorbar(positions[0], 10**pctTech[5], xerr=0.5, c=cmapp)
+    ax_.errorbar(positions[1], 10**pctAvg[1], xerr=0.5, c=cmapg)
+    ax_.errorbar(positions[1], 10**pctAvg[5], xerr=0.5, c=cmapg)
+    ax_.fill_between([positions[0]-0.5,positions[0]+0.5], 
+                        [10**pctTech[1],10**pctTech[1]],
+                        [10**pctTech[5],10**pctTech[5]],
+                        color=cmapp, alpha=0.1,
+                        zorder=-2)
+    ax_.fill_between([positions[0]-0.5,positions[0]+0.5], 
+                        [10**pctTech[2],10**pctTech[2]],
+                        [10**pctTech[4],10**pctTech[4]],
+                        color=cmapp, alpha=0.4,
+                        zorder=-2)
+    ax_.fill_between([positions[1]-0.5,positions[1]+0.5], 
+                        [10**pctAvg[1],10**pctAvg[1]],
+                        [10**pctAvg[5],10**pctAvg[5]],
+                        color=cmapg, alpha=0.1,
+                        zorder=-2)
+    ax_.fill_between([positions[1]-0.5,positions[1]+0.5], 
+                        [10**pctAvg[2],10**pctAvg[2]],
+                        [10**pctAvg[4],10**pctAvg[4]],
+                        color=cmapg, alpha=0.4,
+                        zorder=-2)
 
-    count = 0
+    ax_.set_xticklabels([])
+    ax_.set_xticks([])
+    ax_.set_xlabel('All technologies', 
+                            rotation=90)
+    ax_.plot([-2,2], [1,1], 'k--', lw=0.5, zorder=-10)
+    ax_.set_xlim(-2,2)
+    ax_.set_ylim(0.01,10)
+
+    order = []
+    techcount = []
     for tech in dferrTech['Tech'].unique():
+        techcount.append([tech, dferrTech.loc[dferrTech['Tech']==tech].shape[0],
+                          dferrTech.loc[dferrTech['Tech']==tech,'F p-value'].mean()])
+    techcount = pd.DataFrame(techcount, columns=['Tech','count','F p-value'])
+    for tech in techcount.sort_values(by='F p-value', ascending=False)['Tech'].tolist():
+        sTech = dferrTech.loc[dferrTech['Tech']==tech]
+        sAvg = dferrAvg.loc[dferrAvg['Tech']==tech]
 
-        selTech = dferrTech.loc[dferrTech['Tech'] == tech]
-        selAvg = dferrAvg.loc[dferrAvg['Tech'] == tech]
+        # get data to be plotted
+        pctTech, _, forecastIntAxis, \
+            _, _, statsTech = \
+                analysisFunctions.\
+                    dataToPercentilesArray(sTech,
+                                        tf[1], samplingPoints)
+        pctAvg, _, _, \
+            _, _, statsAvg = \
+                analysisFunctions.\
+                    dataToPercentilesArray(sAvg,
+                                        tf[1], samplingPoints)
+    
+        pctTech = np.array(2*pctTech[1:-1]).mean(axis=0).tolist()
+        pctTech = [x for x in pctTech[1:]]
+        pctAvg = np.array(2*pctAvg[1:-1]).mean(axis=0).tolist()
+        pctAvg = [x for x in pctAvg[1:]]
 
-        # compute percentiles and boxplots stats
-        pctTech = analysisFunctions\
-            .computeTechWeightedPercentiles(selTech)
-        pctAvg = analysisFunctions\
-            .computeTechWeightedPercentiles(selAvg)
-        statsTech = analysisFunctions\
-            .computeBoxplots(np.array([[0,*pctTech]]),
-                            [0], positions=[1,3,4,5,7],
-                            log = True)
-        statsAvg = analysisFunctions\
-            .computeBoxplots(np.array([[0,*pctAvg]]),
-                            [0], positions=[1,3,4,5,7],
-                            log = True)
-
-        # plot boxplots and errorbars for 90% probability interval
-        ax[count][0].bxp([statsTech[0]], positions = [positions[0]],
-                widths = 0.3, showfliers=False,
-                boxprops=dict(color=cmapp, lw=2),
-                manage_ticks=False,
-                medianprops=dict(color='#931621', lw=1.5, zorder=2),
-                vert=False)
-        ax[count][0].bxp([statsAvg[0]], positions = [positions[1]],
-                widths = 0.3, showfliers=False,
-                boxprops=dict(color=cmapg, lw=2),
-                manage_ticks=False,
-                medianprops=dict(color='#931621', lw=1.5, zorder=2),
-                vert=False)
-
-        ax[count][0].errorbar(10**np.array(pctTech[1]), positions[0], 0.15, c=cmapp)
-        ax[count][0].errorbar(10**np.array(pctTech[5]), positions[0], 0.15, c=cmapp)
-        ax[count][0].errorbar(10**np.array(pctAvg[1]), positions[1], 0.15, c=cmapg)
-        ax[count][0].errorbar(10**np.array(pctAvg[5]), positions[1], 0.15, c=cmapg)
-        ax[count][0].fill_between([10**np.array(pctTech[1]),10**np.array(pctTech[5])],
-                            [positions[0]-0.15,positions[0]-0.15], 
-                            [positions[0]+0.15,positions[0]+0.15], 
-                            color=cmapp, alpha=0.1,
-                            zorder=-1)
-        ax[count][0].fill_between([10**np.array(pctTech[2]),10**np.array(pctTech[4])],
-                            [positions[0]-0.15,positions[0]-0.15], 
-                            [positions[0]+0.15,positions[0]+0.15], 
-                            color=cmapp, alpha=0.4,
-                            zorder=-1)
-        ax[count][0].fill_between([10**np.array(pctAvg[1]),10**np.array(pctAvg[5])],
-                            [positions[1]-0.15,positions[1]-0.15], 
-                            [positions[1]+0.15,positions[1]+0.15], 
-                            color=cmapg, alpha=0.1,
-                            zorder=-1)
-        ax[count][0].fill_between([10**np.array(pctAvg[2]),10**np.array(pctAvg[4])],
-                            [positions[1]-0.15,positions[1]-0.15], 
-                            [positions[1]+0.15,positions[1]+0.15], 
-                            color=cmapg, alpha=0.4,
-                            zorder=-1)
-
-        ax[count][0].set_yticklabels([])
-        ax[count][0].set_yticks([])
-        ax[count][0].set_ylabel(tech.replace('_',' '), 
-                                rotation='horizontal',
-                                ha='right', va='center')
-        ax[count][0].plot([1,1],[-2,2], 'k--', lw=0.5, zorder=-10)
-        ax[count][0].set_ylim(-0.4,0.4)
-
-        selTech = slopeErrTech.loc[slopeErrTech['Tech'] == tech]
-        selAvg = slopeErrAvg.loc[slopeErrAvg['Tech'] == tech]
-
-        # compute percentiles and boxplots stats
-        pctTech = analysisFunctions\
-            .computeTechWeightedPercentiles(selTech)
-        pctAvg = analysisFunctions\
-            .computeTechWeightedPercentiles(selAvg)
-        statsTech = analysisFunctions\
-            .computeBoxplots(np.array([[0,*pctTech]]),
-                            [0], positions=[1,3,4,5,7],
-                            log = False)
-        statsAvg = analysisFunctions\
-            .computeBoxplots(np.array([[0,*pctAvg]]),
-                            [0], positions=[1,3,4,5,7],
-                            log = False)
-
-        # plot boxplots and errorbars for 90% probability interval
-        ax[count][1].bxp([statsTech[0]], positions = [positions[0]],
-                widths = 0.3, showfliers=False,
-                boxprops=dict(color=cmapp, lw=2),
-                manage_ticks=False,
-                medianprops=dict(color='#931621', lw=1.5, zorder=2),
-                vert=False)
-        ax[count][1].bxp([statsAvg[0]], positions = [positions[1]],
-                widths = 0.3, showfliers=False,
-                boxprops=dict(color=cmapg, lw=2),
-                manage_ticks=False,
-                medianprops=dict(color='#931621', lw=1.5, zorder=2),
-                vert=False)
+        statsTech_, statsAvg_ = {}, {}
+        for k in statsTech[0].keys():
+            statsTech_[k] = 10**np.mean([(2*np.log10(s[k])) for s in statsTech[1:-1]])
+            statsAvg_[k] = 10**np.mean([(2*np.log10(s[k])) for s in statsAvg[1:-1]])
         
-        ax[count][1].errorbar(pctTech[1], positions[0], 0.15, c=cmapp)
-        ax[count][1].errorbar(pctTech[5], positions[0], 0.15, c=cmapp)
-        ax[count][1].errorbar(pctAvg[1], positions[1], 0.15, c=cmapg)
-        ax[count][1].errorbar(pctAvg[5], positions[1], 0.15, c=cmapg)
-        ax[count][1].fill_between([pctTech[1],pctTech[5]],
-                            [positions[0]-0.15,positions[0]-0.15], 
-                            [positions[0]+0.15,positions[0]+0.15], 
-                            color=cmapp, alpha=0.1,
-                            zorder=-1)
-        ax[count][1].fill_between([pctTech[2],pctTech[4]],
-                            [positions[0]-0.15,positions[0]-0.15], 
-                            [positions[0]+0.15,positions[0]+0.15], 
-                            color=cmapp, alpha=0.4,
-                            zorder=-1)
-        ax[count][1].fill_between([pctAvg[1],pctAvg[5]],
-                            [positions[1]-0.15,positions[1]-0.15], 
-                            [positions[1]+0.15,positions[1]+0.15], 
-                            color=cmapg, alpha=0.1,
-                            zorder=-1)
-        ax[count][1].fill_between([pctAvg[2],pctAvg[4]],
-                            [positions[1]-0.15,positions[1]-0.15], 
-                            [positions[1]+0.15,positions[1]+0.15], 
-                            color=cmapg, alpha=0.4,
-                            zorder=-1)
-        ax[count][1].set_yticklabels([])
-        ax[count][1].set_yticks([])
-        ax[count][1].plot([0,0],[-2,2], 'k--', lw=0.5, zorder=-10)
-        ax[count][1].set_ylim(-0.4,0.4)
+        statsTech = [statsTech_]
+        statsAvg = [statsAvg_]
+        order.append([tech, statsTech[0]['med']])
 
+    order = pd.DataFrame(order, columns=['Tech','med'])
+    order = order.sort_values(by='med', ascending=False)
 
+    # for tech in order['Tech'].tolist():
+    count = 0
+    for tech in techcount.sort_values(by='F p-value', ascending=False)['Tech'].tolist():
         count += 1
+        sTech = dferrTech.loc[dferrTech['Tech']==tech]
+        sAvg = dferrAvg.loc[dferrAvg['Tech']==tech]
 
-    # compute percentiles and boxplots stats
-    pctTech = analysisFunctions\
-        .computeTechWeightedPercentiles(dferrTech)
-    pctAvg = analysisFunctions\
-        .computeTechWeightedPercentiles(dferrAvg)
-    statsTech = analysisFunctions\
-        .computeBoxplots(np.array([[0,*pctTech]]),
-                        [0], positions=[1,3,4,5,7],
-                        log = True)
-    statsAvg = analysisFunctions\
-        .computeBoxplots(np.array([[0,*pctAvg]]),
-                        [0], positions=[1,3,4,5,7],
-                        log = True)
+        # get data to be plotted
+        pctTech, _, forecastIntAxis, \
+            _, _, statsTech = \
+                analysisFunctions.\
+                    dataToPercentilesArray(sTech,
+                                        tf[1], samplingPoints)
+        pctAvg, _, _, \
+            _, _, statsAvg = \
+                analysisFunctions.\
+                    dataToPercentilesArray(sAvg,
+                                        tf[1], samplingPoints)
+    
+        pctTech = np.array(2*pctTech[1:-1]).mean(axis=0).tolist()
+        pctTech = [x for x in pctTech[1:]]
+        pctAvg = np.array(2*pctAvg[1:-1]).mean(axis=0).tolist()
+        pctAvg = [x for x in pctAvg[1:]]
 
-    # plot boxplots and errorbars for 90% probability interval
-    ax[count][0].bxp([statsTech[0]], positions = [positions[0]],
-            widths = 0.3, showfliers=False,
-            boxprops=dict(color=cmapp, lw=2),
-            manage_ticks=False,
-            medianprops=dict(color='#931621', lw=1.5, zorder=2),
-            vert=False)
-    ax[count][0].bxp([statsAvg[0]], positions = [positions[1]],
-            widths = 0.3, showfliers=False,
-            boxprops=dict(color=cmapg, lw=2),
-            manage_ticks=False,
-            medianprops=dict(color='#931621', lw=1.5, zorder=2),
-            vert=False)
-    ax[count][0].set_yticklabels([])
-    ax[count][0].set_yticks([])
-    ax[count][0].set_ylabel('All technologies', 
-                            rotation='horizontal',
-                            ha='right', va='center')
-    ax[count][0].plot([1,1],[-2,2], 'k--', lw=0.5, zorder=-10)
-    ax[count][0].set_ylim(-0.4,0.4)
-    ax[count][0].errorbar(10**np.array(pctTech[1]), positions[0], 0.15, c=cmapp)
-    ax[count][0].errorbar(10**np.array(pctTech[5]), positions[0], 0.15, c=cmapp)
-    ax[count][0].errorbar(10**np.array(pctAvg[1]), positions[1], 0.15, c=cmapg)
-    ax[count][0].errorbar(10**np.array(pctAvg[5]), positions[1], 0.15, c=cmapg)
-    ax[count][0].fill_between([10**np.array(pctTech[1]),10**np.array(pctTech[5])],
-                        [positions[0]-0.15,positions[0]-0.15], 
-                        [positions[0]+0.15,positions[0]+0.15], 
-                        color=cmapp, alpha=0.1,
-                            zorder=-1)
-    ax[count][0].fill_between([10**np.array(pctTech[2]),10**np.array(pctTech[4])],
-                        [positions[0]-0.15,positions[0]-0.15], 
-                        [positions[0]+0.15,positions[0]+0.15], 
-                        color=cmapp, alpha=0.4,
-                            zorder=-1)
-    ax[count][0].fill_between([10**np.array(pctAvg[1]),10**np.array(pctAvg[5])],
-                        [positions[1]-0.15,positions[1]-0.15], 
-                        [positions[1]+0.15,positions[1]+0.15], 
-                        color=cmapg, alpha=0.1,
-                            zorder=-1)
-    ax[count][0].fill_between([10**np.array(pctAvg[2]),10**np.array(pctAvg[4])],
-                        [positions[1]-0.15,positions[1]-0.15], 
-                        [positions[1]+0.15,positions[1]+0.15], 
-                        color=cmapg, alpha=0.4,
-                            zorder=-1)   
-     
-    # compute percentiles and boxplots stats
-    pctTech = analysisFunctions\
-        .computeTechWeightedPercentiles(slopeErrTech)
-    pctAvg = analysisFunctions\
-        .computeTechWeightedPercentiles(slopeErrAvg)
-    statsTech = analysisFunctions\
-        .computeBoxplots(np.array([[0,*pctTech]]),
-                        [0], positions=[1,3,4,5,7],
-                        log = False)
-    statsAvg = analysisFunctions\
-        .computeBoxplots(np.array([[0,*pctAvg]]),
-                        [0], positions=[1,3,4,5,7],
-                        log = False)
+        statsTech_, statsAvg_ = {}, {}
+        for k in statsTech[0].keys():
+            statsTech_[k] = 10**np.mean([(2*np.log10(s[k])) for s in statsTech[1:-1]])
+            statsAvg_[k] = 10**np.mean([(2*np.log10(s[k])) for s in statsAvg[1:-1]])
+        
+        statsTech = [statsTech_]
+        statsAvg = [statsAvg_]
 
-    # plot boxplots and errorbars for 90% probability interval
-    ax[count][1].bxp([statsTech[0]], positions = [positions[0]],
-            widths = 0.3, showfliers=False,
-            boxprops=dict(color=cmapp, lw=2),
-            manage_ticks=False,
-            medianprops=dict(color='#931621', lw=1.5, zorder=2),
-            vert=False)
-    ax[count][1].bxp([statsAvg[0]], positions = [positions[1]],
-            widths = 0.3, showfliers=False,
-            boxprops=dict(color=cmapg, lw=2),
-            manage_ticks=False,
-            medianprops=dict(color='#931621', lw=1.5, zorder=2),
-            vert=False)
-    ax[count][1].set_yticklabels([])
-    ax[count][1].set_yticks([])
-    ax[count][1].plot([0,0],[-2,2], 'k--', lw=0.5, zorder=-10)
-    ax[count][1].set_ylim(-0.4,0.4)
+        # ax_ = ax[order['Tech'].unique().tolist().index(tech)+1]
+        ax_ = ax[count]
+        # plot boxplots and errorbars for 90% probability interval
+        ax_.bxp([statsTech[0]], positions = [positions[0]],
+                widths = 1, showfliers=False,
+                boxprops=dict(color=cmapp, lw=2),
+                manage_ticks=False,
+                medianprops=dict(color='#931621', lw=1.5, zorder=2),
+                capprops=dict(lw=0), whiskerprops=dict(lw=0),
+                vert=vert)
+        ax_.bxp([statsAvg[0]], positions = [positions[1]],
+                widths = 1, showfliers=False,
+                boxprops=dict(color=cmapg, lw=2),
+                manage_ticks=False,
+                medianprops=dict(color='#931621', lw=1.5, zorder=2),
+                capprops=dict(lw=0), whiskerprops=dict(lw=0),
+                vert=vert)
+        
+        ax_.errorbar(positions[0], 10**pctTech[1], xerr=0.5, c=cmapp)
+        ax_.errorbar(positions[0], 10**pctTech[5], xerr=0.5, c=cmapp)
+        ax_.errorbar(positions[1], 10**pctAvg[1], xerr=0.5, c=cmapg)
+        ax_.errorbar(positions[1], 10**pctAvg[5], xerr=0.5, c=cmapg)
+        ax_.fill_between([positions[0]-0.5,positions[0]+0.5], 
+                            [10**pctTech[1],10**pctTech[1]],
+                            [10**pctTech[5],10**pctTech[5]],
+                            color=cmapp, alpha=0.1,
+                            zorder=-2)
+        ax_.fill_between([positions[0]-0.5,positions[0]+0.5], 
+                            [10**pctTech[2],10**pctTech[2]],
+                            [10**pctTech[4],10**pctTech[4]],
+                            color=cmapp, alpha=0.4,
+                            zorder=-2)
+        ax_.fill_between([positions[1]-0.5,positions[1]+0.5], 
+                            [10**pctAvg[1],10**pctAvg[1]],
+                            [10**pctAvg[5],10**pctAvg[5]],
+                            color=cmapg, alpha=0.1,
+                            zorder=-2)
+        ax_.fill_between([positions[1]-0.5,positions[1]+0.5], 
+                            [10**pctAvg[2],10**pctAvg[2]],
+                            [10**pctAvg[4],10**pctAvg[4]],
+                            color=cmapg, alpha=0.4,
+                            zorder=-2)
 
-    ax[count][0].set_xlabel('Unit cost error (Actual/Predicted)')
-    ax[count][1].set_xlabel('Learning rate error (Actual-Predicted) [%]')
+        ax_.set_xticklabels([])
+        ax_.set_xticks([])
+        ax_.set_xlabel(tech.replace('_',' ')+' ('+str(round(techcount.loc[techcount['Tech']==tech,'F p-value'].values[0],3))+')', 
+                                rotation=90)
+        ax_.plot([-2,2], [1,1], 'k--', lw=0.5, zorder=-10)
+        ax_.set_xlim(-2,2)
 
-    ax[count][1].errorbar(pctTech[1], positions[0], 0.15, c=cmapp)
-    ax[count][1].errorbar(pctTech[5], positions[0], 0.15, c=cmapp)
-    ax[count][1].errorbar(pctAvg[1], positions[1], 0.15, c=cmapg)
-    ax[count][1].errorbar(pctAvg[5], positions[1], 0.15, c=cmapg)
-    ax[count][1].fill_between([pctTech[1],pctTech[5]],
-                        [positions[0]-0.15,positions[0]-0.15], 
-                        [positions[0]+0.15,positions[0]+0.15], 
-                        color=cmapp, alpha=0.1,
-                            zorder=-1)
-    ax[count][1].fill_between([pctTech[2],pctTech[4]],
-                        [positions[0]-0.15,positions[0]-0.15], 
-                        [positions[0]+0.15,positions[0]+0.15], 
-                        color=cmapp, alpha=0.4,
-                            zorder=-1)
-    ax[count][1].fill_between([pctAvg[1],pctAvg[5]],
-                        [positions[1]-0.15,positions[1]-0.15], 
-                        [positions[1]+0.15,positions[1]+0.15], 
-                        color=cmapg, alpha=0.1,
-                            zorder=-1)
-    ax[count][1].fill_between([pctAvg[2],pctAvg[4]],
-                        [positions[1]-0.15,positions[1]-0.15], 
-                        [positions[1]+0.15,positions[1]+0.15], 
-                        color=cmapg, alpha=0.4,
-                            zorder=-1)
+    plt.subplots_adjust(top=0.975, bottom=0.25, wspace=0.0, right=0.875, left=0.075)
+    ax[0].set_ylabel('Unit cost error (Actual/Predicted)')
+    ax[0].set_yscale('log', base=10)
 
-    ax[0][0].set_xscale('log', base=10)
-
-
-    axes1=fig.add_axes([0.35,0.01,0.3,0.08])
-    axes1.fill_between([0.25,0.75],[0,0],[1,1],
+    axes1=fig.add_axes([0.91,0.45,0.08,0.4])
+    axes1.plot([-0.5,1.5],[0.5,0.5],'k', lw=2, zorder=-2)
+    axes1.fill_between([-0.5,1.5],[0.25,0.25],[0.75,0.75], 
                        color='k', alpha=0.3, zorder=-10)
-    axes1.fill_between([0.05,0.95],[0,0],[1,1],
+    axes1.fill_between([-.5,1.5],[0.05,0.05],[0.95,0.95], 
                        color='k', alpha=0.3, zorder=-10)
-    axes1.plot([0.25,0.25,0.75,0.75], [-0.5,-2,-2,-0.5], color='k',
+    # axes1.fill_between([-.5,1.5],[0,0],[1.0,1.0], 
+    #                    color='k', alpha=0.1)
+    axes1.plot([1.5,2,2,1.5],[0.25,0.25,0.75,0.75], color='k',
                linestyle='--',lw=0.5)
-    axes1.plot([0.05,0.05,0.95,0.95], [-0.5,-4,-4,-0.5], color='k',
+    axes1.plot([1.5,4,4,1.5],[0.05,0.05,0.95,0.95], color='k',
                linestyle='--',lw=0.5)
-    axes1.plot([0.25,0.25,0.75,0.75,0.25], [0,1,1,0,0],lw=2, color='k')
-    axes1.plot([0.5,0.5], [0,1],lw=2, color='#931621', zorder=-1)
-    axes1.plot([0,0], [0,1],color='k', lw=1)
-    axes1.plot([1,1], [0,1],color='k', lw=1)
-    axes1.plot([0,0.25], [0.5,0.5],color='k', lw=1)
-    axes1.plot([0.75,1], [0.5,0.5],color='k', lw=1)
 
-    axes1.annotate('50%', xy=(0.5, -3), 
+    axes1.annotate('50%', xy=(3, 0.5), 
                    xycoords='data', ha='center', 
                    va='center', fontsize=7,
-                   )
-    axes1.annotate('90%', xy=(0.5,-5), 
+                   rotation=90)
+    axes1.annotate('90%', xy=(5, 0.5), 
                    xycoords='data', ha='center', 
                    va='center', fontsize=7,
-                   )
-    axes1.annotate('Median', xy=(0.5, 2.5), 
+                   rotation=90)
+    axes1.annotate('Median', xy=(-2.5, 0.5), 
                    xycoords='data', ha='center', 
                    va='center', fontsize=7)
-    axes1.annotate('Max', xy=(1.1,0.5), 
-                   xycoords='data', ha='center', 
-                   va='center', fontsize=7)
-    axes1.annotate('Min', xy=(-0.1, 0.5), 
-                   xycoords='data', ha='center', 
-                   va='center', fontsize=7)
+    # axes1.annotate('Max', xy=(0.5, 1.1), 
+    #                xycoords='data', ha='center', 
+    #                va='center', fontsize=7)
+    # axes1.annotate('Min', xy=(0.5, -0.1), 
+    #                xycoords='data', ha='center', 
+    #                va='center', fontsize=7)
 
-    axes1.set_ylim(-6,3)
-    axes1.set_xlim(-0.5,1.5)
+    # axes1.plot([0,1],[0.5,0.5],'k', lw=1)
+    axes1.plot([0,1,1,0,0],[0.25,0.25,0.75,0.75,0.25], lw=2, color='k')
+    axes1.plot([0,1],[0.5,0.5], lw=2, color='#931621', zorder=-1)
+    # axes1.plot([0,1],[0,0], color='k', lw=1)
+    # axes1.plot([0,1],[1,1], color='k', lw=1)
+    # axes1.plot([0.5,0.5],[0,0.25], color='k', lw=1)
+    # axes1.plot([0.5,0.5],[0.75,1], color='k', lw=1)
+
+    axes1.set_xlim(-3.5,5)
+    axes1.set_ylim(-0.5,1.5)
     axes1.set_xticks([])
     axes1.set_yticks([])
     axes1.axis('off')
 
-    plt.subplots_adjust(left=0.2, right=0.8, 
-                        top=0.975, bottom=0.175, hspace=0.0)
+    return fig, ax
+
+
+    # # select data
+    # dferrTech = fErrsTech[Ranges.index(tf)].copy()
+    # dferrAvg = fErrsAvg[Ranges.index(tf)].copy()
+    
+    # dferrTech['Sector'] = [analysisFunctions.\
+    #                        sectorsinv[tech] for tech in dferrTech['Tech']]
+    # dferrTech = dferrTech.sort_values(by=['Sector','Tech'])
+
+    # fig, ax = plt.subplots(1,dferrTech['Tech'].nunique()+1,
+    #                        sharey=True, figsize=(10,8))
+
+    # count = 0
+
+    # # compute percentiles and boxplots stats
+    # pctTech = analysisFunctions\
+    #     .computeTechWeightedPercentiles(dferrTech)
+    # pctAvg = analysisFunctions\
+    #     .computeTechWeightedPercentiles(dferrAvg)
+    # statsTech = analysisFunctions\
+    #     .computeBoxplots(np.array([[0,*pctTech]]),
+    #                     [0], positions=[1,3,4,5,7],
+    #                     log = True)
+    # statsAvg = analysisFunctions\
+    #     .computeBoxplots(np.array([[0,*pctAvg]]),
+    #                     [0], positions=[1,3,4,5,7],
+    #                     log = True)
+
+    # # plot boxplots and errorbars for 90% probability interval
+    # ax[count].bxp([statsTech[0]], positions = [positions[0]],
+    #         widths = 0.3, showfliers=False,
+    #         boxprops=dict(color=cmapp, lw=2),
+    #         manage_ticks=False,
+    #         medianprops=dict(color='#931621', lw=1.5, zorder=2),
+    #         capprops=dict(lw=0), whiskerprops=dict(lw=0))
+    # ax[count].bxp([statsAvg[0]], positions = [positions[1]],
+    #         widths = 0.3, showfliers=False,
+    #         boxprops=dict(color=cmapg, lw=2),
+    #         manage_ticks=False,
+    #         medianprops=dict(color='#931621', lw=1.5, zorder=2),
+    #         capprops=dict(lw=0), whiskerprops=dict(lw=0))
+    # ax[count].set_xticklabels([])
+    # ax[count].set_xticks([])
+    # ax[count].set_xlabel('All technologies', 
+    #                         rotation=90)
+    # ax[count].plot([1,1],[-2,2], 'k--', lw=0.5, zorder=-10)
+    # ax[count].set_xlim(-0.4,0.4)
+    # ax[count].errorbar(positions[0], 10**np.array(pctTech[1]), xerr=0.15, c=cmapp)
+    # ax[count].errorbar(positions[0], 10**np.array(pctTech[5]), xerr=0.15, c=cmapp)
+    # ax[count].errorbar(positions[1], 10**np.array(pctAvg[1]), xerr=0.15, c=cmapg)
+    # ax[count].errorbar(positions[1], 10**np.array(pctAvg[5]), xerr=0.15, c=cmapg)
+    # ax[count].fill_between([positions[0]-0.15,positions[0]+0.15], 
+    #                         [10**np.array(pctTech[1]),10**np.array(pctTech[1])],
+    #                         [10**np.array(pctTech[5]),10**np.array(pctTech[5])],
+    #                     color=cmapp, alpha=0.1,
+    #                     zorder=-1)
+    # ax[count].fill_between([positions[0]-0.15,positions[0]+0.15], 
+    #                         [10**np.array(pctTech[2]),10**np.array(pctTech[2])],
+    #                         [10**np.array(pctTech[4]),10**np.array(pctTech[4])],
+    #                     color=cmapp, alpha=0.4,
+    #                     zorder=-1)
+    # ax[count].fill_between([positions[1]-0.15,positions[1]+0.15], 
+    #                         [10**np.array(pctAvg[1]),10**np.array(pctAvg[1])],
+    #                         [10**np.array(pctAvg[5]),10**np.array(pctAvg[5])],
+    #                     color=cmapg, alpha=0.1,
+    #                     zorder=-1)
+    # ax[count].fill_between([positions[1]-0.15,positions[1]+0.15], 
+    #                         [10**np.array(pctAvg[2]),10**np.array(pctAvg[2])],
+    #                         [10**np.array(pctAvg[4]),10**np.array(pctAvg[4])],
+    #                     color=cmapg, alpha=0.4,
+    #                     zorder=-1) 
+
+    # count += 1
+
+    # for tech in dferrTech['Tech'].unique():
+
+    #     selTech = dferrTech.loc[dferrTech['Tech'] == tech]
+    #     selAvg = dferrAvg.loc[dferrAvg['Tech'] == tech]
+
+    #     # compute percentiles and boxplots stats
+    #     pctTech = analysisFunctions\
+    #         .computeTechWeightedPercentiles(selTech)
+    #     pctAvg = analysisFunctions\
+    #         .computeTechWeightedPercentiles(selAvg)
+    #     statsTech = analysisFunctions\
+    #         .computeBoxplots(np.array([[0,*pctTech]]),
+    #                         [0], positions=[1,3,4,5,7],
+    #                         log = True)
+    #     statsAvg = analysisFunctions\
+    #         .computeBoxplots(np.array([[0,*pctAvg]]),
+    #                         [0], positions=[1,3,4,5,7],
+    #                         log = True)
+
+    #     # plot boxplots and errorbars for 90% probability interval
+    #     ax[count].bxp([statsTech[0]], positions = [positions[0]],
+    #             widths = 0.3, showfliers=False,
+    #             boxprops=dict(color=cmapp, lw=2),
+    #             manage_ticks=False,
+    #             medianprops=dict(color='#931621', lw=1.5, zorder=2),
+    #             capprops=dict(lw=0), whiskerprops=dict(lw=0)),
+    #     ax[count].bxp([statsAvg[0]], positions = [positions[1]],
+    #             widths = 0.3, showfliers=False,
+    #             boxprops=dict(color=cmapg, lw=2),
+    #             manage_ticks=False,
+    #             medianprops=dict(color='#931621', lw=1.5, zorder=2),
+    #             capprops=dict(lw=0), whiskerprops=dict(lw=0))
+
+    #     ax[count].errorbar(positions[0], 10**np.array(pctTech[1]), xerr=0.15, c=cmapp)
+    #     ax[count].errorbar(positions[0], 10**np.array(pctTech[5]), xerr=0.15, c=cmapp)
+    #     ax[count].errorbar(positions[1], 10**np.array(pctAvg[1]), xerr=0.15, c=cmapg)
+    #     ax[count].errorbar(positions[1], 10**np.array(pctAvg[5]), xerr=0.15, c=cmapg)
+    #     ax[count].fill_between([positions[0]-0.15,positions[0]+0.15], 
+    #                            [10**np.array(pctTech[1]),10**np.array(pctTech[1])],
+    #                            [10**np.array(pctTech[5]),10**np.array(pctTech[5])],
+    #                         color=cmapp, alpha=0.1,
+    #                         zorder=-1)
+    #     ax[count].fill_between([positions[0]-0.15,positions[0]+0.15], 
+    #                            [10**np.array(pctTech[2]),10**np.array(pctTech[2])],
+    #                            [10**np.array(pctTech[4]),10**np.array(pctTech[4])],
+    #                         color=cmapp, alpha=0.4,
+    #                         zorder=-1)
+    #     ax[count].fill_between([positions[1]-0.15,positions[1]+0.15], 
+    #                            [10**np.array(pctAvg[1]),10**np.array(pctAvg[1])],
+    #                            [10**np.array(pctAvg[5]),10**np.array(pctAvg[5])],
+    #                         color=cmapg, alpha=0.1,
+    #                         zorder=-1)
+    #     ax[count].fill_between([positions[1]-0.15,positions[1]+0.15], 
+    #                            [10**np.array(pctAvg[2]),10**np.array(pctAvg[2])],
+    #                            [10**np.array(pctAvg[4]),10**np.array(pctAvg[4])],
+    #                         color=cmapg, alpha=0.4,
+    #                         zorder=-1)
+
+    #     ax[count].set_xticklabels([])
+    #     ax[count].set_xticks([])
+    #     ax[count].set_xlabel(tech.replace('_',' '), 
+    #                             rotation=90)
+    #     ax[count].plot([-2,2],[-1,1], 'k--', lw=0.5, zorder=-10)
+    #     ax[count].set_xlim(-0.4,0.4)
+
+    #     count += 1
+     
+    # ax[0].set_yscale('log', base=10)
+
+
+    # axes1=fig.add_axes([0.35,0.01,0.3,0.08])
+    # axes1.fill_between([0.25,0.75],[0,0],[1,1],
+    #                    color='k', alpha=0.3, zorder=-10)
+    # axes1.fill_between([0.05,0.95],[0,0],[1,1],
+    #                    color='k', alpha=0.3, zorder=-10)
+    # axes1.plot([0.25,0.25,0.75,0.75], [-0.5,-2,-2,-0.5], color='k',
+    #            linestyle='--',lw=0.5)
+    # axes1.plot([0.05,0.05,0.95,0.95], [-0.5,-4,-4,-0.5], color='k',
+    #            linestyle='--',lw=0.5)
+    # axes1.plot([0.25,0.25,0.75,0.75,0.25], [0,1,1,0,0],lw=2, color='k')
+    # axes1.plot([0.5,0.5], [0,1],lw=2, color='#931621', zorder=-1)
+    # axes1.plot([0,0], [0,1],color='k', lw=1)
+    # axes1.plot([1,1], [0,1],color='k', lw=1)
+    # axes1.plot([0,0.25], [0.5,0.5],color='k', lw=1)
+    # axes1.plot([0.75,1], [0.5,0.5],color='k', lw=1)
+
+    # axes1.annotate('50%', xy=(0.5, -3), 
+    #                xycoords='data', ha='center', 
+    #                va='center', fontsize=7,
+    #                )
+    # axes1.annotate('90%', xy=(0.5,-5), 
+    #                xycoords='data', ha='center', 
+    #                va='center', fontsize=7,
+    #                )
+    # axes1.annotate('Median', xy=(0.5, 2.5), 
+    #                xycoords='data', ha='center', 
+    #                va='center', fontsize=7)
+    # axes1.annotate('Max', xy=(1.1,0.5), 
+    #                xycoords='data', ha='center', 
+    #                va='center', fontsize=7)
+    # axes1.annotate('Min', xy=(-0.1, 0.5), 
+    #                xycoords='data', ha='center', 
+    #                va='center', fontsize=7)
+
+    # axes1.set_ylim(-6,3)
+    # axes1.set_xlim(-0.5,1.5)
+    # axes1.set_xticks([])
+    # axes1.set_yticks([])
+    # axes1.axis('off')
+
+    #     ax[count].set_xticklabels([])
+    #     ax[count].set_xticks([])
+    #     ax[count].set_xlabel(tech.replace('_',' '), 
+    #                             rotation=90)
+    #     ax[count].plot([-2,2],[-1,1], 'k--', lw=0.5, zorder=-10)
+    #     ax[count].set_xlim(-0.4,0.4)
+
+    # plt.subplots_adjust(left=0.2, right=0.8, 
+    #                     top=0.975, bottom=0.175, hspace=0.0)
+
+    # return fig, ax
+
+
+def plotObsPred(obsErr, predErr, pred2Err,
+                              tf, Ranges, 
+                            samplingPoints, ):
+    
+
+    obserr = obsErr[Ranges.index(tf)]
+    prederr = predErr[Ranges.index(tf)]
+    pred2err = pred2Err[Ranges.index(tf)]
+
+
+    fig, ax = plt.subplots(1,3, sharey=True, sharex=True,   figsize=(15,5))
+
+    ax[0].scatter(10**obserr['Forecast horizon'].values, 10**obserr['Error'].values,
+                  marker='.', color='firebrick', zorder=-2, alpha=0.05)
+    ax[1].scatter(10**prederr['Forecast horizon'].values, 10**prederr['Error'].values,
+                  marker='.', color='C0', zorder=-2, alpha=0.05)
+    # ax[2].scatter(10**pred2err['Forecast horizon'].values, 10**pred2err['Error'].values,
+    #               marker='.', color='C2', zorder=-2, alpha=0.05)
+
+    # get data to be plotted
+    pctObs, _, forecastIntAxis, \
+        _, _, statsObs = \
+            analysisFunctions.\
+                dataToPercentilesArray(obserr,
+                                    tf[1], samplingPoints)
+    pctTech, _, forecastIntAxis, \
+        _, _, statsTech = \
+            analysisFunctions.\
+                dataToPercentilesArray(prederr,
+                                    tf[1], samplingPoints)
+    pctAvg, _, _, \
+        _, _, statsAvg = \
+            analysisFunctions.\
+                dataToPercentilesArray(pred2err,
+                                    tf[1], samplingPoints)
+    
+    plotPercentiles(forecastIntAxis, pctObs,
+                        color = 'firebrick', ax1 = ax[0])
+    plotPercentiles(forecastIntAxis, pctTech,
+                        color = cmapp, ax1 = ax[1])
+    # plotPercentiles(forecastIntAxis, pctAvg,
+    #                     color = cmapg, ax1 = ax[2])
+    plotBoxplotsArray(forecastIntAxis[1:-1], statsObs[1:-1], 
+                    color = 'firebrick', ax = ax[0])
+    plotBoxplotsArray(forecastIntAxis[1:-1], statsTech[1:-1], 
+                    color = cmapp, ax = ax[1])
+    # plotBoxplotsArray(forecastIntAxis[1:-1], statsAvg[1:-1], 
+    #                 color = cmapg, ax = ax[2])
+    xint = np.linspace(0,tf[1],100)
+    ax[2].plot(10**xint,[10**(x*-0.37274962196044475) for x in xint], lw=2, color = cmapg)
+
+    ax[0].plot([1,15],[1,1],'k', zorder=-10)
+    ax[1].plot([1,15],[1,1],'k', zorder=-10)
+    ax[2].plot([1,15],[1,1],'k', zorder=-10)
+    # ax[0].set_xscale('log', base=10)
+    # ax1.set_yscale('log', base=10)
+    # ax2.set_xscale('log', base=10)
+    # ax2.set_yscale('log', base=10)
+    # ax1.set_ylim(0.1,10)
+    # ax2.set_ylim(0.1,10)
+    ax[1].set_xlabel('Cumulative production / Last observed cumulative production')
+    # ax2.set_xlabel('Cumulative production / Last observed cumulative production')
+    ax[1].set_xlim(10**0, 10**tf[1])
+    # ax2.set_xlim(10**0, 10**tf[1])
+    ax[0].annotate('Observations', 
+                    xy=(5, 1.75), fontsize=12, 
+                    color='firebrick',
+                    ha='center',
+                    va='center')
+    ax[1].annotate('Technology-specific slope\nForecast', 
+                    xy=(5, 1.75), fontsize=12, 
+                    color=cmapp,
+                    ha='center',
+                    va='center')
+    ax[2].annotate('Average slope\nForecast', 
+                    xy=(5, 1.75), fontsize=12,
+                    color=cmapg,
+                    ha='center',
+                    va='center')
+
+    ax[0].xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    # ax[1].xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    ax[0].set_ylabel('Unit cost / Last observed unit cost')
+    # ax[0].annotate('Cumulative production'+\
+    #                ' / Last observed cumulative production',
+    #                (1.1,-.2), ha='center', va='center')
+    ax[0].set_ylim(0,2)
+
+    axes1=fig.add_axes([0.9,0.25,0.08,0.5])
+    axes1.plot([-0.5,1.5],[0.5,0.5],'k', lw=2, zorder=-2)
+    axes1.fill_between([-0.5,1.5],[0.25,0.25],[0.75,0.75], 
+                       color='k', alpha=0.3, zorder=-10)
+    axes1.fill_between([-.5,1.5],[0.05,0.05],[0.95,0.95], 
+                       color='k', alpha=0.3, zorder=-10)
+    # axes1.fill_between([-.5,1.5],[0,0],[1.0,1.0], 
+    #                    color='k', alpha=0.1)
+    axes1.plot([1.5,2,2,1.5],[0.25,0.25,0.75,0.75], color='k',
+               linestyle='--',lw=0.5)
+    axes1.plot([1.5,4,4,1.5],[0.05,0.05,0.95,0.95], color='k',
+               linestyle='--',lw=0.5)
+
+    axes1.annotate('50%', xy=(3, 0.5), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7,
+                   rotation=90)
+    axes1.annotate('90%', xy=(5, 0.5), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7,
+                   rotation=90)
+    axes1.annotate('Median', xy=(-2.5, 0.5), 
+                   xycoords='data', ha='center', 
+                   va='center', fontsize=7)
+    # axes1.annotate('Max', xy=(0.5, 1.1), 
+    #                xycoords='data', ha='center', 
+    #                va='center', fontsize=7)
+    # axes1.annotate('Min', xy=(0.5, -0.1), 
+    #                xycoords='data', ha='center', 
+    #                va='center', fontsize=7)
+
+    # axes1.plot([0,1],[0.5,0.5],'k', lw=1)
+    axes1.plot([0,1,1,0,0],[0.25,0.25,0.75,0.75,0.25], lw=2, color='k')
+    axes1.plot([0,1],[0.5,0.5], lw=2, color='#931621', zorder=-1)
+    # axes1.plot([0,1],[0,0], color='k', lw=1)
+    # axes1.plot([0,1],[1,1], color='k', lw=1)
+    # axes1.plot([0.5,0.5],[0,0.25], color='k', lw=1)
+    # axes1.plot([0.5,0.5],[0.75,1], color='k', lw=1)
+
+    axes1.set_xlim(-3.5,5)
+    axes1.set_ylim(-0.5,1.5)
+    axes1.set_xticks([])
+    axes1.set_yticks([])
+    axes1.axis('off')
+
+    plt.subplots_adjust(bottom=0.15, left=0.075, right=0.875, wspace=0.15)
+
+
+    return fig, ax
+
+
+def plotR2Grid(slopeVals, Ranges):
+
+    ndim = int(np.sqrt(len(Ranges)))
+    fig, ax = plt.subplots(ndim, ndim, figsize=(15,10), sharex=True, sharey=True)
+
+    count = 0
+    for r in Ranges:
+        slopevals = slopeVals[Ranges.index(r)]
+        # slopevals = slopevals.loc[slopevals['Tech'].isin(
+        #     ['Fotovoltaica','Transistor','DRAM','Laser_Diode','Hard_Disk_Drive']
+        # ['Wind_Turbine_2_(Germany)', 'Fotovoltaica', 'Photovoltaics_2',
+        # 'Titanium_Sponge', 'Wind_Electricity', 'Transistor', 'Photovoltaics_4',
+        # 'DRAM', 'Ethanol_2', 'Monochrome_Television', 'Laser_Diode',
+        # 'Capillary_DNA_Sequencing', 'Photovoltaics', 'Solar_Water_Heaters',
+        # 'Wind_Turbine_(Denmark)', 'Hard_Disk_Drive', 'Primary_Magnesium',
+        # 'Wheat_(US)', 'Wind_Power', 'Polystyrene']
+                    # )]
+
+        model = sm.OLS(slopevals['Slope val'], sm.add_constant(slopevals['Slope training']))
+        result = model.fit()
+        print(r, result.rsquared)
+        ax[int(count/ndim)][count%ndim].scatter(slopevals['Slope training'], slopevals['Slope val'],
+                                                color='none', edgecolor='firebrick', s=10)
+        ax[int(count/ndim)][count%ndim].set_title('R2 = '+\
+                                                  str(round(result.rsquared,2))+\
+                                                    ', N = '+\
+                                                        str(slopevals['Slope training'].count())+\
+                                                            ', T = '+\
+                                                                str(slopevals['Tech'].nunique()))
+        ax[int(count/ndim)][count%ndim].plot([slopevals['Slope training'].min(),
+                                              slopevals['Slope training'].max()],
+                                              [slopevals['Slope val'].mean(),
+                                               slopevals['Slope val'].mean()], 'k--', zorder=-2)
+        print(slopevals['Tech'].unique())
+        # model = sm.OLS(slopevals['Slope val'], sm.add_constant(slopevals['Average slope']))
+        # result = model.fit()
+        # ax[count%ndim][int(count/ndim)].scatter(slopevals['Average slope'], slopevals['Slope val'], color='red', alpha=0.5)
+        count += 1
+    
+    ax[0][0].annotate('10$^{0.5}$', xy=(0.5, 1.2), xycoords='axes fraction', fontsize=12)
+    ax[0][0].annotate('10$^{0.5}$', xy=(-.5, 0.5), xycoords='axes fraction', fontsize=12)
+    ax[0][1].annotate('10$^{1}$', xy=(0.5, 1.2), xycoords='axes fraction', fontsize=12)
+    ax[1][0].annotate('10$^{1}$', xy=(-.5, 0.5), xycoords='axes fraction', fontsize=12)
+    ax[0][2].annotate('10$^{2}$', xy=(0.5, 1.2), xycoords='axes fraction', fontsize=12)
+    ax[2][0].annotate('10$^{2}$', xy=(-.5, 0.5), xycoords='axes fraction', fontsize=12)
+    ax[1][0].annotate('Traning horizon', xy=(-.75,0.5), 
+                      xycoords='axes fraction', rotation=90, 
+                      ha='center', va='center',
+                      fontsize=12)
+    ax[0][1].annotate('Forecast horizon', xy=(0.5,1.35), 
+                      xycoords='axes fraction', ha='center', va='center',
+                      fontsize=12)
+    ax[1][0].set_ylabel('Slope of the second part')
+    ax[2][1].set_xlabel('Slope of the first part')
+
+    plt.subplots_adjust(bottom=0.1, top=0.9, left=0.2, right=0.8)
+
+    return fig, ax
+
+def plotR2Contour(slopeVals, Ranges):
+
+    fig, ax = plt.subplots(1,3,figsize=(12,5.25))
+
+    for i in range(3):
+
+        ax_ = ax[i]
+
+        if i==1:
+            techs = slopeVals[1]['Tech'].unique()
+            title = 'Technologies covering 2 orders of magnitude ('+str(slopeVals[1]['Tech'].nunique())+')'
+        elif i==2:
+            techs = slopeVals[5]['Tech'].unique()
+            title = 'Technologies covering 3 orders of magnitude ('+str(slopeVals[5]['Tech'].nunique())+')'
+        else:
+            techs = slopeVals[0]['Tech'].unique()
+            title = 'Technologies covering 1 order of magnitude ('+str(slopeVals[0]['Tech'].nunique())+')'
+
+        r2 = []
+        for r in Ranges:
+            if r[0]+r[1]>1 and i==0:
+                r2.append(np.nan)
+                continue
+            if r[0]+r[1]>2 and i==1:
+                r2.append(np.nan)
+                continue
+            if r[0]+r[1]>3 and i==2:
+                r2.append(np.nan)
+                continue
+            slopevals = slopeVals[Ranges.index(r)]
+            slopevals = slopevals.loc[slopevals['Tech'].isin(techs)]
+            model = sm.OLS(slopevals['Slope val'], sm.add_constant(slopevals['Slope training']))
+            result = model.fit()
+            r2.append(result.rsquared)
+        print(r2)
+        r2 = np.array(r2).reshape(3,3)
+        r2 = r2[::-1]
+        print(r2)
+        im = ax_.imshow(r2, cmap=cmcrameri.cm.batlow, vmin=0, vmax=0.43)
+        ax_.set_xticks([0,1,2],[0.5,1,2])
+        ax_.set_yticks([0,1,2],[2,1,0.5])
+        ax_.set_title(title)
+    ax[0].set_ylabel('Training horizon')
+    ax[1].set_xlabel('Forecast horizon')
+    fig.subplots_adjust(bottom=0.2)
+    cbar_ax = fig.add_axes([0.2, 0.1, 0.6, 0.05])
+    cbar = fig.colorbar(im, cax=cbar_ax, orientation='horizontal')
+    cbar.set_label('Fraction of variance of future slope explained by measured slope')
+
+    plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.15)
+
+    return fig, ax
 
 
 
+def plotSignificance(testResDetail, Ranges):
+    cmap = matplotlib.colors.ListedColormap([cmapg, 'firebrick', cmapp])
+    fig, ax = plt.subplots(1,1)
+    gridSign = []
+    for ords in Ranges:
+        sign = []
+        sel = testResDetail.loc[(testResDetail['tOrd']==ords[0])&\
+                                (testResDetail['fOrd']==ords[1])]
+        for t in testResDetail['Tech'].unique():
+            if not(sel.loc[sel['Tech']==t].empty):
+                if sel.loc[sel['Tech']==t,'pvalue'].values[0] < 0.05:
+                    if sel.loc[sel['Tech']==t,'diff'].values < 0 :
+                        sign.append(1)
+                    else:
+                        sign.append(-1)
+                else:
+                    sign.append(0)
+            else:
+                sign.append(np.nan)
+        gridSign.append(sign)
+    gridSign = np.array(gridSign).transpose()
+    im = ax.imshow(gridSign, cmap=cmap, aspect='auto', alpha=0.8)
+    for i in range(gridSign.shape[1]):
+        for j in range(gridSign.shape[0]):
+            if gridSign[j,i] == 0:
+                ax.plot([i-0.5,i+1-0.5],[j-0.5,j+1-0.5], color='grey')
+                ax.plot([i+1-0.5,i-0.5],[j-0.5,j+1-0.5], color='grey')
 
+    testResDetail['Label'] = testResDetail['Sector'] +' - '+ testResDetail['Tech']
+    ax.set_yticks([x for x in range(testResDetail['Tech'].nunique())],[t.replace('_',' ') for t in testResDetail['Label'].unique()])
+    ax.set_xticks([x for x in range(len(Ranges))],['('+str(int(10**x[0]))+', '+str(int(10**x[1]))+')' for x in Ranges], rotation=90)
+    ax.set_ylabel('Technology')
+    ax.set_xlabel('Multiplicative increase in cumulative production (Training, Forecast) ')
+    plt.subplots_adjust(left=0.5, right=0.95, top=0.95, bottom=0.25)
+    cbar = fig.colorbar(im, ax=ax, boundaries=[-1,-0.5,.5,1], 
+                        values=[-1,0,1], orientation='horizontal',
+                        cax=fig.add_axes([0.5,0.05,0.3,0.025]))
+    cbar.set_ticks([-0.75,0,.75])
+    cbar.ax.plot([-.5,.5],[0,1], color='grey')
+    cbar.ax.plot([.5,-.5],[0,1], color='grey')
+    cbar.set_ticklabels(['Avg','No difference','Tech'])
 
     return fig, ax

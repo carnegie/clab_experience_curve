@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import matplotlib, os, analysisFunctions, seaborn
 
+matplotlib.rc('savefig', dpi=300)
+
+
 seaborn.set_palette('colorblind')
 matplotlib.rc('font',**{'family':'sans-serif',
 			'sans-serif':['Helvetica']})
@@ -18,6 +21,7 @@ for file in os.listdir(datafolder):
 	f = pd.read_csv(datafolder+os.path.sep+file)
 	f = f.dropna()
 
+	cols = f.columns.tolist()
 	# compute cumulative sum of units produce 
 	# and normalize price and cumulative units produced
 	f['Normalized cumulative production'] = f[f.columns[3]] /\
@@ -34,6 +38,27 @@ for file in os.listdir(datafolder):
 		 'Normalized unit cost', 'Normalized cumulative production',
 	     'Tech']
 	
+
+	fig, ax = plt.subplots()
+	ax.plot(f['Cumulative production'],f['Unit cost'], marker='o', lw=0)
+	ax.set_xscale('log', base=10)
+	ax.set_yscale('log', base=10)
+	ax.set_ylabel(cols[0])
+	ax.set_xlabel(cols[3])
+	fig.savefig('figs/TechFigures'+os.path.sep+file[:-4]+'.pdf')
+	model = sm.OLS(np.log10(f['Unit cost']), sm.add_constant(np.log10(f['Cumulative production'])))
+	results = model.fit()
+	xlim = ax.get_xlim()
+	ylim = ax.get_ylim()
+	ax.plot(f['Cumulative production'], 
+		 10**(results.predict(
+			 sm.add_constant(
+				 np.log10(f['Cumulative production'])))), 'k')
+	ax.set_xlim(xlim)
+	ax.set_ylim(ylim)
+	fig.savefig('figs/TechFigures'+os.path.sep+file[:-4]+'_fit.pdf')
+	plt.close(fig)	
+
 	# append to dataframe
 	try:
 		df = pd.concat([df, f])
@@ -78,27 +103,29 @@ selTechs = ['Wind_Turbine_2_(Germany)', 'Fotovoltaica', 'Photovoltaics_2',
 # plot normalized cost and cumulative production by sector
 fig, ax = plt.subplots(2,1, sharex=True, 
 		       height_ratios=[1,0.4],
-			   figsize = (9,8))
+			   figsize = (10/2,8/2))
 last = []
+alpha=0.4
 for tech in df['Tech'].unique():
 	s = df.loc[df['Tech']==tech].copy()
-	if tech in selTechs:
-		color = 'C4'
-		alpha=0.8
-		zorder = 0
-	else:
-		color = 'C9'
-		alpha = 0.8
-		zorder = -s['Normalized cumulative production'].values[-1]
+	# if tech in selTechs:
+	# 	color = 'C4'
+	# 	alpha=0.8
+	# 	zorder = 0
+	# else:
+	# 	color = 'C9'
+	# 	alpha = 0.8
+	# 	zorder = -s['Normalized cumulative production'].values[-1]
 	ax[0].plot(s['Normalized cumulative production'], 
 	 s['Normalized unit cost'],
 	#  color=analysisFunctions.sectorsColor[s['Sector'].values[0]],
-	 color=color,
-	 alpha=alpha,
+	#  color=color,
+	#  alpha=alpha,
 	 marker = 'o',
 	 markersize=0.5,
-	 lw=0.25,
-	 zorder=zorder)
+	 lw=0.5,
+	#  zorder=zorder
+	 )
 	last.append(s['Normalized cumulative production'].values[-1])
 last.sort()
 # create total technologies availabilities
@@ -139,14 +166,18 @@ for x in last:
 availsy = [
 	[avails[s][x][1] for x in range(len(avails[s])) ] 
 	for s in ['sel','nonsel'] ]
-ax[1].stackplot(avail[0],availsy, colors = ['C4','C9'])
+# ax[1].stackplot(avail[0],availsy, colors = ['C4','C9'])
 # ax[1].stackplot(avail[0],availsy, colors = [analysisFunctions.sectorsColor[s] for s in df['Sector'].unique()])
 ax[1].plot(avail[0],avail[1], 'k', lw=1)
 ax[0].set_xscale('log', base=10)
 ax[0].set_yscale('log', base=10)
-ax[1].set_xlabel('Normalized cumulative production')
-ax[0].set_ylabel('Normalized unit cost')
+ax[1].set_xlabel('Cumulative production / Initial cumulative production')
+ax[0].set_ylabel('Unit cost / Initial unit cost')
 ax[1].set_ylabel('Technologies available')
+# print(ax[1].get_yticks())
+# print(ax[1].get_yticks().tolist())
+# print(avail[1][0])
+# ax[1].set_yticks(ax[1].get_yticks().tolist().append(avail[1][0]))
 # ax[1].annotate('Selected technologies (20) are required to have at least one point that:'+\
 # 	       '\n\t - is preceded by points for at least one order of magnitude of cumulative production'+\
 # 			'\n\t - is followed by points for at least one order of magnitude or cumulative production',
@@ -163,14 +194,16 @@ ax[1].set_ylabel('Technologies available')
 # 			color='C4',
 # 			fontsize=11
 # 			)
-ax[0].annotate('Selected technologies',
-			xy=(10**6,0.5),
-			xycoords='data',
-			ha='center',
-			va='center',
-			color='C4',
-			fontsize=11
-			)
+# ax[0].annotate('Selected technologies: \n'+\
+# 				'cumulative production range covers\n'+\
+# 				' at least two orders of magnitude',
+# 			xy=(10**8,0.5),
+# 			xycoords='data',
+# 			ha='center',
+# 			va='center',
+# 			color='C4',
+# 			fontsize=11
+# 			)
 # legend_elements = [
 # 	matplotlib.lines.Line2D([0],[0],lw=1, 
 # 			color = analysisFunctions.sectorsColor[sector],
@@ -178,8 +211,8 @@ ax[0].annotate('Selected technologies',
 # 			for sector in df['Sector'].unique() ]
 # fig.legend(handles=legend_elements, title='Sector', loc='center right')
 # fig.subplots_adjust(right=0.8, top=0.95, bottom=0.1, hspace=0.05)
-fig.subplots_adjust(right=0.9, left=0.1, top=0.95, bottom=0.1, hspace=0.05)
-
+fig.subplots_adjust(right=0.9, left=0.15, top=0.95, bottom=0.15, hspace=0.05)
+plt.show()
 
 cmap = seaborn.color_palette("colorblind")
 sectorsColor = {'Energy': cmap[0], 'Chemicals': cmap[1],

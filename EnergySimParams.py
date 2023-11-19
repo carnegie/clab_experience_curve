@@ -255,6 +255,11 @@ costparams['sigma']['multi-day storage'] = 0.065
 costparams['omega']['electrolyzers'] = 0.129
 costparams['sigmaOmega']['electrolyzers'] = 0.067
 costparams['sigma']['electrolyzers'] = 0.201
+
+with open('histElec.txt') as f:
+    histElec = [float(x) for x in f.read().split('\t')[:-1]]
+costparams['elecHist'] = histElec.copy()
+
 learningRateTechs = ['nuclear electricity', 'hydroelectricity', 'biopower electricity',
                      'wind electricity', 'solar pv electricity', 'daily batteries',
             'multi-day storage', 'electrolyzers']
@@ -262,16 +267,72 @@ learningRateTechs2 = ['coal electricity', 'gas electricity', 'nuclear electricit
                 'hydroelectricity', 'biopower electricity', 'wind electricity',
                 'solar pv electricity', 'daily batteries', 'multi-day storage',
                 'electrolyzers']
+
+avgLR = []
+for el in costparams['omega'].keys():
+    if el in learningRateTechs:
+        avgLR.append(costparams['omega'][el])
+avgLR = np.mean(avgLR)
+
+stderrLR = []
+for el in costparams['sigmaOmega'].keys():
+    if el in learningRateTechs:
+        stderrLR.append(costparams['sigmaOmega'][el])
+stderrLR = np.mean(stderrLR)
+
+varN = []
+for el in costparams['sigma'].keys():
+    if el in learningRateTechs:
+        varN.append(costparams['sigma'][el])
+varN = np.mean(varN)
+
+
 costparams2 = copy.deepcopy(costparams)
-for t in learningRateTechs2:
-    costparams2['omega'][t] = 0.27 #0.37274962196044487 #0.3929025570550609 #
-    costparams2['sigmaOmega'][t] =  0.0 #0.02 #0.0 #0.02 #0.27619732762765287
-    costparams2['sigma'][t] = 0.05337952433264972 #0
-costparams2['L']['coal electricity'] = 40
-costparams2['L']['gas electricity'] = 40
+costparams3 = copy.deepcopy(costparams)
+costparams4 = copy.deepcopy(costparams)
+costparams5 = copy.deepcopy(costparams)
 
+for t in learningRateTechs:
+    ### all techs based
+    costparams2['omega'][t] = 0.37274962196044487 
+    costparams2['sigmaOmega'][t] = 0.029783123789468468
+    costparams2['sigma'][t] = 0.08155941096228134 
+    ### energy sector based
+    costparams3['omega'][t] = 0.14238865714823595 
+    costparams3['sigmaOmega'][t] = 0.06555339000828057
+    costparams3['sigma'][t] = 0.11653091876356915
+    ### energy sector based - way et al average & worst case
+    costparams4['omega'][t] = avgLR
+    costparams4['sigmaOmega'][t] = stderrLR
+    costparams4['sigma'][t] = varN
+    ### energy sector based - without nuclear
+    costparams5['omega'][t] = 0.207237
+    costparams5['sigmaOmega'][t] = 0.03582287115618878
+    costparams5['sigma'][t] = 0.12529904474939388
+    
+# costparams2['L']['coal electricity'] = 40
+# costparams2['L']['gas electricity'] = 40
+# costparams3['L']['coal electricity'] = 40
+# costparams3['L']['gas electricity'] = 40
+# costparams4['L']['coal electricity'] = 40
+# costparams4['L']['gas electricity'] = 40
 
-with open('histElec.txt') as f:
-    histElec = [float(x) for x in f.read().split('\t')[:-1]]
-costparams['elecHist'] = histElec.copy()
 costparams2['elecHist'] = histElec.copy()
+costparams3['elecHist'] = histElec.copy()
+costparams4['elecHist'] = histElec.copy()
+costparams5['elecHist'] = histElec.copy()
+
+costsAssumptions = {}
+labels = ['Technology-specific - Way et al. (2022)',
+          'Equal - mean',
+          'Equal - mean Energy w/o nuclear',
+          'Equal - mean Energy',
+          'Equal - mean Way et al. (2022)']
+
+
+
+costsAssumptions['Technology-specific - Way et al. (2022)'] = costparams
+costsAssumptions['Equal - mean'] = costparams2
+costsAssumptions['Equal - mean Energy'] = costparams3
+costsAssumptions['Equal - mean Energy w/o nuclear'] = costparams5
+costsAssumptions['Equal - mean Way et al. (2022)'] = costparams4

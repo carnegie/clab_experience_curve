@@ -638,9 +638,11 @@ class EnergyModel:
                     if tau < y and tau - self.y0 > 0 and y-self.y0 > costparams['L'][t]:
                         self.Q[t][y-self.y0][tau-self.y0] = max(0, self.Q[t][y-self.y0-1][tau-self.y0] - self.Q[t][y-self.y0-costparams['L'][t]][tau-self.y0])
             
+            # normalization over generation produced
             if t in self.learningRateTechs:
                 for y in range(self.y0+1, self.yend):
                     self.Q[t][y-self.y0] = self.Q[t][y-self.y0] * self.q[t][y-self.y0] / sum(self.Q[t][y-self.y0])
+        
         # compute unit cost of technologies
         self.u = {}
         self.z = {}
@@ -691,6 +693,7 @@ class EnergyModel:
             for t in self.technology[:14]:
                 self.totalCost[y-self.y0] += self.C[t][y-self.y0]
 
+        # compute discounted cost
         self.discountedCost = np.zeros(self.yend - self.y0 + 1)
         for y in range(self.y0, 2070+1):
             self.discountedCost[y-self.y0] = np.exp( - 0.02 * (y - self.y0) ) * self.totalCost[y-self.y0]

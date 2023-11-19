@@ -294,21 +294,21 @@ costparams5 = copy.deepcopy(costparams)
 
 for t in learningRateTechs:
     ### all techs based
-    costparams2['omega'][t] = 0.37274962196044487 
-    costparams2['sigmaOmega'][t] = 0.029783123789468468
-    costparams2['sigma'][t] = 0.08155941096228134 
+    costparams2['omega'][t] = 0.372750
+    costparams2['sigmaOmega'][t] = 0.029958
+    costparams2['sigma'][t] = 0.081559
     ### energy sector based
-    costparams3['omega'][t] = 0.14238865714823595 
-    costparams3['sigmaOmega'][t] = 0.06555339000828057
-    costparams3['sigma'][t] = 0.11653091876356915
+    costparams3['omega'][t] = 0.142389 
+    costparams3['sigmaOmega'][t] = 0.067172
+    costparams3['sigma'][t] = 0.116531
     ### energy sector based - way et al average & worst case
     costparams4['omega'][t] = avgLR
     costparams4['sigmaOmega'][t] = stderrLR
     costparams4['sigma'][t] = varN
     ### energy sector based - without nuclear
     costparams5['omega'][t] = 0.207237
-    costparams5['sigmaOmega'][t] = 0.03582287115618878
-    costparams5['sigma'][t] = 0.12529904474939388
+    costparams5['sigmaOmega'][t] = 0.035823
+    costparams5['sigma'][t] = 0.121086
     
 # costparams2['L']['coal electricity'] = 40
 # costparams2['L']['gas electricity'] = 40

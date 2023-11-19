@@ -15,34 +15,9 @@ matplotlib.rc('font', family='Helvetica')
 
 df = pd.read_csv('ExpCurves.csv')
 
-slopes = []
-errors = []
 lrs = []
 
-calint = 0
-valint = 0
-ratio = 0
-
 for t in df['Tech'].unique():
-
-    # if not(analysisFunctions.sectorsinv[t] == 'Energy') or 'Nuclear' in t:
-    #     continue
-
-    x, y = np.log10(df.loc[df['Tech'] == t,'Cumulative production'].values), \
-        np.log10(df.loc[df['Tech'] == t,'Unit cost'].values)
-
-    model = sm.OLS(y, sm.add_constant(x))
-    result = model.fit()
-
-    slopes.append([result.params[1], analysisFunctions.sectorsinv[t], t])
-
-    for i in range(len(x)-1):
-        errors.append([y[i+1] - \
-                    (y[i] + (-0.37274962196044487) * (x[i+1] - x[i])),t] ) 
-        # errors.append([y[i+1] - \
-        #             (y[i] + (-0.20723732127051694) * (x[i+1] - x[i])),t] ) 
-        # errors.append([y[i+1] - \
-        #             (y[i] + (-0.14238865714823595) * (x[i+1] - x[i])),t] ) 
     
     # consider first two points until the last two points
     for i in range(2, len(x)):
@@ -70,37 +45,7 @@ for t in df['Tech'].unique():
                         x_val[-1] - x_val[0], 
                         t, i/j, tot])
 
-slopes = pd.DataFrame(slopes, columns=['Slope','Sector','Tech'])
-print('Average mean slope and its standard error for the selected technologies: ')
-print(slopes['Slope'].mean(), slopes['Slope'].std()/np.sqrt(slopes.shape[0]))
-fig, ax = plt.subplots(1,2, figsize=(12,6), sharey=True, sharex=True)
-sns.kdeplot(slopes, hue='Sector', x='Slope',
-             fill=True, alpha=0.3,
-             ax=ax[0], legend=True)
-# print(slopes.groupby(['Sector']).mean(numeric_only=True), 
-#       slopes.groupby(['Sector']).median(numeric_only=True))
-slopes = slopes.loc[~(slopes['Tech'].str.contains('Nuclear'))]
-sns.kdeplot(slopes, hue='Sector', x='Slope',
-             fill=True, alpha=0.3,
-             ax=ax[1], legend=False)
-sns.kdeplot(slopes, x='Slope',
-             fill=True, alpha=0.3,
-             ax=ax[1], legend=False)
-sns.move_legend(ax[0], 'center left', ncol=1, bbox_to_anchor=(-1.5, 0.5))
-# print(slopes.groupby(['Sector']).mean(numeric_only=True), 
-#       slopes.groupby(['Sector']).median(numeric_only=True))
-plt.subplots_adjust(left=0.4, bottom=0.2, right=0.95)
-
-errors = pd.DataFrame(errors, columns=['Error','Tech'])
-m, v = [], []
-for t in errors['Tech'].unique():
-    m.append(errors.loc[errors['Tech']==t,'Error'].mean())
-    v.append(errors.loc[errors['Tech']==t,'Error'].var())
-print('Average mean error and standard deviation of errors for the selected technologies using mean learning rate:' )
-print(np.mean(m), np.sqrt(np.mean(v)))
-
 # learning rate analysis
-
 lrs = pd.DataFrame(lrs, columns=['cal','val','calint','valint','tech','pfrac','tot'])
 
 lrs['weights'] = 1.0

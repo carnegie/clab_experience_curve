@@ -1,0 +1,14 @@
+name: expCurve
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+    - matplotlib
+    - seaborn
+    - numpy
+    - pandas
+    - scipy
+    - statsmodels
+    - cmcrameri

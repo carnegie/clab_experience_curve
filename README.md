@@ -2,11 +2,24 @@
 
 This repository reports the script for the analysis and figures for replicating the results of "The predictive skill of technological experience curves".
 
-# Create the environment
 
-To install the required packages, please use conda and create an environment by typing in the terminal the following command from the folder where the file is located
 
+
+# Clone the repository and create the environment
+
+To clone the repository, use the following command in the terminal from the folder where you want to clone the repository:
+
+~~~
+git clone github.com/carnegie/clab_experience_curve
+~~~
+
+To install the required packages, we recommend using [conda](https://www.anaconda.com/). A list of the required packages is available in the YAML file (expCurveEnv.yml).
+
+To create a virtual environment with the required packages using conda, use the following command in the terminal from the folder where the file is located:
+
+~~~
 conda env create -f expCurveEnv.yml
+~~~
 
 # Material
 

@@ -409,3 +409,127 @@ def plotErrorTech(df):
 
     return fig, ax
     
+def plotErrTrFor(df):
+
+    # define ranges to be plotted
+    rangeslo = [0,0.5,1]
+    rangesmed = [0.5,1,2]
+    rangeshi = [1,2,3]
+
+    # create figure
+    fig, ax = plt.subplots(3,3, 
+                        figsize = (10,9),
+                        subplot_kw=dict(box_aspect=1),
+                        sharex=True, sharey=True)
+
+    # iterate over ranges for training
+    for tr in enumerate(rangesmed):
+        # iterate over ranges for forecast
+        for fr in enumerate(rangesmed):
+            sel = df.loc[\
+                (df['Forecast horizon']>=rangeslo[fr[0]]) &\
+                (df['Forecast horizon']<rangeshi[fr[0]]) &\
+                (df['Training horizon']>=rangeslo[tr[0]]) &\
+                (df['Training horizon']<rangeshi[tr[0]])].copy()
+            
+            sel['weights'] = 1.0
+            for t in sel['Tech'].unique():
+                sel.loc[sel['Tech']==t, 'weights'] = 1.0 / \
+                    sel.loc[sel['Tech']==t].shape[0] / \
+                    sel['Tech'].nunique()
+            
+            ax[tr[0]][fr[0]].set_title(\
+                '(' + str(int(10**rangesmed[tr[0]])) +
+                ', ' + str(int(10**rangesmed[fr[0]])) + ')')
+
+            for var in ['Error (Tech)', 'Error (Avg)']:
+                q5, q25, q50, q75, q95 = \
+                    sm.stats.DescrStatsW(\
+                        sel[var], weights=sel['weights'])\
+                            .quantile([0.05, 0.25, 0.5, 0.75, 0.95]) 
+                
+                if var=='Error (Tech)':
+                    color = sns.color_palette('colorblind')[0]
+                else:
+                    color = sns.color_palette('colorblind')[2]
+
+                ax[tr[0]][fr[0]].plot(\
+                        [1*(var=='Error (Avg)')-0.25, 1*(var=='Error (Avg)')+0.25], 
+                        10**np.array([q50, q50]), 
+                        color=color)
+                ax[tr[0]][fr[0]].plot(\
+                        [1*(var=='Error (Avg)')-0.25, 1*(var=='Error (Avg)')+0.25, 
+                            1*(var=='Error (Avg)')+0.25, 1*(var=='Error (Avg)')-0.25, 1*(var=='Error (Avg)')-0.25],
+                        10**np.array([q25, q25, q75, q75, q25]),
+                        color=color)
+                
+                if var=='Error (Tech)':
+                    label = 'Technology-specific slope'
+                else:
+                    label = 'Average slope'
+
+                ax[tr[0]][fr[0]].fill_between(\
+                    [1*(var=='Error (Avg)')-.25, 1*(var=='Error (Avg)')+.25], 
+                    10**np.array([q5,q5]), 10**np.array([q95,q95]), 
+                    color=color, alpha=.2)
+                ax[tr[0]][fr[0]].fill_between(\
+                    [1*(var=='Error (Avg)')-.25, 1*(var=='Error (Avg)')+.25],
+                    10**np.array([q25,q25]), 10**np.array([q75,q75]),
+                    color=color, alpha=.2,
+                    label=label)
+
+    for a in ax:
+        for axx in a:
+            axx.set_ylim(.09, 10)
+            axx.set_yscale('log', base=10)
+            axx.yaxis.grid(which='minor', linewidth=0.5)
+            axx.xaxis.grid(visible=False)  
+
+    for a in ax[-1]:
+        a.set_xticks([])
+
+    ax[1][0].set_ylabel('Observed / forecasted cost')
+    
+    legend = fig.legend(handles = ax[-1][-1].get_legend_handles_labels()[0],
+                labels = ax[-1][-1].get_legend_handles_labels()[1],
+                loc='lower center',
+                ncol=2)
+
+    for l in legend.legendHandles:
+        l.set_alpha(.4)
+        l.set_linewidth(4)
+
+    axes = fig.add_axes([0.775, 0.375, 0.25, 0.3])
+
+    axes.grid(False)
+    axes.set_axis_off()
+
+    axes.plot([0,.5], [1,1], color='black')
+    axes.plot([0,.5,.5,0,0], [0.5,0.5,1.5,1.5,0.5], color='black')
+    axes.fill_between([0,.5], [0,0], [2,2], color='black', alpha=.2)
+    axes.fill_between([0,.5], [.5,.5], [1.5,1.5], color='black', alpha=.2)
+    axes.set_ylim(-1,3)
+    axes.set_xlim(-1.8,3)
+    axes.annotate('50%', xy=(-.5,1),
+                        ha='center', va='center',
+                        xycoords='data')
+    axes.annotate('90%', xy=(-1.5,1),
+                        ha='center', va='center',
+                        xycoords='data')
+    axes.annotate('Median', xy=(.6,1),
+                    ha='left', va='center',
+                        xycoords='data')
+    axes.plot([-.1,-.5,-.5], [1.5,1.5,1.25], color='black')
+    axes.plot([-.1,-.5,-.5], [.5,.5,.75], color='black')
+    axes.plot([-.1,-1.5,-1.5], [2,2,1.25], color='silver')
+    axes.plot([-.1,-1.5,-1.5], [0,0,.75], color='silver')
+
+    fig.subplots_adjust(hspace=0.3, wspace=0,
+                        bottom=.1, top=0.95,
+                        right=.75, left=.1,
+                        )
+
+    return fig, ax
+                
+
+

@@ -1594,14 +1594,20 @@ def plotObsPred(obsErr, predErr, pred2Err,
     pred2err = pred2Err[Ranges.index(tf)]
 
 
-    fig, ax = plt.subplots(1,3, sharey=True, sharex=True,   figsize=(15,5))
+    fig, ax = plt.subplots(1, 3, 
+                           sharey=True, sharex=True,
+                           figsize=(15,5))
 
-    ax[0].scatter(10**obserr['Forecast horizon'].values, 10**obserr['Error'].values,
-                  marker='.', color='firebrick', zorder=-2, alpha=0.05)
-    ax[1].scatter(10**prederr['Forecast horizon'].values, 10**prederr['Error'].values,
-                  marker='.', color='C0', zorder=-2, alpha=0.05)
-    # ax[2].scatter(10**pred2err['Forecast horizon'].values, 10**pred2err['Error'].values,
-    #               marker='.', color='C2', zorder=-2, alpha=0.05)
+    ax[0].scatter(10**obserr['Forecast horizon'].values,
+                  10**obserr['Error'].values,
+                  marker='.', color='firebrick',
+                  edgecolor='None',
+                  zorder=-2, alpha=0.05)
+    ax[1].scatter(10**prederr['Forecast horizon'].values,
+                  10**prederr['Error'].values,
+                  marker='.', color='C0', 
+                  edgecolor='None',
+                  zorder=-2, alpha=0.05)
 
     # get data to be plotted
     pctObs, _, forecastIntAxis, \
@@ -1635,9 +1641,9 @@ def plotObsPred(obsErr, predErr, pred2Err,
     xint = np.linspace(0,tf[1],100)
     ax[2].plot(10**xint,[10**(x*-0.37274962196044475) for x in xint], lw=2, color = cmapg)
 
-    ax[0].plot([1,15],[1,1],'k', zorder=-10)
-    ax[1].plot([1,15],[1,1],'k', zorder=-10)
-    ax[2].plot([1,15],[1,1],'k', zorder=-10)
+    ax[0].plot([1,1e6],[1,1],'k', zorder=-10)
+    ax[1].plot([1,1e6],[1,1],'k', zorder=-10)
+    ax[2].plot([1,1e6],[1,1],'k', zorder=-10)
     # ax[0].set_xscale('log', base=10)
     # ax1.set_yscale('log', base=10)
     # ax2.set_xscale('log', base=10)

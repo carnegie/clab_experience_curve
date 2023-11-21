@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 import matplotlib, cmcrameri
 import statsmodels.api as sm
 import matplotlib.animation as animation
+import seaborn as sns
 
 matplotlib.rc('savefig', dpi=300)
-
+sns.set_style('whitegrid')
 matplotlib.rc('font',
                 **{'family':'sans-serif',
                    'sans-serif':'Helvetica'})
@@ -187,6 +188,6 @@ for t in DF['Tech'].unique():
     # save animation as a gif
     writer = animation.PillowWriter(fps=5,
                 metadata=dict(artist='Me'),)
-    ani.save('./gifs/'+t+'.gif', writer=writer)
+    ani.save('./figs/gifs/'+t+'.gif', writer=writer)
 
 plt.close('all')

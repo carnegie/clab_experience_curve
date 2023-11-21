@@ -4,60 +4,93 @@ import statsmodels.api as sm
 import scipy, seaborn
 
 ### sectors dictionary
-sectors = {'Energy':['Wind_Turbine_2_(Germany)', 'Fotovoltaica',
-                    'Crude_Oil', 'Photovoltaics_2', 
-                    'Onshore_Gas_Pipeline', 'Wind_Electricity',
-                    'Photovoltaics_4','Geothermal_Electricity',
-                    'Solar_Thermal','Nuclear_Electricity',
-                    'Solar_Thermal_Electricity', 'Electric_Power',
-                    'SCGT', 'Photovoltaics', 
-                    'Solar_Water_Heaters', 'Wind_Turbine_(Denmark)',
-                    'CCGT_Power','Nuclear_Power_(OECD)',
-                    'CCGT_Electricity', 'Offshore_Gas_Pipeline',
+sectors = {'Energy':['Wind_Turbine_2_(Germany)', 
+                    'Fotovoltaica',
+                    'Crude_Oil', 
+                    'Photovoltaics_2', 
+                    'Onshore_Gas_Pipeline', 
+                    'Wind_Electricity',
+                    'Photovoltaics_4',
+                    'Geothermal_Electricity',
+                    'Solar_Thermal',
+                    'Nuclear_Electricity',
+                    'Solar_Thermal_Electricity', 
+                    'Electric_Power',
+                    'SCGT', 
+                    'Photovoltaics', 
+                    'Solar_Water_Heaters', 
+                    'Wind_Turbine_(Denmark)',
+                    'CCGT_Power',
+                    'Nuclear_Power_(OECD)',
+                    'CCGT_Electricity', 
+                    'Offshore_Gas_Pipeline',
                     'Wind_Power'], 
-        'Chemicals':['Titanium_Sponge','CarbonDisulfide',
-                    'Primary_Aluminum', 'Acrylonitrile',
-                    'HydrofluoricAcid','PolyesterFiber',
-                    'SodiumHydrosulfite', 'EthylAlcohol',
-                    'Ethanol_2', 'Cyclohexane',
-                    'Polyvinylchloride','PolyethyleneLD',
-                    'Trichloroethane', 'Polypropylene',
-                    'Pentaerythritol','Ethylene_2',
-                    'VinylAcetate', 'CarbonBlack',
-                    'Aniline', 'PhthalicAnhydride',
-                    'Magnesium', 'MaleicAnhydride',
-                    'TitaniumDioxide', 'Paraxylene',
-                    'Ammonia', 'VinylChloride',
-                    'Sorbitol', 'Styrene',
-                    'Aluminum', 'Polystyrene',
-                    'Phenol', 'BisphenolA',
-                    'EthyleneGlycol', 'Methanol',
-                    'PolyethyleneHD', 'Low_Density_Polyethylene',
-                    'Urea', 'Sodium',
-                    'Ethanolamine', 'SodiumChlorate',
-                    'Primary_Magnesium', 'NeopreneRubber',
-                    'Ethylene', 'AcrylicFiber',
-                    'Formaldehyde', 'Benzene',
-                    'Ethanol_(Brazil)', 'IsopropylAlcohol',
-                    'Motor_Gasoline', 'Caprolactam'],
-        'Hardware': ['Transistor', 'DRAM', 
-                     'Hard_Disk_Drive', 'Laser_Diode'],
-        'Consumer goods': ['Monochrome_Television', 'Automotive_(US)' ,
-                           'Electric_Range', 'Free_Standing_Gas_Range'],
-        'Food': ['Milk_(US)', 'Refined_Cane_Sugar',
-                 'Wheat_(US)', 'Beer_(Japan)',
+        'Chemicals':['Titanium_Sponge',
+                    'CarbonDisulfide',
+                    'Primary_Aluminum', 
+                    'Acrylonitrile',
+                    'HydrofluoricAcid',
+                    'PolyesterFiber',
+                    'SodiumHydrosulfite', 
+                    'EthylAlcohol',
+                    'Ethanol_2', 
+                    'Cyclohexane',
+                    'Polyvinylchloride',
+                    'PolyethyleneLD',
+                    'Trichloroethane', 
+                    'Polypropylene',
+                    'Pentaerythritol',
+                    'Ethylene_2',
+                    'VinylAcetate', 
+                    'CarbonBlack',
+                    'Aniline', 
+                    'PhthalicAnhydride',
+                    'Magnesium', 
+                    'MaleicAnhydride',
+                    'TitaniumDioxide', 
+                    'Paraxylene',
+                    'Ammonia', 
+                    'VinylChloride',
+                    'Sorbitol', 
+                    'Styrene',
+                    'Aluminum', 
+                    'Polystyrene',
+                    'Phenol', 
+                    'BisphenolA',
+                    'EthyleneGlycol', 
+                    'Methanol',
+                    'PolyethyleneHD', 
+                    'Low_Density_Polyethylene',
+                    'Urea', 
+                    'Sodium',
+                    'Ethanolamine', 
+                    'SodiumChlorate',
+                    'Primary_Magnesium', 
+                    'NeopreneRubber',
+                    'Ethylene', 
+                    'AcrylicFiber',
+                    'Formaldehyde', 
+                    'Benzene',
+                    'Ethanol_(Brazil)', 
+                    'IsopropylAlcohol',
+                    'Motor_Gasoline', 
+                    'Caprolactam'],
+        'Hardware': ['Transistor', 
+                    'DRAM', 
+                    'Hard_Disk_Drive', 
+                    'Laser_Diode'],
+        'Consumer goods': ['Monochrome_Television', 
+                           'Automotive_(US)' ,
+                           'Electric_Range', 
+                           'Free_Standing_Gas_Range'],
+        'Food': ['Milk_(US)', 
+                 'Refined_Cane_Sugar',
+                 'Wheat_(US)', 
+                 'Beer_(Japan)',
                  'Corn_(US)'],
         'Genomics':['Shotgun_Sanger_DNA_Sequencing',
                      'Capillary_DNA_Sequencing']
 }
-sectorsColor = {'Energy':'royalblue', 'Chemicals':'black',
-               'Hardware':'red', 'Consumer goods':'forestgreen',
-               'Food':'cyan', 'Genomics':'darkmagenta'}
-
-# cmap = seaborn.color_palette("colorblind")
-# sectorsColor = {'Energy': cmap[0], 'Chemicals': cmap[1],
-#                'Hardware': cmap[2], 'Consumer goods': cmap[3],
-#                'Food': cmap[4], 'Genomics': cmap[8]}
 
 sectorsinv = {v:k for k, vlist in sectors.items() for v in vlist}
 
@@ -229,6 +262,71 @@ def computeR2MonteCarlo(LR_cal, LR_val, techsList, iter=1000):
 
     return R2
 
+
+def computeAllErrors(df):
+
+    # initialize lists to store results
+    dfObsErr = []
+
+    # iterate over all technologies
+    for t in df['Tech'].unique():
+
+        # computing average technological slope
+        #  based on all other technologies
+        # slopeall = computeMeanSlope(df.loc[~(df['Tech'] == t)].copy())
+        slopeall = computeMeanSlope(df)
+        # print(slopeall)
+
+        # extract technology data
+        x, y = np.log10(\
+            df.loc[\
+                df['Tech']==t, 'Cumulative production'].values), \
+            np.log10(df.loc[df['Tech']==t, 'Unit cost'].values)
+        
+        # iterate over all points 
+        # where prediction is meaningful in the dataset
+        # i.e., the first two points are needed to make a prediction
+        # and the last two points to have something
+        for i in range(1, len(x)-1):
+            # iterate over all points before 
+            # to obtain different observed calibration sets
+            for M in range(i-1,-1,-1):
+
+                # build linear regression model and fit it to data
+                model = sm.OLS(y[M:i+1], sm.add_constant(x[M:i+1]))
+                result = model.fit()
+
+                # iterate over all following points
+                for N in range(i+1, len(x)):
+
+                    # compute prediction using technology-specific slope
+                    predtech = y[i] + \
+                        result.params[1] * (x[N]-x[i])
+                    
+                    # compute prediction using average slope
+                    predavg = y[i] + \
+                        slopeall * (x[N]-x[i])
+
+                    # compute error using technology-specific slope
+                    errtech = y[N] - predtech
+
+                    # compute error using average slope
+                    erravg = y[N] - predavg
+                    
+                    # store data
+                    dfObsErr.append([x[i] - x[M],
+                                    x[N] - x[i],
+                                    y[N] - y[i],
+                                    predtech - y[i],
+                                    predavg - y[i],
+                                    errtech,
+                                    erravg,
+                                    i,
+                                    t])
+                    
+    return dfObsErr
+
+
 # compute errors over specified ranges of 
 # cumulative production for training and validation
 # using technology-specific and average slopes
@@ -282,7 +380,7 @@ def computeErrors(df, trainingOrdMag, forecastOrdMag):
                 # use M to explore the forecast range 
                 # (M ranges from i+1 to H-1)
                 M = min(i + 1, H - 1)
-                while M <= H - 2 and x[M] - x[i] < forecastOrdMag:
+                while M <= H - 2 and x[M] - x[i] < maxForecastOrdMag:
                     M += 1
 
                 # if training and forecast ranges are large enough
@@ -302,15 +400,9 @@ def computeErrors(df, trainingOrdMag, forecastOrdMag):
                         
                     # compute forecast error associated 
                     # using slope M points after midpoint
-
                     pred =  y[i] + slope * (x[i:M+1] - x[i])
                     
-                    # pred =  result.predict(sm.add_constant(x[i:M+1]))
-
                     pred2 =  y[i] + slopeall * (x[i:M+1] - x[i])
-
-                    # pred2 =  np.mean(y[N:i+1] - slopeall * x[N:i+1]) + slopeall * (x[i:M+1])
-                    # pred2 =  intercept + slopeall * (x[i:M+1])
                     
                     # compute errors and store data
                     error = (y[i:M+1] - (pred)) 
@@ -319,7 +411,7 @@ def computeErrors(df, trainingOrdMag, forecastOrdMag):
                         if x[i+idx] - x[i]>-1:
                             dferrTech.append(
                                 [x[i+idx] - x[i], error[idx], tech,
-                                 result.f_pvalue
+                                #  result.f_pvalue
                                 ])
                             dferrAvg.append(
                                 [x[i+idx] - x[i], error2[idx], tech])
@@ -329,28 +421,7 @@ def computeErrors(df, trainingOrdMag, forecastOrdMag):
                                             pred2[idx] - y[i],
                                             tech])
 
-                        
-                    # compute slope errors and store data
-
-                    # derive linear regression model
-                    model_n = sm.OLS(y[i:M+1], 
-                                     sm.add_constant(x[i:M+1]))
-                    result_n = model_n.fit()
-                    slope_n = result_n.params[1]
-                    slopeErrTech.append(
-                        [forecastOrdMag , 
-                         slope_n - slope,
-                        #  100*(1 - 2**slope_n) - (100*(1 - 2**slope)),
-                           tech])
-                    slopeErrAvg.append(
-                        [forecastOrdMag , 
-                         slope_n - slopeall,
-                        #  100*(1 - 2**slope_n) - (100*(1 - 2**slopeall)), 
-                         tech])
-                    slopevals.append([slope_n, slope, slopeall, tech])
-
-    return trainErr, dferrTech, dferrAvg, \
-            slopeErrTech, slopeErrAvg, slopevals, obspred
+    return trainErr, dferrTech, dferrAvg, obspred
 
 # built arrays of breaks and centered breaks for forecast errors plot
 def builtBreakCenteredArrays(ordOfMag, npoints, training=False):
@@ -387,7 +458,7 @@ def computeTechWeightedPercentiles(df, percentiles=[0,5,25,50,75,95,100]):
     # count data points per technology and assign inverse weight
     for tt in df['Tech'].unique():
         df.loc[df['Tech']==tt,'Weights'] =  \
-              1/df.loc[df['Tech']==tt].count()[0]
+              1/df.loc[df['Tech']==tt].shape[0]
     
     # sort data by error
     df = df.sort_values(by='Error', ascending=True)
@@ -441,7 +512,7 @@ def computePercentilesArray(dferr, breaks,
         # print(sel.count()[0], breaks[i], sel['Tech'].nunique())
         # if no data is selected, append NaNs
         if sel.shape[0] == 0:
-            pct.append([breaks[i],np.nan,np.nan,np.nan,np.nan,np.nan])
+            pct.append([breaks[i],np.nan,np.nan,np.nan,np.nan,np.nan,np.nan,np.nan])
             countPoints.append(0)
             countTechs.append(0)
             continue

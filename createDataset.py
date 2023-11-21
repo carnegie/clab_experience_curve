@@ -6,7 +6,7 @@ import seaborn as sns
 import matplotlib, os, analysisFunctions
 
 matplotlib.rc('savefig', dpi=300)
-
+sns.set_style('whitegrid')
 sns.set_context('talk')
 sns.set_palette('colorblind')
 matplotlib.rc('font',**{'family':'sans-serif',

@@ -29,36 +29,17 @@ dfObsErr = pd.DataFrame(dfObsErr,
                                  'Forecast (Avg)',
                                  'Error (Tech)',
                                  'Error (Avg)',
-                                 'Point',
+                                 'Max trainingt horizon',
+                                 'Max forecast horizon',
                                  'Tech'])
 
 dfObsErrAll = dfObsErr.copy()
 
-# select only technologies for which at least 
-# one order of magnitude of data is available
-# for both training and forecast horizons
-dfObsErr = dfObsErr.loc[\
-    dfObsErr['Tech'].isin(\
-        dfObsErr.copy().loc[\
-            (dfObsErr['Training horizon']>=1) &\
-            (dfObsErr['Forecast horizon']>=1),'Tech'].values)].copy()
+dfObsErr = dfObsErr.loc[dfObsErr['Training horizon']>=1]\
+                     .loc[dfObsErr['Max forecast horizon']>=1]
 
-for t in dfObsErr['Tech'].unique():
-    dfObsErr.loc[dfObsErr['Tech']==t] = \
-        dfObsErr.loc[(dfObsErr['Tech']==t) & \
-        (dfObsErr.loc[dfObsErr['Tech']==t,'Point'].isin(\
-            dfObsErr.loc[(dfObsErr['Tech']==t) & \
-                (dfObsErr['Training horizon']>=1) &\
-                (dfObsErr['Forecast horizon']>=1) ,'Point'].values))]
-
-# select only data for which 
-# at least one order of magnitude
-# has been used for training
-dfObsErr = dfObsErr.loc[\
-    dfObsErr['Training horizon']>=1]
 
 fig, ax = plottingFunctions.plotObsPredErr(dfObsErr)
-
 
 # for supplementary material
 fig, ax = plottingFunctions.plotErrTrFor(dfObsErrAll)  

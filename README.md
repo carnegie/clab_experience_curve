@@ -1,6 +1,6 @@
 # Overview
 
-This repository reports the script for the analysis and figures for replicating the results of "The predictive skill of technological experience curves".
+This repository reports the scripts used to obtain the results and figures reported in the manuscript "The predictive skill of technological experience curves".
 
 
 

@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 import statsmodels.api as sm
 import analysisFunctions
@@ -412,9 +413,9 @@ def plotErrorTech(df):
 def plotErrTrFor(df):
 
     # define ranges to be plotted
-    rangeslo = [0,0.5,1]
-    rangesmed = [0.5,1,2]
-    rangeshi = [1,2,3]
+    rangeslo = [0.0,0.5,1.0]
+    rangesmed = [0.5,1.0,2.0]
+    rangeshi = [1.0,1.5,3.0]
 
     # create figure
     fig, ax = plt.subplots(3,3, 
@@ -426,11 +427,11 @@ def plotErrTrFor(df):
     for tr in enumerate(rangesmed):
         # iterate over ranges for forecast
         for fr in enumerate(rangesmed):
-            sel = df.loc[\
-                (df['Forecast horizon']>=rangeslo[fr[0]]) &\
-                (df['Forecast horizon']<rangeshi[fr[0]]) &\
-                (df['Training horizon']>=rangeslo[tr[0]]) &\
-                (df['Training horizon']<rangeshi[tr[0]])].copy()
+
+            sel = df.loc[df['Training horizon']>=rangesmed[tr[0]]]\
+                    .loc[df['Max forecast horizon']>=rangesmed[fr[0]]]\
+                    .loc[df['Forecast horizon']>=rangeslo[fr[0]]]\
+                    .loc[df['Forecast horizon']<rangeshi[fr[0]]].copy()
             
             sel['weights'] = 1.0
             for t in sel['Tech'].unique():
@@ -440,7 +441,8 @@ def plotErrTrFor(df):
             
             ax[tr[0]][fr[0]].set_title(\
                 '(' + str(int(10**rangesmed[tr[0]])) +
-                ', ' + str(int(10**rangesmed[fr[0]])) + ')')
+                ', ' + str(int(10**rangesmed[fr[0]])) + ') ' + 
+                str(sel['Tech'].nunique()) + ' Techs',)
 
             for var in ['Error (Tech)', 'Error (Avg)']:
                 q5, q25, q50, q75, q95 = \
@@ -480,7 +482,7 @@ def plotErrTrFor(df):
 
     for a in ax:
         for axx in a:
-            axx.set_ylim(.09, 10)
+            axx.set_ylim(.03, 10)
             axx.set_yscale('log', base=10)
             axx.yaxis.grid(which='minor', linewidth=0.5)
             axx.xaxis.grid(visible=False)  
@@ -499,7 +501,7 @@ def plotErrTrFor(df):
         l.set_alpha(.4)
         l.set_linewidth(4)
 
-    axes = fig.add_axes([0.775, 0.375, 0.25, 0.3])
+    axes = fig.add_axes([0.775, 0.375, 0.275, 0.3])
 
     axes.grid(False)
     axes.set_axis_off()
@@ -532,4 +534,100 @@ def plotErrTrFor(df):
     return fig, ax
                 
 
+def plotStatisticalTestTech(df):
 
+    # define sector colors 
+    cmap = sns.color_palette('colorblind')
+    sectorsColor = {'Energy': cmap[0], 'Chemicals': cmap[1],
+               'Hardware': cmap[2], 'Consumer goods': cmap[3],
+               'Food': cmap[4], 'Genomics': cmap[8]}
+
+    # add sector column
+    df['Sector'] = [analysisFunctions.sectorsinv[t] 
+                        for t in df['Tech'].values]
+    
+    df['TechIsBetter'] = [1*(x[0] < x[1]) for x in \
+        df[['Mean Error (Tech)', 'Mean Error (Avg)']].values]
+
+    # create figure
+    fig, ax = plt.subplots(df['Training horizon'].nunique(),
+                           df['Forecast horizon'].nunique(),
+                           figsize = (15,9),
+                           sharey=True,
+                           sharex=True)
+
+    # iterate over training and forecast horizons
+    for tr in enumerate(df['Training horizon'].unique()):
+        for fr in enumerate(df['Forecast horizon'].unique()):
+            
+            # extract relevant data
+            s = df.loc[df['Training horizon']==tr[1]]\
+                    .loc[df['Forecast horizon']==fr[1]].copy()
+            
+            # create empty list to store data
+            bars = {}
+
+            # iterate over sectors
+            for sec in analysisFunctions.sectors.keys():
+
+                # find how many times technology specific 
+                # has lower error and the different is significant
+                techbetter = s.loc[s['Sector']==sec]\
+                        .loc[s['Paired t-test'] < 0.05]\
+                        .loc[s['Wilcoxon signed-ranks test'] < 0.05]\
+                        .loc[s['TechIsBetter']==1].shape[0]
+                                
+                # find how many times the average slope method
+                # has lower error and the difference is significant
+                averagebetter = s.loc[s['Sector']==sec]\
+                        .loc[s['Paired t-test'] < 0.05]\
+                        .loc[s['Wilcoxon signed-ranks test'] < 0.05]\
+                        .loc[s['TechIsBetter']==0].shape[0]
+
+                # append data to list
+                bars[sec] = [techbetter, 
+                            s.loc[s['Sector']==sec].shape[0] - \
+                                techbetter - averagebetter,
+                            averagebetter]
+
+            # convert list to dataframe
+            bars = pd.DataFrame(bars, 
+                                index=['Technology-specific\nslope',
+                                        'No significant\ndifference',
+                                        'Average slope'])
+
+            # plot stacked barplot
+            bars.plot.bar(stacked=True, 
+                        color=[sectorsColor[x] for x in bars.columns],
+                        ax=ax[tr[0]][fr[0]],
+                        legend=False)
+
+            # remove xaxis grid            
+            ax[tr[0]][fr[0]].xaxis.grid(visible=False)
+
+            # set descriptive title for panel
+            ax[tr[0]][fr[0]].set_title(\
+                '(' + str(int(10**tr[1])) + ', ' + 
+                str(int(10**fr[1])) + ') ' + 
+                str(s['Tech'].nunique()) + ' Techs',)
+
+    # set yaxis label
+    ax[1][0].set_ylabel('Number of technologies with lowest error')
+      
+    # add legend
+    fig.legend(handles=ax[0][0].get_legend_handles_labels()[0],
+                labels=ax[0][0].get_legend_handles_labels()[1],
+                loc='lower center',
+                ncol=6)
+
+    # adjust figure    
+    fig.subplots_adjust(bottom=0.35, top=0.95,
+                        right=0.95, left=0.075,
+                        wspace=0.05, hspace=0.3)
+    
+    return fig, ax
+
+
+
+
+            

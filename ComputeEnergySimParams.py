@@ -17,7 +17,9 @@ for t in df['Tech'].unique():
         df.loc[df['Tech'] == t,'Cumulative production'].values), \
         np.log10(\
             df.loc[df['Tech'] == t,'Unit cost'].values)
-    # build regression model and fit it to all data available
+    
+    # build linear regression model
+    # and fit it to all data available
     model = sm.OLS(y, sm.add_constant(x))
     result = model.fit()
 
@@ -29,21 +31,15 @@ for t in df['Tech'].unique():
 # create dataframe from list
 slopes = pd.DataFrame(slopes, columns=['Slope','Sector','Tech'])
 
-# compute average slope and its standard error 
-print('Average mean slope and \
-      its standard error across all technologies: ')
-print(slopes['Slope'].mean(),
-      slopes['Slope'].sem())
 # store information in list
 expCurveParams = [['All techs', slopes['Slope'].mean(), 
       slopes['Slope'].sem()]]
 
 # compute average slope and its standard error by sector
-print('Average mean slope and its standard error by sector: ')
 smean = slopes.groupby(['Sector']).mean(numeric_only=True)
 ssem = slopes.groupby(['Sector']).sem(numeric_only=True)
-print(smean)
-print(ssem)
+
+
 # store information in list
 expCurveParams.append(\
     ['Energy sector', 
@@ -53,12 +49,9 @@ expCurveParams.append(\
 # compute average slope and its standard error by sector
 # after excluding nuclear technologies
 slopes = slopes.loc[~(slopes['Tech'].str.contains('Nuclear'))]
-print('Average mean slope and '
-      'its standard error by sector excluding nuclear: ')
 smean = slopes.groupby(['Sector']).mean(numeric_only=True)
 ssem = slopes.groupby(['Sector']).sem(numeric_only=True)
-print(smean)
-print(ssem)
+
 # store information in list
 expCurveParams.append(\
     ['Energy sector without nuclear',
@@ -107,6 +100,7 @@ for p in expCurveParams:
     for t in errors['Tech'].unique():
         m.append(errors.loc[errors['Tech']==t,'Error'].mean())
         v.append(errors.loc[errors['Tech']==t,'Error'].var())
+
     # append standard deviation of errors to expCurveParams
     expCurveParams[expCurveParams.index(p)]\
         .append(np.sqrt(np.mean(v)))
@@ -116,6 +110,10 @@ expCurveParams = pd.DataFrame(expCurveParams,
             columns=['Aggregation','Mean slope', 
                      'Standard error of mean slope',
                      'Standard deviation of errors'])
+
 print('Parameters used to estimate the '
        'cost of the energy transition:')
 print(expCurveParams)
+
+expCurveParams.to_csv('./energySim/ExpCurveParams.csv', 
+                      index=False)

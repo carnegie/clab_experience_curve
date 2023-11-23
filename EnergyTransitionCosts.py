@@ -3,7 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib
-import EnergySim, EnergySimParams
+import energySim.EnergySim as EnergySim
+import energySim.EnergySimParams as EnergySimParams
 
 matplotlib.rc('savefig', dpi=300)
 

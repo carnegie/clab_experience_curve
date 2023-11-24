@@ -23,7 +23,7 @@ conda env create -f expCurveEnv.yml
 
 # Material
 
-The folder `expCurveData` contains the files for 86 techhnology as downloaded from the Santa Fe Institute [Performance Curve Database](https://pcdb.santafe.edu/).
+The folder `expCurveData` contains the files for 86 techhnologies as downloaded from the Santa Fe Institute [Performance Curve Database](https://pcdb.santafe.edu/). These are the technologies for which data without missing values is available.
 
 The script `CreateDataset.py` reads in the CSV files for each technology, prepares the data in two CSV files (`ExpCurves.csv` and `NormalizedExpCurves.csv`) and produces figures 1, S1, and S2.
 

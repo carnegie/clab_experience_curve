@@ -1,9 +1,13 @@
 import numpy as np
 import copy
 
+### this script contains the parameters used 
+### to simulate the energy model of Way et al. (2022)
+
 scenarios = {}
 
-# No transition scenario
+### NO TRANSITION ###
+
 # growth rates of carriers
 # growthparams = gt0, gT, t1, t2, t3, psi
 EFgp = {}
@@ -38,7 +42,8 @@ slack = {'transport':'electricity', 'industry':'electricity',
 
 scenarios['no transition'] = [EFgp, slack]
 
-# fast transition scenario
+### FAST TRANSITION ###
+
 EFgp = {}
 # EFgp['oil','transport'] = [1.99, 0.2, 12, 20, 0, 1]
 EFgp['electricity','transport'] = [25, 5, 8, 20, 1, .8]
@@ -72,7 +77,8 @@ slack = {'transport':'oil', 'industry':'gas',
 scenarios['fast transition'] = [EFgp, slack]
 
 
-# slow transition scenario
+### SLOW TRANSITION ###
+
 EFgp = {}
 EFgp['oil','transport'] = [0.0, -5, 15, 30, 0, 1]
 # EFgp['electricity','transport'] = [25, 5, 8, 20, 1, .8]
@@ -105,7 +111,8 @@ slack = {'transport':'electricity', 'industry':'electricity',
 
 scenarios['slow transition'] = [EFgp, slack]
 
-# slow nuclear transition scenario
+### SLOW NUCLEAR TRANSITION ###
+
 EFgp = {}
 EFgp['oil','transport'] = [0.0, -5, 15, 30, 0, 1]
 # EFgp['electricity','transport'] = [25, 5, 8, 20, 1, .8]
@@ -139,7 +146,8 @@ slack = {'transport':'electricity', 'industry':'electricity',
 scenarios['slow nuclear transition'] = [EFgp, slack]
 
 
-# historical mix scenario
+### HISTORICAL MIX ###
+
 EFgp = {}
 # EFgp['oil','transport'] = [0.0, -5, 15, 30, 0, 1]
 EFgp['electricity','transport'] = [2, 2, 0, 1, 0, 1]
@@ -172,7 +180,7 @@ slack = {'transport':'oil', 'industry':'gas',
 
 scenarios['historical mix'] = [EFgp, slack]
 
-
+### COST PARAMETERS ###
 
 costparams = {}
 costparams['cgrid'] = 10.4 #  bn$(2020)/PWh
@@ -256,42 +264,48 @@ costparams['omega']['electrolyzers'] = 0.129
 costparams['sigmaOmega']['electrolyzers'] = 0.067
 costparams['sigma']['electrolyzers'] = 0.201
 
-with open('histElec.txt') as f:
+### histElec has been generated 
+### by running the Historical Mix scenario
+### and saving the electricity demand
+with open('./energySim/histElec.txt') as f:
     histElec = [float(x) for x in f.read().split('\t')[:-1]]
 costparams['elecHist'] = histElec.copy()
 
 learningRateTechs = ['nuclear electricity', 'hydroelectricity', 'biopower electricity',
                      'wind electricity', 'solar pv electricity', 'daily batteries',
             'multi-day storage', 'electrolyzers']
-learningRateTechs2 = ['coal electricity', 'gas electricity', 'nuclear electricity',
-                'hydroelectricity', 'biopower electricity', 'wind electricity',
-                'solar pv electricity', 'daily batteries', 'multi-day storage',
-                'electrolyzers']
 
+### obtain average experience curve params from Way et al. (2022)
+
+# average learning rate
 avgLR = []
 for el in costparams['omega'].keys():
     if el in learningRateTechs:
         avgLR.append(costparams['omega'][el])
 avgLR = np.mean(avgLR)
 
+# standard error of learning rate
 stderrLR = []
 for el in costparams['sigmaOmega'].keys():
     if el in learningRateTechs:
         stderrLR.append(costparams['sigmaOmega'][el])
 stderrLR = np.mean(stderrLR)
 
-varN = []
+# standard deviation of errors
+stdN = []
 for el in costparams['sigma'].keys():
     if el in learningRateTechs:
-        varN.append(costparams['sigma'][el])
-varN = np.mean(varN)
+        stdN.append(costparams['sigma'][el])
+stdN = np.mean(stdN)
 
 
+# copy params for alternative cost assumptions
 costparams2 = copy.deepcopy(costparams)
 costparams3 = copy.deepcopy(costparams)
 costparams4 = copy.deepcopy(costparams)
 costparams5 = copy.deepcopy(costparams)
 
+# modify learning rate assumptions
 for t in learningRateTechs:
     ### all techs based
     costparams2['omega'][t] = 0.372750
@@ -304,24 +318,13 @@ for t in learningRateTechs:
     ### energy sector based - way et al average & worst case
     costparams4['omega'][t] = avgLR
     costparams4['sigmaOmega'][t] = stderrLR
-    costparams4['sigma'][t] = varN
+    costparams4['sigma'][t] = stdN
     ### energy sector based - without nuclear
     costparams5['omega'][t] = 0.207237
     costparams5['sigmaOmega'][t] = 0.035823
     costparams5['sigma'][t] = 0.121086
-    
-# costparams2['L']['coal electricity'] = 40
-# costparams2['L']['gas electricity'] = 40
-# costparams3['L']['coal electricity'] = 40
-# costparams3['L']['gas electricity'] = 40
-# costparams4['L']['coal electricity'] = 40
-# costparams4['L']['gas electricity'] = 40
 
-costparams2['elecHist'] = histElec.copy()
-costparams3['elecHist'] = histElec.copy()
-costparams4['elecHist'] = histElec.copy()
-costparams5['elecHist'] = histElec.copy()
-
+# create labels different cost assumptions
 costsAssumptions = {}
 labels = ['Technology-specific - Way et al. (2022)',
           'Equal - mean',
@@ -329,8 +332,7 @@ labels = ['Technology-specific - Way et al. (2022)',
           'Equal - mean Energy',
           'Equal - mean Way et al. (2022)']
 
-
-
+# assign label to cost assumptions
 costsAssumptions['Technology-specific - Way et al. (2022)'] = costparams
 costsAssumptions['Equal - mean'] = costparams2
 costsAssumptions['Equal - mean Energy'] = costparams3

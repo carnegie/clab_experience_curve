@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -7,24 +6,26 @@ import energySim.EnergySim as EnergySim
 import energySim.EnergySimParams as EnergySimParams
 
 matplotlib.rc('savefig', dpi=300)
-
 sns.set_style('whitegrid')
 sns.set_context('talk')
 matplotlib.rc('font',
-                **{'family':'sans-serif','sans-serif':'Helvetica'})
+                **{'family':'sans-serif',
+                   'sans-serif':'Helvetica'})
 
-### test
+### test - uncomment to run single scenario 
+### and check consistency with Way et al. (2022)
+
 # scenario = 'fast transition'
 # model = EnergySim.EnergyModel(EFgp = EnergySimParams.scenarios[scenario][0],
 #                                slack = EnergySimParams.scenarios[scenario][1])
 # model.simulate()
 # model.computeCost(EnergySimParams.costparams, 
 #       learningRateTechs=EnergySimParams.learningRateTechs)
-# # # model.plotDemand()
-# # # model.plotUsefulEnergy()
-# # # model.plotFinalEnergy()
-# # # model.plotFinalEnergyBySource()
-# # # model.plotCostBySource()
+# model.plotDemand()
+# model.plotFinalEnergyBySource()
+# model.plotCostBySource()
+# model.plotS7()
+# plt.show()
 
 ### simulation loop
 costs, costs2 = {}, {}
@@ -38,7 +39,7 @@ labels = ['Technology-specific - Way et al. (2022)',
 for l in labels:
     tcosts[l] = {}
 coststech = {}
-nsim = 1000
+nsim = 10
 colors = ['k','forestgreen',
           'lightblue','magenta','brown']
 techcolors = ['black','saddlebrown','darkgray',

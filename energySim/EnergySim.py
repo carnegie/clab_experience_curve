@@ -248,7 +248,7 @@ class EnergyModel:
         ax.set_ylabel('EJ')
         ax.set_xlabel('Year')
         ax.set_title('Electricity generation, storage'
-                     'capacity and P2X production')
+                     ' capacity and P2X production')
 
         fig, ax = plt.subplots(figsize=(8,6))
         ax.plot(100*(self.q['P2X'][1:]/self.q['P2X'][:-1]-1))

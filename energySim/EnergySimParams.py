@@ -1,5 +1,6 @@
 import numpy as np
-import copy
+import pandas as pd
+import copy, os
 
 ### this script contains the parameters used 
 ### to simulate the energy model of Way et al. (2022)
@@ -267,13 +268,21 @@ costparams['sigma']['electrolyzers'] = 0.201
 ### histElec has been generated 
 ### by running the Historical Mix scenario
 ### and saving the electricity demand
-with open('./energySim/histElec.txt') as f:
+
+currentPath = os.path.dirname(__file__)
+
+with open(currentPath+'/histElec.txt') as f:
     histElec = [float(x) for x in f.read().split('\t')[:-1]]
 costparams['elecHist'] = histElec.copy()
 
-learningRateTechs = ['nuclear electricity', 'hydroelectricity', 'biopower electricity',
-                     'wind electricity', 'solar pv electricity', 'daily batteries',
-            'multi-day storage', 'electrolyzers']
+learningRateTechs = ['nuclear electricity', 
+                     'hydroelectricity', 
+                     'biopower electricity',
+                     'wind electricity', 
+                     'solar pv electricity', 
+                     'daily batteries',
+                     'multi-day storage', 
+                     'electrolyzers']
 
 ### obtain average experience curve params from Way et al. (2022)
 
@@ -305,25 +314,60 @@ costparams3 = copy.deepcopy(costparams)
 costparams4 = copy.deepcopy(costparams)
 costparams5 = copy.deepcopy(costparams)
 
+# read alternative learning rate assumptions
+expCurveParams = pd.read_csv(currentPath+'/ExpCurveParams.csv')
+
 # modify learning rate assumptions
 for t in learningRateTechs:
     ### all techs based
-    costparams2['omega'][t] = 0.372750
-    costparams2['sigmaOmega'][t] = 0.029958
-    costparams2['sigma'][t] = 0.081559
+    costparams2['omega'][t] = \
+         - expCurveParams.loc[\
+            expCurveParams['Aggregation'] == 'All techs',\
+                        'Mean slope'].values[0]
+    costparams2['sigmaOmega'][t] = \
+        expCurveParams.loc[\
+            expCurveParams['Aggregation'] == 'All techs',\
+                        'Standard error of mean slope'].values[0]
+    costparams2['sigma'][t] = \
+        expCurveParams.loc[\
+            expCurveParams['Aggregation'] == 'All techs',\
+                        'Standard deviation of errors'].values[0]
+
     ### energy sector based
-    costparams3['omega'][t] = 0.142389 
-    costparams3['sigmaOmega'][t] = 0.067172
-    costparams3['sigma'][t] = 0.116531
+    costparams3['omega'][t] = \
+        - expCurveParams.loc[\
+            expCurveParams['Aggregation'] == 'Energy sector',\
+                        'Mean slope'].values[0]
+    costparams3['sigmaOmega'][t] = \
+        expCurveParams.loc[\
+            expCurveParams['Aggregation'] == 'Energy sector',\
+                        'Standard error of mean slope'].values[0]
+    costparams3['sigma'][t] = \
+        expCurveParams.loc[\
+            expCurveParams['Aggregation'] == 'Energy sector',\
+                        'Standard deviation of errors'].values[0]
+
     ### energy sector based - way et al average & worst case
     costparams4['omega'][t] = avgLR
     costparams4['sigmaOmega'][t] = stderrLR
     costparams4['sigma'][t] = stdN
     ### energy sector based - without nuclear
-    costparams5['omega'][t] = 0.207237
-    costparams5['sigmaOmega'][t] = 0.035823
-    costparams5['sigma'][t] = 0.121086
-
+    costparams5['omega'][t] = \
+        - expCurveParams.loc[\
+            expCurveParams['Aggregation'] == \
+                'Energy sector without nuclear',\
+                        'Mean slope'].values[0]
+    costparams5['sigmaOmega'][t] = \
+        expCurveParams.loc[\
+            expCurveParams['Aggregation'] == \
+                'Energy sector without nuclear',\
+                        'Standard error of mean slope'].values[0]
+    costparams5['sigma'][t] = \
+        expCurveParams.loc[\
+            expCurveParams['Aggregation'] == \
+                'Energy sector without nuclear',\
+                        'Standard deviation of errors'].values[0]
+    
 # create labels different cost assumptions
 costsAssumptions = {}
 labels = ['Technology-specific - Way et al. (2022)',

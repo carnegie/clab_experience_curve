@@ -1621,6 +1621,14 @@ Wind_Power,3145.0,1995.0,1.1
 Wind_Power,4780.0,1996.0,1.220523338
 Wind_Power,10150.0,1999.0,1.059047901
 Wind_Power,18450.0,2001.0,0.841688444
+Ford_Model-T,0.015,1910.0,3000.0
+Ford_Model-T,0.05,1911.0,2500.0
+Ford_Model-T,0.11,1912.0,2000.0
+Ford_Model-T,0.3,1913.0,1800.0
+Ford_Model-T,0.5,1914.0,1800.0
+Ford_Model-T,0.8,1915.0,1700.0
+Ford_Model-T,1.2,1916.0,1500.0
+Ford_Model-T,4.3,1921.0,950.0
 Polystyrene,21.0,1944.0,0.55
 Polystyrene,32.0,1945.0,0.52
 Polystyrene,55.0,1946.0,0.45

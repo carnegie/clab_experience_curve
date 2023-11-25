@@ -12,8 +12,13 @@ matplotlib.rc('font',
                 **{'family':'sans-serif',
                    'sans-serif':'Helvetica'})
 
-# create dictionary to store total costs
-tcosts = {}
+## set to True to run new simulations
+simulate = False
+# select the number of cost projection simulations
+# needed to explore parameters' uncertainty
+# used only if new simulations are run
+nsim = 1000
+
 
 # create labels for different cost assumptions
 labels = ['Technology-specific - Way et al. (2022)',
@@ -22,15 +27,6 @@ labels = ['Technology-specific - Way et al. (2022)',
           'Equal - mean Energy',
           'Equal - mean Way et al. (2022)']
 
-# for each label, create an empty dictionary to store costs
-for l in labels:
-    tcosts[l] = {}
-
-
-# select the number of cost projection simulations
-# needed to explore parameters' uncertainty
-nsim = 1000
-
 # define colors for technologies
 techcolors = ['black','saddlebrown','darkgray',
                   'saddlebrown','darkgray',
@@ -38,50 +34,68 @@ techcolors = ['black','saddlebrown','darkgray',
                   'forestgreen','deepskyblue',
                   'orange','pink','plum','lawngreen', 'burlywood'] 
 
-# create empty list to store technology expansion
-techExp = []
+# resimulate only if required
+if simulate:
 
-# iterate over scenarios
-for scenario in EnergySimParams.scenarios.keys():
+    # create dictionary to store total costs
+    tcosts = {}
 
-    # create empty list to store total costs
+    # for each label, create an empty dictionary to store costs
     for l in labels:
-        tcosts[l][scenario] = []
+        tcosts[l] = {}
 
-    # pass input data to model
-    model = EnergySim.EnergyModel(\
-                EFgp = EnergySimParams.scenarios[scenario][0],
-                slack = EnergySimParams.scenarios[scenario][1])
+    # create empty list to store technology expansion
+    techExp = []
 
-    # simulate model
-    model.simulate()
+    # iterate over scenarios
+    for scenario in EnergySimParams.scenarios.keys():
 
-    # run multiple iterations to explore cost parameters' uncertainty
-    for n in range(nsim):
-        
-        # for each cost assumption, compute total costs
-        # and append it to the dictionary
-        # 1e-12 is used to convert from USD to trillion USD
+        # create empty list to store total costs
         for l in labels:
-            tcosts[l][scenario].append( 1e-12 * \
-                model.computeCost(\
-                    EnergySimParams.costsAssumptions[l],
-                    EnergySimParams.learningRateTechs)[1])
+            tcosts[l][scenario] = []
 
-    # append technology expansion to list
-    for t in model.technology[5:13]:
-        techExp.append([t, scenario, model.z[t][0], model.z[t][-1]])
+        # pass input data to model
+        model = EnergySim.EnergyModel(\
+                    EFgp = EnergySimParams.scenarios[scenario][0],
+                    slack = EnergySimParams.scenarios[scenario][1])
 
-# create dataframe from dictionary, update columns,
-#  and focus on relevant scenarios
-df = pd.DataFrame(tcosts).stack().explode().reset_index()
-df.columns = ['Scenario',
-              'Learning rate assumptions', 
-              'Net Present Cost [trillion USD]']
-df = df.loc[~df['Scenario'].str.contains('nuclear|historical') ]
+        # simulate model
+        model.simulate()
 
-# save dataframe to csv
-df.to_csv('./energySim/Costs_all.csv')
+        # run multiple iterations to explore cost parameters' uncertainty
+        for n in range(nsim):
+            
+            # for each cost assumption, compute total costs
+            # and append it to the dictionary
+            # 1e-12 is used to convert from USD to trillion USD
+            for l in labels:
+                tcosts[l][scenario].append( 1e-12 * \
+                    model.computeCost(\
+                        EnergySimParams.costsAssumptions[l],
+                        EnergySimParams.learningRateTechs)[1])
+
+        # append technology expansion to list
+        for t in model.technology[5:13]:
+            techExp.append([t, scenario, model.z[t][0], model.z[t][-1]])
+
+    # create dataframe from dictionary, update columns,
+    #  and focus on relevant scenarios
+    df = pd.DataFrame(tcosts).stack().explode().reset_index()
+    df.columns = ['Scenario',
+                'Learning rate assumptions', 
+                'Net Present Cost [trillion USD]']
+    df = df.loc[~df['Scenario'].str.contains('nuclear|historical') ]
+
+    # save dataframe to csv
+    df.to_csv('./energySim/Costs_all.csv')
+
+    # convert tech expansion list to dataframe
+    df = pd.DataFrame(techExp, 
+                    columns=['Technology', 
+                            'Scenario', 
+                            'Initial production [EJ]',
+                                'Final production [EJ]'])
+    df.to_csv('./energySim/TechnologyExpansion.csv')
 
 # read data
 df = pd.read_csv('./energySim/Costs_all.csv')
@@ -108,11 +122,11 @@ ax = sns.boxplot(data=df,
 
 # set x-axis labels
 plt.gca()\
-    .set_xticklabels(\
+    .set_xticks(plt.gca().get_xticks(),
         [label.get_text().replace(' - ', '\n') \
             for label in ax.get_xticklabels()])
 
-# move legend on the bottom 
+# move legend on the bottom
 sns.move_legend(ax, "lower center", 
                 ncol=3, bbox_to_anchor=(0.5, -0.6))
 
@@ -120,12 +134,9 @@ sns.move_legend(ax, "lower center",
 plt.subplots_adjust(bottom=0.375, top=0.95, 
                     left=0.1, right=0.95)
 
-# convert tech expansion list to dataframe
-df = pd.DataFrame(techExp, 
-                  columns=['Technology', 
-                           'Scenario', 
-                           'Initial production [EJ]',
-                             'Final production [EJ]'])
+# read data
+df = pd.read_csv('./energySim/TechnologyExpansion.csv')
+
 
 # create figure
 fig, ax = plt.subplots(5,1, 

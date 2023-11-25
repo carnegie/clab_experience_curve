@@ -12,6 +12,9 @@ sns.set_palette('colorblind')
 matplotlib.rc('font',**{'family':'sans-serif',
 			'sans-serif':['Helvetica']})
 
+## set to True to overwrite existing files
+saveData = False
+
 # folder name
 datafolder = 'expCurveData'
 
@@ -102,14 +105,17 @@ df_ = df[['Tech',
 		  'Cumulative production',
 		  'Year',
 		  'Unit cost']].copy()
-# df_.to_csv('ExpCurves.csv', index=False)
+
+if saveData:
+	df_.to_csv('ExpCurves.csv', index=False)
 
 # save normalized dataframe
 df_ = df[['Tech',
 			'Normalized cumulative production',
 	  		'Year',
 			'Normalized unit cost']].copy()
-# df_.to_csv('NormalizedExpCurves.csv', index=False)
+if saveData:
+	df_.to_csv('NormalizedExpCurves.csv', index=False)
 
 df['Sector'] = [\
 	analysisFunctions.sectorsinv[tech] for tech in df['Tech']]

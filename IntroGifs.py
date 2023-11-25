@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib, cmcrameri
+import matplotlib, cmcrameri, os
 import statsmodels.api as sm
 import matplotlib.animation as animation
 import seaborn as sns
@@ -188,6 +188,8 @@ for t in DF['Tech'].unique():
     # save animation as a gif
     writer = animation.PillowWriter(fps=5,
                 metadata=dict(artist='Me'),)
+    if not os.path.exists('./figs/gifs/'):
+        os.makedirs('./figs/gifs/')
     ani.save('./figs/gifs/'+t+'.gif', writer=writer)
 
 plt.close('all')

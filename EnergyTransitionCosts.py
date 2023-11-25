@@ -137,17 +137,20 @@ plt.subplots_adjust(bottom=0.375, top=0.95,
 # read data
 df = pd.read_csv('./energySim/TechnologyExpansion.csv')
 
+# remove less relevant scenarios
+df = df.loc[~df['Scenario'].str.contains('nuclear|historical') ]
+
 
 # create figure
-fig, ax = plt.subplots(5,1, 
+fig, ax = plt.subplots(3,1, 
                        sharex=True, sharey=True, 
-                       figsize=(12,10))
+                       figsize=(12,7))
 
 # counter for scenarios
 count = 0
 
 # iterate over scenarios
-for s in df['Scenario'].unique():
+for s in ['no transition', 'slow transition', 'fast transition']:
 
     # counter for technologies
     countl = 0

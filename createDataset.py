@@ -1,129 +1,287 @@
 import pandas as pd
-import os, matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
+import seaborn as sns
+import matplotlib, os, analysisFunctions
 
-# prepare figure for plots
-fig, ax = plt.subplots()
+matplotlib.rc('savefig', dpi=300)
+sns.set_style('whitegrid')
+sns.set_context('talk')
+sns.set_palette('colorblind')
+matplotlib.rc('font',**{'family':'sans-serif',
+			'sans-serif':['Helvetica']})
+
+## set to True to overwrite existing files
+saveData = False
+
 # folder name
 datafolder = 'expCurveData'
+
 # for all files in folder
 for file in os.listdir(datafolder):
+
 	# read file and drop nan
 	f = pd.read_csv(datafolder+os.path.sep+file)
 	f = f.dropna()
-	# compute cumulative sum of units produce and normalize price and cumulative units produced
-	f[f.columns[2]] = f[f.columns[2]].cumsum()
-	f[f.columns[2]] = f[f.columns[2]] / f[f.columns[2]].values[0]
-	f[f.columns[0]] = f[f.columns[0]] / f[f.columns[0]].values[0]
-	# get the length of the observation series in years
-	f[f.columns[1]] = f[f.columns[1]] - f[f.columns[1]].values[0]
-	# plot as step functions
-	ax.step(f[f.columns[2]], f[f.columns[0]],'o-', where='post', markersize=2, alpha=0.5)
-	# save unit cost, cumulative production, and name of technology
-	f['Tech'] = file
-	f = f[[f.columns[0], f.columns[1], f.columns[2], 'Tech']].copy()
-	f.columns = ['Unit cost','Year','Cumulative production','Tech']
+
+	# save original columns and redefine columns
+	cols = f.columns
+	f.columns = ['Unit cost',
+				'Year',
+				'Production',
+				'Cumulative production']	
+
+	# compute cumulative sum of units produce 
+	# and normalize price and cumulative units produced
+	f['Normalized cumulative production'] = \
+		f['Cumulative production'] /\
+		  f['Cumulative production'].values[0]
+	f['Normalized unit cost'] = \
+		f['Unit cost'] /\
+		  f['Unit cost'].values[0]
+	
+	# save unit cost, year, cumulative production,
+	# normalized unit cost, normzlied cumulative production, 
+	# and name of technology
+	f['Tech'] = file[:-4]
+	f = f[['Unit cost', 
+			'Year', 
+			'Cumulative production',
+			'Normalized unit cost', 
+			'Normalized cumulative production',
+			'Tech']].copy()	
+
+	# plot individual technology data 
+	fig, ax = plt.subplots()
+	ax.plot(f['Cumulative production'], 
+			f['Unit cost'], 
+			marker='o', lw=0)
+	
+	# set log scale and axes labels
+	ax.set_xscale('log', base=10)
+	ax.set_yscale('log', base=10)
+	ax.set_ylabel(cols[0])
+	ax.set_xlabel(cols[3])
+
+	#save figure
+	fig.tight_layout()
+	fig.savefig('figs/TechFigures' + \
+			 os.path.sep + file[:-4] + '.pdf')
+
+	# store position of axes limits
+	xlim = ax.get_xlim()
+	ylim = ax.get_ylim()
+
+	# add regression line to figure
+	model = sm.OLS(np.log10(f['Unit cost']), 
+				sm.add_constant(\
+					np.log10(f['Cumulative production'])))
+	results = model.fit()
+	ax.plot(f['Cumulative production'], 
+		 10**(results.predict(
+			 sm.add_constant(
+				 np.log10(f['Cumulative production'])))), 'k')
+
+	# set position of axes limits
+	ax.set_xlim(xlim)
+	ax.set_ylim(ylim)
+
+	#save figure
+	fig.savefig('figs/TechFigures' + \
+			 os.path.sep + file[:-4] + '_fit.pdf')
+	plt.close(fig)	
+
 	# append to dataframe
 	try:
 		df = pd.concat([df, f])
 	except NameError:
 		df = f
-# set axes styling
-ax.set_xscale('log', base=10)
-ax.set_yscale('log', base=10)	
-ax.set_ylabel('Unit cost')
-ax.set_xlabel('Cumulative production')
 
-# figure reporting the number of available technologies for number of units produced
-fig, ax = plt.subplots()
-nunits =[1]
-for tech in df['Tech'].unique():
-	nunits.append(df.loc[df['Tech']==tech, df.columns[2]].max())
-nunits.sort()
-ax.step(nunits,[x for x in range(len(nunits),0,-1)], where='post')
-ax.set_xscale('log', base=10)
-ax.set_ylabel('Number of technologies available')
-ax.set_xlabel('Normalized cumulative production')
-
-# figure reporting the number of available technologies for number of years measured
-fig, ax = plt.subplots()
-nyears =[1]
-for tech in df['Tech'].unique():
-	nyears.append(df.loc[df['Tech']==tech, df.columns[1]].max())
-nyears.sort()
-ax.step(nyears,[x for x in range(len(nunits),0,-1)], where='post')
-# ax.set_xscale('log', base=10)
-ax.set_ylabel('Number of technologies available')
-ax.set_xlabel('Length of experience curve in years')
-
-# figure plotting number of years available against number of units
-fig, ax = plt.subplots()
-nyears =[]
-nunits = []
-for tech in df['Tech'].unique():
-	nunits.append(df.loc[df['Tech']==tech, df.columns[2]].max())
-	nyears.append(df.loc[df['Tech']==tech, df.columns[1]].max())
-ax.scatter(nyears,nunits)
-ax.set_yscale('log', base=10)
-ax.set_ylabel('Total number of units measured')
-ax.set_xlabel('Length of experience curve in years')
-plt.show()
-
-df = df[['Unit cost','Year','Cumulative production','Tech']].copy()
+print('Saving dataframes to csv files...')
 
 # save dataframe
-df.to_csv('ExpCurves.csv', index=False)
+df_ = df[['Tech',
+		  'Cumulative production',
+		  'Year',
+		  'Unit cost']].copy()
 
-# predict for each technology using only available data 
+if saveData:
+	df_.to_csv('ExpCurves.csv', index=False)
+
+# save normalized dataframe
+df_ = df[['Tech',
+			'Normalized cumulative production',
+	  		'Year',
+			'Normalized unit cost']].copy()
+if saveData:
+	df_.to_csv('NormalizedExpCurves.csv', index=False)
+
+df['Sector'] = [\
+	analysisFunctions.sectorsinv[tech] for tech in df['Tech']]
+
+### plot normalized cost and cumulative production by sector
+
+# create figure
+fig, ax = plt.subplots(2, 1, sharex=True, 
+		       height_ratios=[1,0.5],
+			   figsize=(10,8))
+
+# create list to store the range of cumulative production
+# covered by each of the technologies
+last = []
+
+# iterate over all technologies
 for tech in df['Tech'].unique():
-	select = df.loc[df['Tech']==tech].copy()
-	plt.figure()
-	plt.scatter(select['Cumulative production'], select['Unit cost'], color='r', marker='o')
-	for npoints in range(2,len(select['Unit cost'].values)):
-		# estimate experience curve using simple linear regression
-		x = np.log10(select['Cumulative production'].values[:npoints])
-		y = np.log10(select['Unit cost'].values[:npoints])
-		x = sm.add_constant(x)
-		model = sm.OLS(endog=y, exog=x)
-		res = model.fit()
-		x_predict = np.log10(select['Cumulative production'].values[npoints-1:])
-		x_predict = sm.add_constant(x_predict)
-		predictions = 10**(res.predict(x_predict))
-		# adjust by applying experience from last point onward
-		last_error = np.log10(select['Unit cost'].values[npoints-1]) - res.predict(x_predict)[0]
-		adjusted_predictions = predictions * 10 ** last_error
-		plt.plot(select['Cumulative production'].values[npoints-1:], predictions, 'k:')
-		plt.plot(select['Cumulative production'].values[npoints-1:npoints+1], adjusted_predictions[:2], 'r:')
-		# predicting next value estimating local experience curve based on last two points
-		x = np.log10(select['Cumulative production'].values[npoints-2:npoints])
-		x = sm.add_constant(x)
-		y = np.log10(select['Unit cost'].values[npoints-2:npoints])
-		model = sm.OLS(endog=y, exog=x)
-		res = model.fit()
-		x_predict = np.log10(select['Cumulative production'].values[npoints-1:npoints+1])
-		x_predict = sm.add_constant(x_predict)
-		predictions = 10**(res.predict(x_predict))
-		plt.plot(select['Cumulative production'].values[npoints-1:npoints+1], predictions, 'g:')
+
+	# select data for each technology
+	s = df.loc[df['Tech']==tech].copy()
+
+	# plot normalized unit cost vs
+	# normalized cumulative production
+	ax[0].plot(s['Normalized cumulative production'], 
+		s['Normalized unit cost'],
+		marker = '.',
+		markersize=5,
+		alpha=0.5
+		)
 	
-	legend_elements = [
-		matplotlib.lines.Line2D([0],[0], lw=0, marker='o', color='red', label='Obs'),
-		matplotlib.lines.Line2D([0],[0], lw=1, linestyle='--', color='k', label='Exp. curve estimate'),
-		matplotlib.lines.Line2D([0],[0], lw=1, linestyle='--', color='r', label='Exp. curve estimate from last point'),
-		matplotlib.lines.Line2D([0],[0], lw=1, linestyle='--', color='g', label='Exp. curve estimated from last two points'),
-	]
-	plt.legend(handles=legend_elements)
-	plt.xscale('log', base=10)
-	plt.yscale('log', base=10)
-	plt.ylabel('Unit cost')
-	plt.xlabel('Cumulative production')
-	plt.title(select['Tech'].values[0])
-	plt.show()
+	# append length of cumulative production range
+	last.append(\
+		s['Normalized cumulative production'].values[-1])
+
+# sort list of cumulative production ranges
+last.sort()
+
+# create array contanining the number of technologies
+# available at each order of magnitude of cumulative production
+avail = [[1,df['Tech'].nunique()]]
+for x in last:
+	avail.append([x, avail[-1][1] - 1])
+avail = np.array(avail).transpose()
+
+# plot available technologies vs cumulative production range
+ax[1].step(avail[0], avail[1], 
+		   where='post', color='k', 
+		   lw=2)
+
+# set axes scales and labels
+ax[0].set_xscale('log', base=10)
+ax[0].set_yscale('log', base=10)
+ax[1].set_xlabel(
+	'Cumulative production / Initial cumulative production')
+ax[0].set_ylabel('Unit cost / Initial unit cost')
+ax[1].set_ylabel('Technologies available')
+
+fig.subplots_adjust(right=0.9, left=0.15, 
+					top=0.95, bottom=0.15, 
+					hspace=0.15)
+
+### Below some figures for the 
+### Supplememntary Material are produced
+
+### plot normalized cost vs cumulative production, 
+### color by sector
+
+# define sector colors
+cmap = sns.color_palette("colorblind")
+sectorsColor = {'Energy': cmap[0], 'Chemicals': cmap[1],
+               'Hardware': cmap[2], 'Consumer goods': cmap[3],
+               'Food': cmap[4], 'Genomics': cmap[8]}
+
+# create figure
+fig, ax = plt.subplots(figsize=(9,7.5))
+
+# iterate over all technologies
+for tech in df['Tech'].unique():
+
+	# plot normalized unit cost vs
+	# normalized cumulative production
+	# color by sector
+	ax.plot(df.loc[df['Tech']==tech,'Cumulative production'],
+			df.loc[df['Tech']==tech,'Unit cost'],
+			alpha=0.5,
+			marker='.',
+			markersize=5,
+			color=sectorsColor[\
+				df.loc[df['Tech']==tech,'Sector'].values[0]])
+
+# set axes scales and labels
+ax.set_xscale('log', base=10)
+ax.set_yscale('log', base=10)
+ax.set_xlabel('Cumulative production')
+ax.set_ylabel('Unit cost')
+
+# define legend handles and labels
+legend_elements = [\
+				matplotlib.lines.Line2D([0], [0], 
+					marker='o', 
+					color=sectorsColor['Energy'], 
+					label='Energy',
+					markersize=5),
+				matplotlib.lines.Line2D([0], [0], 
+					marker='o',
+					color=sectorsColor['Chemicals'], 
+					label='Chemicals',
+					markersize=5),
+				matplotlib.lines.Line2D([0], [0], 
+					marker='o',
+					color=sectorsColor['Hardware'], 
+					label='Hardware',
+					markersize=5),
+				matplotlib.lines.Line2D([0], [0], 
+					marker='o',
+					color=sectorsColor['Consumer goods'], 
+					label='Consumer goods',
+					markersize=5),
+				matplotlib.lines.Line2D([0], [0],
+					marker='o',
+					color=sectorsColor['Food'], 
+					label='Food',
+					markersize=5),
+				matplotlib.lines.Line2D([0], [0],
+					marker='o',
+					color=sectorsColor['Genomics'], 
+					label='Genomics',
+					markersize=5),
+				]
+
+# add legend
+fig.legend(handles=legend_elements, 
+		   title='Sectors', 
+		   ncol=2, 
+		   loc='lower center')
+
+plt.subplots_adjust(bottom=0.3, top=0.975)
+
+### plot normalized cost and year
+### color by sector
+
+# create figure
+fig, ax = plt.subplots(figsize=(9,7.5))
+
+# iterate over all technologies
+for tech in df['Tech'].unique():
+
+	# plot normalized unit cost vs
+	# year, color by sector
+	plt.plot(df.loc[df['Tech']==tech,'Year'],
+			df.loc[df['Tech']==tech,'Unit cost'],
+			alpha=0.5,
+			marker='.',
+			markersize=5,
+			color=sectorsColor[\
+				df.loc[df['Tech']==tech,'Sector'].values[0]])
+
+# set axes scales and labels
+ax.set_yscale('log', base=10)
+ax.set_xlabel('Year')
+ax.set_ylabel('Unit cost')
+
+# add legend
+fig.legend(handles=legend_elements, 
+		   title='Sectors', 
+		   ncol=2, loc='lower center')
+plt.subplots_adjust(bottom=0.3, top=0.975)
 
 plt.show()
-
-
-		
-
-		

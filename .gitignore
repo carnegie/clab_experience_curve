@@ -1,0 +1,11 @@
+*/.DS_Store
+.DS_Store
+figs/*
+figs/
+Old/
+
+
+# Byte-compiled / optimized / DLL files
+*/__pycache__/
+__pycache__/
+*.py[cod]

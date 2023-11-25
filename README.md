@@ -21,6 +21,16 @@ To create a virtual environment with the required packages using conda, use the 
 conda env create -f expCurveEnv.yml
 ~~~
 
+# Replicating figures
+
+Run the scripts:
+- `CreateDataset.py` (Fig. 1, S1, S2)
+- `ExplainedVariance.py` (Fig. 2, S3)
+- `CostErrors.py` (Fig. 3, S4, S5)
+- `ErrorsStatisticalSignificance` (Fig. S6)
+- `EnergyTransitionCosts.py` (Fig. 4, 5)
+
+
 # Material
 
 The folder `expCurveData` contains the files for 86 techhnologies as downloaded from the Santa Fe Institute [Performance Curve Database](https://pcdb.santafe.edu/). These are the technologies for which data without missing values is available.

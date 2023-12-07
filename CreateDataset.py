@@ -66,7 +66,9 @@ for file in os.listdir(datafolder):
 
 	#save figure
 	fig.tight_layout()
-	fig.savefig('figs/TechFigures' + \
+	if not os.path.exists('figs' + os.path.sep + 'TechFigures'):
+		os.makedirs('figs' + os.path.sep + 'TechFigures')
+	fig.savefig('figs' + os.path.sep + 'TechFigures' + \
 			 os.path.sep + file[:-4] + '.pdf')
 
 	# store position of axes limits
@@ -88,7 +90,7 @@ for file in os.listdir(datafolder):
 	ax.set_ylim(ylim)
 
 	#save figure
-	fig.savefig('figs/TechFigures' + \
+	fig.savefig('figs' + os.path.sep + 'TechFigures' + \
 			 os.path.sep + file[:-4] + '_fit.pdf')
 	plt.close(fig)	
 
@@ -177,6 +179,8 @@ fig.subplots_adjust(right=0.9, left=0.15,
 					top=0.95, bottom=0.15, 
 					hspace=0.15)
 
+fig.savefig('figs' + os.path.sep + 'Data.png')
+
 ### Below some figures for the 
 ### Supplememntary Material are produced
 
@@ -253,6 +257,9 @@ fig.legend(handles=legend_elements,
 		   loc='lower center')
 
 plt.subplots_adjust(bottom=0.3, top=0.975)
+fig.savefig('figs' + os.path.sep + 
+			'SupplementaryFigures' + 
+			 os.path.sep + 'data_raw.png')
 
 ### plot normalized cost and year
 ### color by sector
@@ -283,5 +290,8 @@ fig.legend(handles=legend_elements,
 		   title='Sectors', 
 		   ncol=2, loc='lower center')
 plt.subplots_adjust(bottom=0.3, top=0.975)
+fig.savefig('figs' + os.path.sep + 
+			'SupplementaryFigures' + 
+			 os.path.sep + 'data_time.png')
 
 plt.show()

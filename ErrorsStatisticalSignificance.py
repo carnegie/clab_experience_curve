@@ -3,7 +3,7 @@ import numpy as np
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import seaborn as sns
-import matplotlib, scipy, analysisFunctions, plottingFunctions
+import matplotlib, scipy, analysisFunctions, plottingFunctions, os
 
 sns.set_style('whitegrid')
 sns.set_palette('colorblind')
@@ -109,11 +109,11 @@ allTests = pd.DataFrame(allTests, columns=['Training horizon',
     'Forecast horizon', 'Paired t-test', 'Wilcoxon signed-ranks test'])
 
 # save dataframes to csv
-techTests.to_csv('./StatisticalTests/techTests.csv')
-allTests.to_csv('./StatisticalTests/AllTests.csv')
+techTests.to_csv('StatisticalTests' + os.path.sep + 'techTests.csv')
+allTests.to_csv('StatisticalTests' + os.path.sep + 'AllTests.csv')
 
 # plot tech results
-plottingFunctions.plotStatisticalTestTech(techTests)
+fig, ax = plottingFunctions.plotStatisticalTestTech(techTests)
 
 
 # repeat selecting only techs that cover all the ranges examined
@@ -191,7 +191,12 @@ techTests = pd.DataFrame(techTests, columns=['Tech', 'Training horizon',
 allTests = pd.DataFrame(allTests, columns=['Training horizon',
     'Forecast horizon', 'Paired t-test', 'Wilcoxon signed-ranks test'])
 
-techTests.to_csv('./StatisticalTests/techTests_sameTechs.csv')
-allTests.to_csv('./StatisticalTests/AllTests_sameTechs.csv')
+techTests.to_csv('StatisticalTests' +os.path.sep + 'techTests_sameTechs.csv')
+allTests.to_csv('StatisticalTests' +os.path.sep + 'AllTests_sameTechs.csv')
+
+if not os.path.exists('figs' + os.path.sep + 'SupplementaryFigures'):
+    os.makedirs('figs' + os.path.sep + 'SupplementaryFigures')
+fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+            os.path.sep + 'StatisticalTestTechs.png')
 
 plt.show()

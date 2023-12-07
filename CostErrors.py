@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
-import matplotlib, analysisFunctions, plottingFunctions, scipy
+import matplotlib, analysisFunctions, plottingFunctions, os
 import seaborn as sns
 
 matplotlib.rc('savefig', dpi=300)
@@ -41,9 +41,21 @@ dfObsErr = dfObsErr.loc[dfObsErr['Training horizon']>=1]\
 
 fig, ax = plottingFunctions.plotObsPredErr(dfObsErr)
 
+if not os.path.exists('figs' + os.path.sep + 'costError'):
+    os.makedirs('figs' + os.path.sep + 'costError')
+fig.savefig('figs' + os.path.sep + 'costError' + \
+            os.path.sep + 'ObsPredErr.png')
+
 # for supplementary material
 fig, ax = plottingFunctions.plotErrTrFor(dfObsErrAll)  
 
+if not os.path.exists('figs' + os.path.sep + 'SupplementaryFigures'):
+    os.makedirs('figs' + os.path.sep + 'SupplementaryFigures')
+fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+            os.path.sep + 'ErrorTrainingForecast.png')
+
 fig, ax = plottingFunctions.plotErrorTech(dfObsErr)
+fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+            os.path.sep + 'ErrorByTech.png')
 
 plt.show()

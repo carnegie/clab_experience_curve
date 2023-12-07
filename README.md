@@ -10,7 +10,7 @@ This repository reports the scripts used to obtain the results and figures repor
 To clone the repository, use the following command in the terminal from the folder where you want to clone the repository:
 
 ~~~
-git clone github.com/carnegie/clab_experience_curve
+git clone https://github.com/carnegie/clab_experience_curve.git
 ~~~
 
 To install the required packages, we recommend using [conda](https://www.anaconda.com/). A list of the required packages is available in the YAML file (expCurveEnv.yml).
@@ -51,7 +51,7 @@ These alternatives parameters assumptions are used in the script `EnergyTransiti
 
 The scripts `analysisFunctions.py` and `plottingFunctions.py` contain functions used to analyze data and produce figures.
 
-Fhe folder `energySim` contains the script `EnergySim.py` used to simulate the energy system transition costs as in *"Empirically grounded technology forecast and the costs of the energy transition"*, Way et al., Joule (2022). The parameters used in the model together with the alternative cost assumptions are reported in the script `EnergySimParams.py`. The script `checkEnergySim.py` simulates the 5 scenarios used in the previously cited paper and reproduces figures coherently with that papers' supplementary material.
+The folder `energySim` contains the script `EnergySim.py` used to simulate the energy system transition costs as in *"Empirically grounded technology forecast and the costs of the energy transition"*, Way et al., Joule (2022). The parameters used in the model together with the alternative cost assumptions are reported in the script `EnergySimParams.py`. The script `checkEnergySim.py` simulates the 5 scenarios used in the previously cited paper and reproduces figures coherently with that papers' supplementary material.
 
 
 

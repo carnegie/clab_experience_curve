@@ -188,8 +188,9 @@ for t in DF['Tech'].unique():
     # save animation as a gif
     writer = animation.PillowWriter(fps=5,
                 metadata=dict(artist='Me'),)
-    if not os.path.exists('./figs/gifs/'):
-        os.makedirs('./figs/gifs/')
-    ani.save('./figs/gifs/'+t+'.gif', writer=writer)
+    if not os.path.exists('figs' + os.path.sep + 'gifs'):
+        os.makedirs('figs' + os.path.sep + 'gifs')
+    ani.save('figs' + os.path.sep + 'gifs'+ 
+             os.path.sep + t +'.gif', writer=writer)
 
 plt.close('all')

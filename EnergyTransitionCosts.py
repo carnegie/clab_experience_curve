@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import matplotlib
+import matplotlib, os
 import energySim.EnergySim as EnergySim
 import energySim.EnergySimParams as EnergySimParams
 
@@ -87,7 +87,7 @@ if simulate:
     df = df.loc[~df['Scenario'].str.contains('nuclear|historical') ]
 
     # save dataframe to csv
-    df.to_csv('./energySim/Costs_all.csv')
+    df.to_csv('energySim' + os.path.sep + 'Costs_all.csv')
 
     # convert tech expansion list to dataframe
     df = pd.DataFrame(techExp, 
@@ -95,16 +95,16 @@ if simulate:
                             'Scenario', 
                             'Initial production [EJ]',
                                 'Final production [EJ]'])
-    df.to_csv('./energySim/TechnologyExpansion.csv')
+    df.to_csv('energySim' + os.path.sep + 'TechnologyExpansion.csv')
 
 # read data
-df = pd.read_csv('./energySim/Costs_all.csv')
+df = pd.read_csv('energySim' + os.path.sep + 'Costs_all.csv')
 
 # convert scenario name to Sentence case formatting
 df['Scenario'] = df['Scenario'].str.title()
 
 # create figure
-plt.figure(figsize=(15,6))
+fig = plt.figure(figsize=(15,6))
 
 # add boxplots
 ax = sns.boxplot(data=df, 
@@ -134,8 +134,13 @@ sns.move_legend(ax, "lower center",
 plt.subplots_adjust(bottom=0.375, top=0.95, 
                     left=0.1, right=0.95)
 
+if not os.path.exists('figs' + os.path.sep + 'energyTransitionCost'):
+    os.makedirs('figs' + os.path.sep + 'energyTransitionCost')
+fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \
+            os.path.sep + 'CostLearningAssumptions.png')
+
 # read data
-df = pd.read_csv('./energySim/TechnologyExpansion.csv')
+df = pd.read_csv('energySim' + os.path.sep + 'TechnologyExpansion.csv')
 
 # remove less relevant scenarios
 df = df.loc[~df['Scenario'].str.contains('nuclear|historical') ]
@@ -208,5 +213,8 @@ fig.legend(handles = ax[0].get_legend_handles_labels()[0],
             loc='center right', 
             bbox_to_anchor=(1, 0.5)
             )
+
+fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \
+            os.path.sep + 'TechnologiesProductionRange.png')
 
 plt.show()

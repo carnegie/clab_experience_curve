@@ -170,6 +170,8 @@ ax[1].step(avail[0], avail[1],
 # set axes scales and labels
 ax[0].set_xscale('log', base=10)
 ax[0].set_yscale('log', base=10)
+ax[0].set_xlim(1, 1.2e10)
+ax[0].set_ylim(1e-8, 1e2)
 ax[1].set_xlabel(
 	'Cumulative production / Initial cumulative production')
 ax[0].set_ylabel('Unit cost / Initial unit cost')

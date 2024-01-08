@@ -245,6 +245,26 @@ def plotObsPredErr(dfObsErr):
     ax[1][2].yaxis.grid(which='minor', linewidth=0.5)
     ax[1][3].yaxis.grid(which='minor', linewidth=0.5)
 
+    ## annotate panels
+    ax[0][0].annotate('a', xy=(0.05,1.05),
+                    xycoords='axes fraction',
+                    ha='center', va='center')
+    ax[0][1].annotate('b', xy=(0.05,1.05),
+                    xycoords='axes fraction',
+                    ha='center', va='center')
+    ax[0][2].annotate('c', xy=(0.05,1.05),
+                    xycoords='axes fraction',
+                    ha='center', va='center')
+    ax[1][1].annotate('d', xy=(0.05,1.05),
+                    xycoords='axes fraction',
+                    ha='center', va='center')
+    ax[1][2].annotate('e', xy=(0.05,1.05),
+                    xycoords='axes fraction',
+                    ha='center', va='center')
+    ax[1][3].annotate('f', xy=(0.05,1.05),
+                    xycoords='axes fraction',
+                    ha='center', va='center')
+
     fig.subplots_adjust(bottom=0.15, top=0.95,
                         left=.06, right=.98,)
     

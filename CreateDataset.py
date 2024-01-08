@@ -176,12 +176,12 @@ ax[1].set_xlabel(
 	'Cumulative production / Initial cumulative production')
 ax[0].set_ylabel('Unit cost / Initial unit cost')
 ax[1].set_ylabel('Technologies available')
-ax[0].annotate('a', (0.025, 1.025),
+ax[0].annotate('a', (0.05, 1.05),
 			   xycoords='axes fraction', 
-			   weight='bold')
-ax[1].annotate('b', (0.025, 1.025),
+			   ha='center', va='center')
+ax[1].annotate('b', (0.05, 1.05),
 			   xycoords='axes fraction', 
-			   weight='bold')
+			   ha='center', va='center')
 
 fig.subplots_adjust(right=0.9, left=0.15, 
 					top=0.95, bottom=0.1, 

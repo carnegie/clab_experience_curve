@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib, cmcrameri, analysisFunctions
+import matplotlib, cmcrameri, os, analysisFunctions
 import seaborn as sns
 import statsmodels.api as sm
 
@@ -379,9 +379,18 @@ ax[1].set_xlabel('Fraction of data points treated as observed')
 ax[1].set_ylabel('Percentage of explained variance [%]')
 ax[1].legend(loc='upper right')
 
+ax[0].annotate('a', xy=(0.05, 1.05),
+                xycoords='axes fraction',
+                ha='center', va='center')
+ax[1].annotate('b', xy=(0.05, 1.05),
+                xycoords='axes fraction',
+                ha='center', va='center')
 fig.subplots_adjust(wspace=0.3, hspace=0.3, 
                     left=0.1, right=0.95,
-                    top=0.95, bottom=0.15)
+                    top=0.925, bottom=0.15)
+
+fig.savefig('figs' + os.path.sep + 'explainedVariance' + \
+            os.path.sep + 'explainedVariance.png')
 
 # plot explained variance vs fraction of data treated as observed
 # using cumulative production range, points and moving average
@@ -429,5 +438,8 @@ ax.legend(loc='upper right')
 
 fig.subplots_adjust(top=0.95, bottom=0.15,
                     left=0.15, right=0.9)
+
+fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+            os.path.sep + 'ExplainedVariance.png')
 
 plt.show()

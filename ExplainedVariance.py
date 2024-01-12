@@ -117,236 +117,237 @@ fig, ax = plt.subplots(1,2, figsize=(12,5))
 
 # iterate over all subintervals
 for x in np.arange(minv, maxv, stepv):
+    
+    ### method based on range 
+    ### of the logarithm of cumulative production 
+    x = round(x, 3)
+    # create lists to store data
+    cals, vals, = [], []
+    cals_n, vals_n = [], []
 
-        ### method based on range 
-        ### of the logarithm of cumulative production 
-
-        # create lists to store data
-        cals, vals, = [], []
-        cals_n, vals_n = [], []
-
-        # iterate over technologies
-        for t in lrs['tech'].unique():
-            
-            # select only data from technologies
-            # and covering full interval
-            lrst = lrs.loc[\
-                    (lrs['tech']==t) & (lrs['tot']==1)
-                        ].copy()
-            
-            # compute distance from the examined
-            # fraction of data treated as observed
-            lrst['distance'] = \
-                (x - lrst['calint'] / 
-                    (lrst['calint']+lrst['valint'])
-                        )**2
-            
-            # append data to lists where distance is minimum
-            cals.append(\
-                lrst.loc[lrst['distance'] == \
-                    lrst['distance'].min(),['cal']]\
-                        .values[0])
-            vals.append(lrst.loc[\
-                lrst['distance'] == \
-                    lrst['distance'].min(),['val']]\
-                        .values[0])
-            
-            # append data to lists where distance is minimum
-            # for lists excluding nuclear
-            if 'Nuclear' not in t:
-                cals_n.append(\
-                    lrst.loc[lrst['distance'] == \
-                             lrst['distance'].min(),['cal']]\
-                                .values[0])
-                vals_n.append(\
-                    lrst.loc[lrst['distance'] == \
-                             lrst['distance'].min(),['val']]\
-                                .values[0])
+    # iterate over technologies
+    for t in lrs['tech'].unique():
         
-        # transform lists into arrays
-        cals = np.array(cals)
-        vals = np.array(vals)
-        cals_n = np.array(cals_n)
-        vals_n = np.array(vals_n)
-        
-        # build linear regression model and store r squared
-        m = sm.OLS(vals, \
-                sm.add_constant(cals)
-                )
-        r = m.fit()
-        tr2xy_i.append([x, 100*r.rsquared])
-
-        # build linear regression model and store r squared
-        m = sm.OLS(vals_n, \
-                sm.add_constant(cals_n)
-                )
-        r = m.fit()
-        tr2xy_i_n.append([x, 100*r.rsquared])
-
-
-        ### method based on number of points
-
-        # create lists to store data
-        cals, vals, = [], []
-        cals_n, vals_n = [], []
-
-        # iterate over technologies
-        for t in lrs['tech'].unique():
-
-            # select only data from technologies
-            # and covering full interval
-            lrst = lrs.loc[\
+        # select only data from technologies
+        # and covering full interval
+        lrst = lrs.loc[\
                 (lrs['tech']==t) & (lrs['tot']==1)
                     ].copy()
-            
-            # compute distance from the examined
-            # fraction of data treated as observed
-            lrst['distance'] = (x - lrst['pfrac'])**2
+        
+        # compute distance from the examined
+        # fraction of data treated as observed
+        lrst['distance'] = \
+            (x - lrst['calint'] / 
+                (lrst['calint']+lrst['valint'])
+                    )**2
+        
+        # append data to lists where distance is minimum
+        cals.append(\
+            lrst.loc[lrst['distance'] == \
+                lrst['distance'].min(),['cal']]\
+                    .values[-1])
+        vals.append(lrst.loc[\
+            lrst['distance'] == \
+                lrst['distance'].min(),['val']]\
+                    .values[-1])
+        
+        # append data to lists where distance is minimum
+        # for lists excluding nuclear
+        if 'Nuclear' not in t:
+            cals_n.append(\
+                lrst.loc[lrst['distance'] == \
+                            lrst['distance'].min(),['cal']]\
+                            .values[-1])
+            vals_n.append(\
+                lrst.loc[lrst['distance'] == \
+                            lrst['distance'].min(),['val']]\
+                            .values[-1])
+    
+    # transform lists into arrays
+    cals = np.array(cals)
+    vals = np.array(vals)
+    cals_n = np.array(cals_n)
+    vals_n = np.array(vals_n)
+    
+    # build linear regression model and store r squared
+    m = sm.OLS(vals, \
+            sm.add_constant(cals)
+            )
+    r = m.fit()
+    tr2xy_i.append([x, 100*r.rsquared])
 
-            # append data to lists where distance is minimum
-            cals.append(\
+    # build linear regression model and store r squared
+    m = sm.OLS(vals_n, \
+            sm.add_constant(cals_n)
+            )
+    r = m.fit()
+    tr2xy_i_n.append([x, 100*r.rsquared])
+
+
+    ### method based on number of points
+
+    # create lists to store data
+    cals, vals, = [], []
+    cals_n, vals_n = [], []
+
+    # iterate over technologies
+    for t in lrs['tech'].unique():
+
+        # select only data from technologies
+        # and covering full interval
+        lrst = lrs.loc[\
+            (lrs['tech']==t) & (lrs['tot']==1)
+                ].copy()
+        
+        # compute distance from the examined
+        # fraction of data treated as observed
+        lrst['distance'] = (x - lrst['pfrac'])**2
+
+        # append data to lists where distance is minimum
+        cals.append(\
+            lrst.loc[lrst['distance']==\
+                        lrst['distance'].min(),['cal']]\
+                        .values[-1])
+
+        vals.append(
+            lrst.loc[lrst['distance']==\
+                        lrst['distance'].min(),['val']]\
+                        .values[-1])
+        
+        # append data to lists where distance is minimum
+        # for lists excluding nuclear
+        if 'Nuclear' not in t:
+            cals_n.append(\
                 lrst.loc[lrst['distance']==\
-                         lrst['distance'].min(),['cal']]\
-                            .values[0])
-            vals.append(
+                            lrst['distance'].min(),['cal']]\
+                            .values[-1])
+            vals_n.append(\
                 lrst.loc[lrst['distance']==\
-                         lrst['distance'].min(),['val']]\
-                            .values[0])
-            
-            # append data to lists where distance is minimum
-            # for lists excluding nuclear
-            if 'Nuclear' not in t:
-                cals_n.append(\
-                    lrst.loc[lrst['distance']==\
-                             lrst['distance'].min(),['cal']]\
-                                .values[0])
-                vals_n.append(\
-                    lrst.loc[lrst['distance']==\
-                             lrst['distance'].min(),['val']]\
-                                .values[0])
+                            lrst['distance'].min(),['val']]\
+                            .values[-1])
+    
+    # transform lists into arrays
+    cals = np.array(cals)
+    vals = np.array(vals)
+    cals_n = np.array(cals_n)
+    vals_n = np.array(vals_n)
+
+    # build linear regression model
+    # fit it to data and append r squared data to list
+    m = sm.OLS(vals, \
+            sm.add_constant(cals)
+            )
+    r = m.fit()
+    tr2xy_p.append([x, 100*r.rsquared])
+
+    # build linear regression model for nuclear excluded
+    # fit it to data and append r squared data to list
+    m = sm.OLS(vals_n, \
+            sm.add_constant(cals_n)
+            )
+    r = m.fit()
+    tr2xy_p_n.append([x, 100*r.rsquared])
+
+    # plot scatter when at least half of the points are observed
+    if x == 0.5:
+        ax[0].scatter(cals, vals)
+        ax[0].axhline(0, color='silver', 
+                        alpha=0.5, zorder=-1)
+        ax[0].axvline(0, color='silver', 
+                        alpha=0.5, zorder=-1)
+        ax[0].set_xlabel('Observed learning exponent')
+        ax[0].set_ylabel('Future learning exponent')
+        ax[0].set_aspect('equal')
+        # ax[0].annotate('A', xy=(-1, 0.75), 
+        #                 xycoords='data',
+        #                 ha='center',
+        #                 va='center', fontsize=14)
+
+    ### moving average method
+
+    # select data in the interval
+    lrs_ = lrs.loc[\
+        (lrs['calint']/\
+            (lrs['calint']+lrs['valint']) >= x-0.05) & \
+        (lrs['calint']/\
+            (lrs['calint']+lrs['valint']) < x+0.05)
+                ].copy()
+    
+    # compute weights
+    for t in lrs_['tech'].unique():
+        lrs_.loc[lrs_['tech']==t,'weights'] = 1 / \
+            lrs_.loc[lrs_['tech']==t].shape[0] / \
+            lrs_['tech'].nunique()
         
-        # transform lists into arrays
-        cals = np.array(cals)
-        vals = np.array(vals)
-        cals_n = np.array(cals_n)
-        vals_n = np.array(vals_n)
+    # build weighted linear regression model
+    # fit it to data    
+    # append data to list
+    m = sm.WLS(lrs_['val'].values, \
+            sm.add_constant(lrs_['cal'].values),
+            weights=lrs_['weights'])
+    r = m.fit()
+    r2xy_ma.append([x, 100*r.rsquared])
 
-        # build linear regression model
-        # fit it to data and append r squared data to list
-        m = sm.OLS(vals, \
-                sm.add_constant(cals)
-                )
-        r = m.fit()
-        tr2xy_p.append([x, 100*r.rsquared])
+    # remove nuclear data
+    lrs__ = lrs_.loc[\
+        ~(lrs_['tech'].str.contains('Nuclear'))].copy()
 
-        # build linear regression model for nuclear excluded
-        # fit it to data and append r squared data to list
-        m = sm.OLS(vals_n, \
-                sm.add_constant(cals_n)
-                )
-        r = m.fit()
-        tr2xy_p_n.append([x, 100*r.rsquared])
+    # compute weights
+    for t in lrs__['tech'].unique():
+        lrs__.loc[lrs__['tech']==t,'weights'] = 1 / \
+            lrs__.loc[lrs__['tech']==t].shape[0] / \
+            lrs__['tech'].nunique()
 
-        # plot scatter if half of points are observed
-        if x >= 0.5 and x < 0.5+stepv:
-            ax[0].scatter(cals, vals)
-            ax[0].axhline(0, color='silver', 
-                          alpha=0.5, zorder=-1)
-            ax[0].axvline(0, color='silver', 
-                          alpha=0.5, zorder=-1)
-            ax[0].set_xlabel('Observed learning exponent')
-            ax[0].set_ylabel('Future learning exponent')
-            ax[0].set_aspect('equal')
-            # ax[0].annotate('A', xy=(-1, 0.75), 
-            #                 xycoords='data',
-            #                 ha='center',
-            #                 va='center', fontsize=14)
+    # build weighted linear regression model
+    # fit it to data    
+    # append data to list
+    m = sm.WLS(lrs__['val'].values, \
+            sm.add_constant(lrs__['cal'].values),
+            weights=lrs__['weights'])
+    r = m.fit()
+    r2xy_ma_n.append([x, 100*r.rsquared])
 
-        ### moving average method
+    # select only data covering the full interval
+    lrs_ = lrs_.loc[lrs_['tot']==1]
 
-        # select data in the interval
-        lrs_ = lrs.loc[\
-            (lrs['calint']/\
-             (lrs['calint']+lrs['valint']) >= x-0.05) & \
-            (lrs['calint']/\
-             (lrs['calint']+lrs['valint']) < x+0.05)
-                   ].copy()
+    # if empty skip
+    if lrs_.empty:
+        tr2xy_ma.append([x, np.nan])
+        continue
+
+    # compute weights
+    for t in lrs_['tech'].unique():
+        lrs_.loc[lrs_['tech']==t,'weights'] = 1 / \
+            lrs_.loc[lrs_['tech']==t].shape[0] / \
+            lrs_['tech'].nunique()
         
-        # compute weights
-        for t in lrs_['tech'].unique():
-            lrs_.loc[lrs_['tech']==t,'weights'] = 1 / \
-                lrs_.loc[lrs_['tech']==t].shape[0] / \
-                lrs_['tech'].nunique()
-            
-        # build weighted linear regression model
-        # fit it to data    
-        # append data to list
-        m = sm.WLS(lrs_['val'].values, \
-                sm.add_constant(lrs_['cal'].values),
-                weights=lrs_['weights'])
-        r = m.fit()
-        r2xy_ma.append([x, 100*r.rsquared])
+    # build weighted linear regression model
+    # fit it to data    
+    # append data to list
+    m = sm.WLS(lrs_['val'].values, \
+            sm.add_constant(lrs_['cal'].values),
+            weights=lrs_['weights'])
+    r = m.fit()
+    tr2xy_ma.append([x, 100*r.rsquared])
 
-        # remove nuclear data
-        lrs__ = lrs_.loc[\
-            ~(lrs_['tech'].str.contains('Nuclear'))].copy()
-
-        # compute weights
-        for t in lrs__['tech'].unique():
-            lrs__.loc[lrs__['tech']==t,'weights'] = 1 / \
-                lrs__.loc[lrs__['tech']==t].shape[0] / \
-                lrs__['tech'].nunique()
-
-        # build weighted linear regression model
-        # fit it to data    
-        # append data to list
-        m = sm.WLS(lrs__['val'].values, \
-                sm.add_constant(lrs__['cal'].values),
-                weights=lrs__['weights'])
-        r = m.fit()
-        r2xy_ma_n.append([x, 100*r.rsquared])
-
-        # select only data covering the full interval
-        lrs_ = lrs_.loc[lrs_['tot']==1]
-
-        # if empty skip
-        if lrs_.empty:
-            tr2xy_ma.append([x, np.nan])
-            continue
-
-        # compute weights
-        for t in lrs_['tech'].unique():
-            lrs_.loc[lrs_['tech']==t,'weights'] = 1 / \
-                lrs_.loc[lrs_['tech']==t].shape[0] / \
-                lrs_['tech'].nunique()
-            
-        # build weighted linear regression model
-        # fit it to data    
-        # append data to list
-        m = sm.WLS(lrs_['val'].values, \
-                sm.add_constant(lrs_['cal'].values),
-                weights=lrs_['weights'])
-        r = m.fit()
-        tr2xy_ma.append([x, 100*r.rsquared])
-
-        # remove nuclear data
-        lrs__ = lrs_.loc[\
-            ~(lrs_['tech'].str.contains('Nuclear'))].copy()
-        
-        # compute weights
-        for t in lrs__['tech'].unique():
-            lrs__.loc[lrs__['tech']==t,'weights'] = 1 / \
-                lrs__.loc[lrs__['tech']==t].shape[0] / \
-                lrs__['tech'].nunique()
-        
-        # build weighted linear regression model
-        # fit it to data
-        # append data to list
-        m = sm.WLS(lrs__['val'].values, \
-                sm.add_constant(lrs__['cal'].values),
-                weights=lrs__['weights'])
-        r = m.fit()
-        tr2xy_ma_n.append([x, 100*r.rsquared])
+    # remove nuclear data
+    lrs__ = lrs_.loc[\
+        ~(lrs_['tech'].str.contains('Nuclear'))].copy()
+    
+    # compute weights
+    for t in lrs__['tech'].unique():
+        lrs__.loc[lrs__['tech']==t,'weights'] = 1 / \
+            lrs__.loc[lrs__['tech']==t].shape[0] / \
+            lrs__['tech'].nunique()
+    
+    # build weighted linear regression model
+    # fit it to data
+    # append data to list
+    m = sm.WLS(lrs__['val'].values, \
+            sm.add_constant(lrs__['cal'].values),
+            weights=lrs__['weights'])
+    r = m.fit()
+    tr2xy_ma_n.append([x, 100*r.rsquared])
 
 # convert lists to arrays
 tr2xy_i = np.array(tr2xy_i)

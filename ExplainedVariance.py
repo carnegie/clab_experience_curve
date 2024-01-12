@@ -85,7 +85,7 @@ m = sm.WLS(lrs['val'].values, \
         sm.add_constant(lrs['cal'].values),
         weights=lrs['weights'])
 r = m.fit()
-print(100*r.rsquared)
+# print(100*r.rsquared)
 
 # select only where observed + future covers total range
 lrs__ = lrs.loc[lrs['tot']==1].copy()
@@ -102,7 +102,7 @@ m = sm.WLS(lrs__['val'].values, \
         sm.add_constant(lrs__['cal'].values),
         weights=lrs__['weights'])
 r = m.fit()
-print(100*r.rsquared)
+# print(100*r.rsquared)
 
 # create lists to store data
 tr2xy_i, tr2xy_p, tr2xy_i_n, tr2xy_p_n = [], [], [], []

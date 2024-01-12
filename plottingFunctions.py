@@ -107,23 +107,23 @@ def plotObsPredErr(dfObsErr):
                     ha='center', va='center',
                     xycoords='data', 
                     color=sns.color_palette('colorblind')[3])
-    ax[0][1].annotate('Technology-specific\nslope', 
-                    xy=(6.5,1.5),
+    ax[0][1].annotate('Technology-specific', 
+                    xy=(6.5,1.6),
                     ha='center', va='center',
                     xycoords='data',
                     color=sns.color_palette('colorblind')[0])
-    ax[0][2].annotate('Average slope',
+    ax[0][2].annotate('Technology-mean',
                         xy=(6.5,1.6),
                         ha='center', va='center',
                         xycoords='data',
                         color=sns.color_palette('colorblind')[2])
 
-    ax[1][1].annotate('Technology-specific\nslope', 
-                    xy=(6.5,5),
+    ax[1][1].annotate('Technology-specific', 
+                    xy=(6.5,6),
                     ha='center', va='center',
                     xycoords='data',
                     color=sns.color_palette('colorblind')[0])
-    ax[1][2].annotate('Average slope',
+    ax[1][2].annotate('Technology-mean',
                         xy=(6.5,6),
                         ha='center', va='center',
                         xycoords='data',
@@ -202,10 +202,10 @@ def plotObsPredErr(dfObsErr):
     ax[1][0].axis('off')
 
     # set axes labels
-    ax[0][0].set_ylabel('Unit cost')
+    ax[0][0].set_ylabel('Unit cost relative to reference')
     ax[1][1].set_ylabel('Observed / forecasted cost')
     ax[0][0].annotate('Cumulative production'
-                    ' / current cumulative production', 
+                    ' relative to reference', 
                     xy=(0.5, 0.05), 
                 xycoords='figure fraction',
                 ha='center', va='center',)
@@ -237,8 +237,8 @@ def plotObsPredErr(dfObsErr):
     ax[1][2].set_yticklabels([])
     ax[1][3].set_yticklabels([])
     ax[1][3].set_xticks([0,1], 
-                        labels=['Technology-specific\nslope', 
-                                'Average\nslope'])
+                        labels=['Technology\nspecific', 
+                                'Technology\nmean'])
 
     # set minor grid log scale plots
     ax[1][1].yaxis.grid(which='minor', linewidth=0.5)
@@ -366,9 +366,9 @@ def plotErrorTech(df):
                 color=color)
             
             if var=='Error (Tech)':
-                label = 'Technology-specific slope'
+                label = 'Technology-specific'
             else:
-                label = 'Average slope'
+                label = 'Technology-mean'
 
             # plot shaded area and median line
             ax[t[0]+1].fill_between(\
@@ -486,9 +486,9 @@ def plotErrTrFor(df):
                         color=color)
                 
                 if var=='Error (Tech)':
-                    label = 'Technology-specific slope'
+                    label = 'Technology-specific'
                 else:
-                    label = 'Average slope'
+                    label = 'Technology-mean'
 
                 ax[tr[0]][fr[0]].fill_between(\
                     [1*(var=='Error (Avg)')-.25, 1*(var=='Error (Avg)')+.25], 
@@ -612,9 +612,9 @@ def plotStatisticalTestTech(df):
 
             # convert list to dataframe
             bars = pd.DataFrame(bars, 
-                                index=['Technology-specific\nslope',
+                                index=['Technology-specific',
                                         'No significant\ndifference',
-                                        'Average slope'])
+                                        'Technology-mean'])
 
             # plot stacked barplot
             bars.plot.bar(stacked=True, 

@@ -122,7 +122,7 @@ def computeSlope(df):
     # return slope
     return result.params[1] 
 
-def computeAllErrors(df):
+def computeAllErrors(df, removeTechExamined=False):
 
     # initialize lists to store results
     dfObsErr = []
@@ -130,10 +130,12 @@ def computeAllErrors(df):
     # iterate over all technologies
     for t in df['Tech'].unique():
 
-        # computing average technological slope
-        #  based on all other technologies
-        # slopeall = computeMeanSlope(df.loc[~(df['Tech'] == t)].copy())
-        slopeall = computeMeanSlope(df)
+        if removeTechExamined:
+            # computing average technological slope
+            # based on all other technologies
+            slopeall = computeMeanSlope(df.loc[~(df['Tech'] == t)].copy())
+        else:
+            slopeall = computeMeanSlope(df)
         # print(slopeall)
 
         # extract technology data

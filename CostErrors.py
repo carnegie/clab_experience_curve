@@ -58,4 +58,42 @@ fig, ax = plottingFunctions.plotErrorTech(dfObsErr)
 fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
             os.path.sep + 'ErrorByTech.png')
 
+# repeat removing technology under exam when computing average slope
+# compute all errors combination for all technologies
+dfObsErr = analysisFunctions.computeAllErrors(df, removeTechExamined=True)
+
+# transform list to dataframe
+dfObsErr = pd.DataFrame(dfObsErr, 
+                        columns=['Training horizon',
+                                 'Forecast horizon',
+                                 'Observation',
+                                 'Forecast (Tech)',
+                                 'Forecast (Avg)',
+                                 'Error (Tech)',
+                                 'Error (Avg)',
+                                 'Max trainingt horizon',
+                                 'Max forecast horizon',
+                                 'Tech'])
+
+dfObsErrAll = dfObsErr.copy()
+
+dfObsErr = dfObsErr.loc[dfObsErr['Training horizon']>=1]\
+                     .loc[dfObsErr['Max forecast horizon']>=1]
+
+
+fig, ax = plottingFunctions.plotObsPredErr(dfObsErr)
+
+fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+            os.path.sep + 'ObsPredErr_removeTechExamined.png')
+
+# for supplementary material
+fig, ax = plottingFunctions.plotErrTrFor(dfObsErrAll)  
+
+fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+            os.path.sep + 'ErrorTrainingForecast_removeTechExamined.png')
+
+fig, ax = plottingFunctions.plotErrorTech(dfObsErr)
+fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+            os.path.sep + 'ErrorByTech_removeTechExamined.png')
+
 plt.show()

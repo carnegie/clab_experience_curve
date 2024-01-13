@@ -371,14 +371,14 @@ for t in learningRateTechs:
 # create labels different cost assumptions
 costsAssumptions = {}
 labels = ['Technology-specific - Way et al. (2022)',
-          'Equal - mean',
-          'Equal - mean Energy w/o nuclear',
-          'Equal - mean Energy',
-          'Equal - mean Way et al. (2022)']
+          'Technology-mean - PCDB',
+          'Technology-mean - PCDB (Energy), no nuclear',
+          'Technology-mean - PCDB (Energy)',
+          'Technology-mean - Way et al. (2022)']
 
 # assign label to cost assumptions
 costsAssumptions['Technology-specific - Way et al. (2022)'] = costparams
-costsAssumptions['Equal - mean'] = costparams2
-costsAssumptions['Equal - mean Energy'] = costparams3
-costsAssumptions['Equal - mean Energy w/o nuclear'] = costparams5
-costsAssumptions['Equal - mean Way et al. (2022)'] = costparams4
+costsAssumptions['Technology-mean - PCDB'] = costparams2
+costsAssumptions['Technology-mean - PCDB-Energy'] = costparams3
+costsAssumptions['Technology-mean - PCDB-Energy, no nuclear'] = costparams5
+costsAssumptions['Technology-mean - Way et al. (2022)'] = costparams4

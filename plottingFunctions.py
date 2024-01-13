@@ -203,20 +203,17 @@ def plotObsPredErr(dfObsErr):
 
     # set axes labels
     ax[0][0].set_ylabel('Unit cost relative to reference')
-    ax[1][1].set_ylabel('Observed / forecasted cost')
-    ax[0][0].annotate('Cumulative production'
-                    ' relative to reference', 
-                    xy=(0.5, 0.05), 
-                xycoords='figure fraction',
-                ha='center', va='center',)
+    ax[1][1].set_ylabel('Observation to forecast ratio')
+    ax[1][1].set_xlabel('Cumulative production'
+                    ' relative to reference')
 
     # adjust axes limits
     ax[0][0].set_xlim(1,12)
-    ax[0][0].set_xticklabels([])
     ax[0][1].set_xlim(1,12)
-    ax[0][1].set_xticklabels([])
     ax[0][2].set_xlim(1,12)
-    ax[0][2].set_xticklabels([])
+    [ax[a][b].set_xticks([1,5,10], ['1','5','10']) \
+                    for a,b in zip([0,0,0,1,1],[0,1,2,1,2])]
+
     ax[0][0].set_ylim(0,1.75)
     ax[0][1].set_ylim(0,1.75)
     ax[0][2].set_ylim(0,1.75)
@@ -265,8 +262,9 @@ def plotObsPredErr(dfObsErr):
                     xycoords='axes fraction',
                     ha='center', va='center')
 
-    fig.subplots_adjust(bottom=0.15, top=0.95,
-                        left=.06, right=.98,)
+    fig.subplots_adjust(bottom=0.1, top=0.95,
+                        left=.06, right=.98,
+                        hspace=0.25)
     
     return fig, ax
 
@@ -334,7 +332,7 @@ def plotErrorTech(df):
             10**np.array([q25,q25]), 10**np.array([q75,q75]), 
             color=color, alpha=.2)  
 
-    ax[0].set_ylabel('Observed / forecasted cost')
+    ax[0].set_ylabel('Observation to forecast ratio')
     ax[0].set_xticks([0.5], ['All technologies'],
                      rotation=90)
     
@@ -510,7 +508,7 @@ def plotErrTrFor(df):
     for a in ax[-1]:
         a.set_xticks([])
 
-    ax[1][0].set_ylabel('Observed / forecasted cost')
+    ax[1][0].set_ylabel('Observation to forecast ratio')
     
     legend = fig.legend(handles = ax[-1][-1].get_legend_handles_labels()[0],
                 labels = ax[-1][-1].get_legend_handles_labels()[1],

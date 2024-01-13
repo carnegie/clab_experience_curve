@@ -4,6 +4,7 @@ import seaborn as sns
 import matplotlib, os
 import energySim.EnergySim as EnergySim
 import energySim.EnergySimParams as EnergySimParams
+import numpy as np
 
 matplotlib.rc('savefig', dpi=300)
 sns.set_style('whitegrid')
@@ -13,7 +14,7 @@ matplotlib.rc('font',
                    'sans-serif':'Helvetica'})
 
 ## set to True to run new simulations
-simulate = False
+simulate = True
 # select the number of cost projection simulations
 # needed to explore parameters' uncertainty
 # used only if new simulations are run
@@ -22,10 +23,10 @@ nsim = 1000
 
 # create labels for different cost assumptions
 labels = ['Technology-specific - Way et al. (2022)',
-          'Equal - mean',
-          'Equal - mean Energy w/o nuclear',
-          'Equal - mean Energy',
-          'Equal - mean Way et al. (2022)']
+          'Technology-mean - PCDB',
+          'Technology-mean - PCDB-Energy, no nuclear',
+          'Technology-mean - PCDB-Energy',
+          'Technology-mean - Way et al. (2022)']
 
 # define colors for technologies
 techcolors = ['black','saddlebrown','darkgray',
@@ -36,6 +37,7 @@ techcolors = ['black','saddlebrown','darkgray',
 
 # resimulate only if required
 if simulate:
+    np.random.seed(0)
 
     # create dictionary to store total costs
     tcosts = {}
@@ -132,7 +134,41 @@ sns.move_legend(ax, "lower center",
 
 # adjust figure
 plt.subplots_adjust(bottom=0.375, top=0.95, 
-                    left=0.1, right=0.95)
+                    left=0.07, right=0.95)
+
+
+axes = fig.add_axes([0.8, -0.05, 0.2, 0.35])
+
+axes.grid(False)
+axes.set_axis_off()
+
+axes.plot([0,.5], [1,1], color='black')
+axes.plot([0,.5,.5,0,0], [0.5,0.5,1.5,1.5,0.5], color='black')
+# axes.fill_between([0,.5], [0,0], [2,2], color='black', alpha=.2)
+axes.fill_between([0,.5], [.5,.5], [1.5,1.5], color='black', alpha=.2)
+axes.plot([0,.5], [0,0], color='black')
+axes.plot([0,.5], [2,2], color='black')
+axes.plot([0.25,0.25], [0,.5], color='black')
+axes.plot([0.25,0.25], [1.5,2], color='black')
+axes.set_ylim(-1,3)
+axes.set_xlim(-1.8,3)
+fontsize = 14
+axes.annotate('50%', xy=(-.5,1),
+                    ha='center', va='center',
+                    xycoords='data', 
+                    fontsize=fontsize)
+axes.annotate('90%', xy=(-1.5,1),
+                    ha='center', va='center',
+                    xycoords='data',
+                    fontsize=fontsize)
+axes.annotate('Median', xy=(.6,1),
+                ha='left', va='center',
+                    xycoords='data',
+                    fontsize=fontsize)
+axes.plot([-.1,-.5,-.5], [1.5,1.5,1.25], color='black')
+axes.plot([-.1,-.5,-.5], [.5,.5,.75], color='black')
+axes.plot([-.1,-1.5,-1.5], [2,2,1.25], color='silver')
+axes.plot([-.1,-1.5,-1.5], [0,0,.75], color='silver')
 
 if not os.path.exists('figs' + os.path.sep + 'energyTransitionCost'):
     os.makedirs('figs' + os.path.sep + 'energyTransitionCost')
@@ -211,7 +247,8 @@ fig.subplots_adjust(hspace=0.3, wspace=0.1,
 fig.legend(handles = ax[0].get_legend_handles_labels()[0],
             labels = ax[0].get_legend_handles_labels()[1],
             loc='center right', 
-            bbox_to_anchor=(1, 0.5)
+            bbox_to_anchor=(1, 0.5),
+            title='Energy technology'
             )
 
 fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \

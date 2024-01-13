@@ -173,8 +173,8 @@ ax[0].set_yscale('log', base=10)
 ax[0].set_xlim(1, 1.2e10)
 ax[0].set_ylim(1e-8, 1e2)
 ax[1].set_xlabel(
-	'Cumulative production / Initial cumulative production')
-ax[0].set_ylabel('Unit cost / Initial unit cost')
+	'Cumulative production relative to initial')
+ax[0].set_ylabel('Unit cost relative to initial')
 ax[1].set_ylabel('Technologies available')
 ax[0].annotate('a', (0.05, 1.05),
 			   xycoords='axes fraction', 

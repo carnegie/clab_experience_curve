@@ -390,6 +390,9 @@ fig.subplots_adjust(wspace=0.3, hspace=0.3,
                     left=0.1, right=0.95,
                     top=0.925, bottom=0.15)
 
+if not(os.path.exists('figs' + os.path.sep + 'explainedVariance')):
+    os.makedirs('figs' + os.path.sep + 'explainedVariance')
+
 fig.savefig('figs' + os.path.sep + 'explainedVariance' + \
             os.path.sep + 'explainedVariance.png')
 
@@ -439,6 +442,9 @@ ax.legend(loc='upper right')
 
 fig.subplots_adjust(top=0.95, bottom=0.15,
                     left=0.15, right=0.9)
+
+if not(os.path.exists('figs' + os.path.sep + 'SupplementaryFigures')):
+    os.makedirs('figs' + os.path.sep + 'SupplementaryFigures')
 
 fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
             os.path.sep + 'ExplainedVariance.png')

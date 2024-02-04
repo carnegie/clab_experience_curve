@@ -1,41 +1,41 @@
-,Technology,Scenario,Initial production [EJ],Final production [EJ]
-0,nuclear electricity,no transition,345.0,1823.2548423703288
-1,hydroelectricity,no transition,519.0,2452.63843943776
-2,biopower electricity,no transition,37.3,1944.8611835761421
-3,wind electricity,no transition,40.0,7120.345224882264
-4,solar pv electricity,no transition,13.3,7187.280429823085
-5,daily batteries,no transition,0.00422,8.104061661793015
-6,multi-day storage,no transition,1.08e-06,8.748e-05
-7,electrolyzers,no transition,2.89e-07,0.00012311809328114802
-8,nuclear electricity,fast transition,345.0,743.5227689578414
-9,hydroelectricity,fast transition,519.0,3458.964976426268
-10,biopower electricity,fast transition,37.3,1921.2912225094954
-11,wind electricity,fast transition,40.0,13975.862624174357
-12,solar pv electricity,fast transition,13.3,28437.18032051207
-13,daily batteries,fast transition,0.00422,37.27859743648902
-14,multi-day storage,fast transition,1.08e-06,11.352302050473318
-15,electrolyzers,fast transition,2.89e-07,4.133532466937525
-16,nuclear electricity,slow transition,345.0,1686.6373672079428
-17,hydroelectricity,slow transition,519.0,3155.631612224784
-18,biopower electricity,slow transition,37.3,2187.3839851216158
-19,wind electricity,slow transition,40.0,10165.513603456238
-20,solar pv electricity,slow transition,13.3,21009.29755609171
-21,daily batteries,slow transition,0.00422,30.07003020647712
-22,multi-day storage,slow transition,1.08e-06,8.431966909353855
-23,electrolyzers,slow transition,2.89e-07,2.246392126693478
-24,nuclear electricity,slow nuclear transition,345.0,15138.109697593349
-25,hydroelectricity,slow nuclear transition,519.0,3155.631612224784
-26,biopower electricity,slow nuclear transition,37.3,856.7756972965676
-27,wind electricity,slow nuclear transition,40.0,8513.612703608414
-28,solar pv electricity,slow nuclear transition,13.3,10666.436968370723
-29,daily batteries,slow nuclear transition,0.00422,13.079650504853916
-30,multi-day storage,slow nuclear transition,1.08e-06,0.005239218293692912
-31,electrolyzers,slow nuclear transition,2.89e-07,1.9823568745993962
-32,nuclear electricity,historical mix,345.0,2282.7195780481957
-33,hydroelectricity,historical mix,519.0,3464.3337586332577
-34,biopower electricity,historical mix,37.3,81.05803525440591
-35,wind electricity,historical mix,40.0,1154.1887573777124
-36,solar pv electricity,historical mix,13.3,594.615873414459
-37,daily batteries,historical mix,0.00422,0.4040223576343099
-38,multi-day storage,historical mix,1.08e-06,0.00021035371442920523
-39,electrolyzers,historical mix,2.89e-07,0.0001559954431229844
+,Technology,Scenario,Reference production [EJ],Final production [EJ],Reference cost [USD/GJ],Learning exponent
+0,nuclear electricity,no transition,345.0,1823.2548423703288,25.0,0.0
+1,hydroelectricity,no transition,519.0,2452.63843943776,13.0,0.0
+2,biopower electricity,no transition,37.3,1944.8611835761421,20.0,0.05
+3,wind electricity,no transition,40.0,7120.345224882264,11.3,0.194
+4,solar pv electricity,no transition,13.3,7187.280429823085,15.7,0.319
+5,daily batteries,no transition,0.00422,8.104061661793015,86000.0,0.421
+6,multi-day storage,no transition,1.08e-06,8.748e-05,111100.0,0.168
+7,electrolyzers,no transition,2.89e-07,0.00012311809328114802,364722.0,0.129
+8,nuclear electricity,fast transition,345.0,743.5227689578414,25.0,0.0
+9,hydroelectricity,fast transition,519.0,3458.964976426268,13.0,0.0
+10,biopower electricity,fast transition,37.3,1921.2912225094954,20.0,0.05
+11,wind electricity,fast transition,40.0,13975.862624174357,11.3,0.194
+12,solar pv electricity,fast transition,13.3,28437.18032051207,15.7,0.319
+13,daily batteries,fast transition,0.00422,37.27859743648902,86000.0,0.421
+14,multi-day storage,fast transition,1.08e-06,11.352302050473318,111100.0,0.168
+15,electrolyzers,fast transition,2.89e-07,4.133532466937525,364722.0,0.129
+16,nuclear electricity,slow transition,345.0,1686.6373672079428,25.0,0.0
+17,hydroelectricity,slow transition,519.0,3155.631612224784,13.0,0.0
+18,biopower electricity,slow transition,37.3,2187.3839851216158,20.0,0.05
+19,wind electricity,slow transition,40.0,10165.513603456238,11.3,0.194
+20,solar pv electricity,slow transition,13.3,21009.29755609171,15.7,0.319
+21,daily batteries,slow transition,0.00422,30.07003020647712,86000.0,0.421
+22,multi-day storage,slow transition,1.08e-06,8.431966909353855,111100.0,0.168
+23,electrolyzers,slow transition,2.89e-07,2.246392126693478,364722.0,0.129
+24,nuclear electricity,slow nuclear transition,345.0,15138.109697593349,25.0,0.0
+25,hydroelectricity,slow nuclear transition,519.0,3155.631612224784,13.0,0.0
+26,biopower electricity,slow nuclear transition,37.3,856.7756972965676,20.0,0.05
+27,wind electricity,slow nuclear transition,40.0,8513.612703608414,11.3,0.194
+28,solar pv electricity,slow nuclear transition,13.3,10666.436968370723,15.7,0.319
+29,daily batteries,slow nuclear transition,0.00422,13.079650504853916,86000.0,0.421
+30,multi-day storage,slow nuclear transition,1.08e-06,0.005239218293692912,111100.0,0.168
+31,electrolyzers,slow nuclear transition,2.89e-07,1.9823568745993962,364722.0,0.129
+32,nuclear electricity,historical mix,345.0,2282.7195780481957,25.0,0.0
+33,hydroelectricity,historical mix,519.0,3464.3337586332577,13.0,0.0
+34,biopower electricity,historical mix,37.3,81.05803525440591,20.0,0.05
+35,wind electricity,historical mix,40.0,1154.1887573777124,11.3,0.194
+36,solar pv electricity,historical mix,13.3,594.615873414459,15.7,0.319
+37,daily batteries,historical mix,0.00422,0.4040223576343099,86000.0,0.421
+38,multi-day storage,historical mix,1.08e-06,0.00021035371442920523,111100.0,0.168
+39,electrolyzers,historical mix,2.89e-07,0.0001559954431229844,364722.0,0.129

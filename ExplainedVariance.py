@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib, cmcrameri, os, analysisFunctions
+import matplotlib, cmcrameri, os, analysisFunctions, scipy
 import seaborn as sns
 import statsmodels.api as sm
+import statsmodels.stats.outliers_influence as oi
 
 matplotlib.rc('savefig', dpi=300)
 sns.set_palette([cmcrameri.cm.batlowS(x) for x in range(10)])
@@ -113,7 +114,7 @@ r2xy_ma, tr2xy_ma, r2xy_ma_n, tr2xy_ma_n =  [], [], [] ,[]
 minv, maxv, stepv = 0.1, 0.9, 0.005
 
 # create figure
-fig, ax = plt.subplots(1,2, figsize=(12,5))
+fig, ax = plt.subplots(1,2, figsize=(14,6))
 
 # iterate over all subintervals
 for x in np.arange(minv, maxv, stepv):
@@ -238,6 +239,16 @@ for x in np.arange(minv, maxv, stepv):
             sm.add_constant(cals)
             )
     r = m.fit()
+    # print(oi.OLSInfluence(r).summary_frame()['cooks_d'].values)
+    # print(oi.OLSInfluence(r).summary_frame()['dfb_const'].values)
+    # print(oi.OLSInfluence(r).summary_frame()['dfb_x1'].values)
+    # print(oi.OLSInfluence(r).summary_frame().columns)
+    # print(oi.OLSInfluence(r).summary_frame()['cooks_d'].idxmax())
+    # print(df['Tech'].unique())
+    # print(df['Tech'].unique()[oi.OLSInfluence(r).summary_frame()['cooks_d'].idxmax()])
+    # print(df['Tech'].unique()[oi.OLSInfluence(r).summary_frame()['student_resid'].idxmax()])
+    # print(df['Tech'].unique()[oi.OLSInfluence(r).summary_frame()['dfb_const'].idxmax()])
+    # print(df['Tech'].unique()[oi.OLSInfluence(r).summary_frame()['dfb_x1'].idxmax()])
     tr2xy_p.append([x, 100*r.rsquared])
 
     # build linear regression model for nuclear excluded
@@ -250,14 +261,26 @@ for x in np.arange(minv, maxv, stepv):
 
     # plot scatter when at least half of the points are observed
     if x == 0.5:
-        ax[0].scatter(cals, vals)
-        ax[0].axhline(0, color='silver', 
+
+        ax[1].scatter(cals, vals, edgecolor='k')
+        ax[1].axhline(0, color='silver', 
                         alpha=0.5, zorder=-1)
-        ax[0].axvline(0, color='silver', 
+        ax[1].axvline(0, color='silver', 
                         alpha=0.5, zorder=-1)
-        ax[0].set_xlabel('Observed learning exponent')
-        ax[0].set_ylabel('Future learning exponent')
-        ax[0].set_aspect('equal')
+        ax[1].set_xlabel('Learning exponent - Calibration')
+        ax[1].set_ylabel('Learning exponent - Test')
+        ax[1].plot([-1.5,1.5], [-1.5,1.5],
+                   color='k', linestyle='--', zorder=-10, lw=.5)
+        ax[1].set_xlim(-1.4,1.4)
+        ax[1].set_ylim(-1.4,1.4)
+        ax[1].annotate('Learning exponent is constant', 
+                        xy=(0.6, 0.7), 
+                        rotation=45,
+                        xycoords='data',
+                        ha='center',
+                        va='center', fontsize=14)
+        ax[1].set_aspect('equal')
+        ax[1].grid(which='minor', axis='both')
         # ax[0].annotate('A', xy=(-1, 0.75), 
         #                 xycoords='data',
         #                 ha='center',
@@ -361,24 +384,24 @@ tr2xy_ma_n = np.array(tr2xy_ma_n)
 
 # plot fraction of explained variance
 # vs fraction of points treated as observed
-ax[1].scatter(0.5, tr2xy_p\
+ax[0].scatter(0.5, tr2xy_p\
               [np.where(
                   (tr2xy_p[:,0]>=0.5) * \
                     (tr2xy_p[:,0]<0.5+stepv)
                     )[0][0],1], 
-              color='k', marker='o', s=50)
-ax[1].plot([x for x in np.arange(minv, maxv, stepv)], 
+              color='k', marker='o', s=100, edgecolor='r')
+ax[0].plot([x for x in np.arange(minv, maxv, stepv)], 
          tr2xy_p[:,1],
          label='All technologies')
-ax[1].plot([x for x in np.arange(minv, maxv, stepv)], 
+ax[0].plot([x for x in np.arange(minv, maxv, stepv)], 
          tr2xy_p_n[:,1],
          label='Nuclear excluded')
 
 # set axes limits and labels, add legend
-ax[1].set_ylim(0,100)
-ax[1].set_xlabel('Fraction of data points treated as observed')
-ax[1].set_ylabel('Percentage of explained variance [%]')
-ax[1].legend(loc='upper right')
+ax[0].set_ylim(0,30)
+ax[0].set_xlabel('Fraction of data points used for calibration')
+ax[0].set_ylabel('Percentage of explained variance [%]')
+ax[0].legend(loc='upper right')
 
 ax[0].annotate('a', xy=(0.05, 1.05),
                 xycoords='axes fraction',
@@ -395,6 +418,9 @@ if not(os.path.exists('figs' + os.path.sep + 'explainedVariance')):
 
 fig.savefig('figs' + os.path.sep + 'explainedVariance' + \
             os.path.sep + 'explainedVariance.png')
+
+fig.savefig('figs' + os.path.sep + 'explainedVariance' + \
+            os.path.sep + 'explainedVariance.eps')
 
 # plot explained variance vs fraction of data treated as observed
 # using cumulative production range, points and moving average

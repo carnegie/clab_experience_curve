@@ -187,7 +187,71 @@ fig.subplots_adjust(right=0.9, left=0.15,
 					top=0.95, bottom=0.1, 
 					hspace=0.2)
 
+# create figure, only above panel
+fig, ax = plt.subplots(1, 1, 
+			   figsize=(10,8))
+
+ax.set_xscale('log', base=10)
+ax.set_yscale('log', base=10)
+
+# create list to store the range of cumulative production
+# covered by each of the technologies
+last = []
+
+# iterate over all technologies
+for tech in df['Tech'].unique():
+
+	# select data for each technology
+	s = df.loc[df['Tech']==tech].copy()
+
+	# plot normalized unit cost vs
+	# normalized cumulative production
+	ax.plot(s['Normalized cumulative production'], 
+		s['Normalized unit cost'],
+		marker = '.',
+		markersize=5,
+		alpha=0.5
+		)
+	print(tech, s['Normalized cumulative production'].values[-1])
+	if tech in ['Solar_Water_Heaters','Fotovoltaica',
+			 'DRAM','Transistor', 'Wind_Electricity',
+			 'Nuclear_Electricity','Laser_Diode',
+			 'Hard_Disk_Drive']:
+		if tech == 'Hard_Disk_Drive':
+			ha = 'right'
+			va = 'top'
+		else:
+			ha = 'left'
+			va = 'bottom'
+		if tech == 'Fotovoltaica':
+			tech = 'Solar PV Electricity'
+		ax.annotate(tech.replace('_',' '),
+						xy=(s['Normalized cumulative production'].values[-1],
+						s['Normalized unit cost'].values[-1]),
+						textcoords='data',
+						ha=ha,
+						va=va,
+						fontsize=14,
+						)
+
+	# plt.pause(0.5)
+	
+# set axes scales and labels
+ax.set_xscale('log', base=10)
+ax.set_yscale('log', base=10)
+ax.set_xlim(1, 8e10)
+ax.set_ylim(0.3*1e-8, 1e2)
+ax.set_xlabel(
+	'Cumulative production relative to initial')
+ax.set_ylabel('Unit cost relative to initial')
+
+
+fig.subplots_adjust(right=0.9, left=0.15, 
+					top=0.95, bottom=0.15, 
+					hspace=0.2)
+
 fig.savefig('figs' + os.path.sep + 'Data.png')
+fig.savefig('figs' + os.path.sep + 'Data.eps')
 
 ### Below some figures for the 
 ### Supplememntary Material are produced

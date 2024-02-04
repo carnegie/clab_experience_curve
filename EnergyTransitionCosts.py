@@ -14,7 +14,7 @@ matplotlib.rc('font',
                    'sans-serif':'Helvetica'})
 
 ## set to True to run new simulations
-simulate = True
+simulate = False
 # select the number of cost projection simulations
 # needed to explore parameters' uncertainty
 # used only if new simulations are run
@@ -78,7 +78,8 @@ if simulate:
 
         # append technology expansion to list
         for t in model.technology[5:13]:
-            techExp.append([t, scenario, model.z[t][0], model.z[t][-1]])
+            techExp.append([t, scenario, model.z[t][0], model.z[t][-1],
+                            model.c[t][0], EnergySimParams.costparams['omega'][t]])
 
     # create dataframe from dictionary, update columns,
     #  and focus on relevant scenarios
@@ -95,8 +96,10 @@ if simulate:
     df = pd.DataFrame(techExp, 
                     columns=['Technology', 
                             'Scenario', 
-                            'Initial production [EJ]',
-                                'Final production [EJ]'])
+                            'Reference production [EJ]',
+                                'Final production [EJ]',
+                                'Reference cost [USD/GJ]',
+                                'Learning exponent'])
     df.to_csv('energySim' + os.path.sep + 'TechnologyExpansion.csv')
 
 # read data
@@ -104,6 +107,9 @@ df = pd.read_csv('energySim' + os.path.sep + 'Costs_all.csv')
 
 # convert scenario name to Sentence case formatting
 df['Scenario'] = df['Scenario'].str.title()
+
+# df = df.loc[df['Learning rate assumptions'].isin(labels) ]
+# df['Learning rate assumptions'] = df['Learning rate assumptions'].str.replace('.','.,')
 
 # create figure
 fig = plt.figure(figsize=(15,6))
@@ -120,7 +126,10 @@ ax = sns.boxplot(data=df,
                     whis=(5,95),
                     linewidth=1.75,
                     palette='colorblind', 
+                    gap = 0.2,
                     **{'showfliers':False})
+
+plt.gca().set_xlabel('Experience curve assumptions')
 
 # set x-axis labels
 plt.gca()\
@@ -134,7 +143,85 @@ sns.move_legend(ax, "lower center",
 
 # adjust figure
 plt.subplots_adjust(bottom=0.375, top=0.95, 
-                    left=0.07, right=0.95)
+                    left=0.075, right=0.95)
+
+
+axes = fig.add_axes([0.8, -0.05, 0.2, 0.35])
+
+axes.grid(False)
+axes.set_axis_off()
+
+axes.plot([0,.5], [1,1], color='black')
+axes.plot([0,.5,.5,0,0], [0.5,0.5,1.5,1.5,0.5], color='black')
+# axes.fill_between([0,.5], [0,0], [2,2], color='black', alpha=.2)
+axes.fill_between([0,.5], [.5,.5], [1.5,1.5], color='black', alpha=.2)
+axes.plot([0,.5], [0,0], color='black')
+axes.plot([0,.5], [2,2], color='black')
+axes.plot([0.25,0.25], [0,.5], color='black')
+axes.plot([0.25,0.25], [1.5,2], color='black')
+axes.set_ylim(-1,3)
+axes.set_xlim(-1.8,3)
+fontsize = 14
+axes.annotate('50%', xy=(-.5,1),
+                    ha='center', va='center',
+                    xycoords='data', 
+                    fontsize=fontsize)
+axes.annotate('90%', xy=(-1.5,1),
+                    ha='center', va='center',
+                    xycoords='data',
+                    fontsize=fontsize)
+axes.annotate('Median', xy=(.6,1),
+                ha='left', va='center',
+                    xycoords='data',
+                    fontsize=fontsize)
+axes.plot([-.1,-.5,-.5], [1.5,1.5,1.25], color='black')
+axes.plot([-.1,-.5,-.5], [.5,.5,.75], color='black')
+axes.plot([-.1,-1.5,-1.5], [2,2,1.25], color='silver')
+axes.plot([-.1,-1.5,-1.5], [0,0,.75], color='silver')
+
+if not os.path.exists('figs' + os.path.sep + 'SupplementaryFigures'):
+    os.makedirs('figs' + os.path.sep + 'SupplementaryFigures')
+
+fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+            os.path.sep + 'TotalDiscountedCostsExtended.png')
+
+
+df = df.loc[df['Learning rate assumptions'].str.contains('Way') ]
+df['Learning rate assumptions'] = df['Learning rate assumptions'].str.replace('.','.,')
+
+# create figure
+fig = plt.figure(figsize=(15,6))
+
+# add boxplots
+ax = sns.boxplot(data=df, 
+                    hue='Scenario', 
+                    y='Net Present Cost [trillion USD]', 
+                    x='Learning rate assumptions', 
+                    hue_order=['No Transition',
+                                'Slow Transition', 
+                                'Fast Transition'],
+                    width=0.5, 
+                    whis=(5,95),
+                    linewidth=1.75,
+                    palette='colorblind', 
+                    gap = 0.2,
+                    **{'showfliers':False})
+
+plt.gca().set_xlabel('Experience curve assumptions')
+
+# set x-axis labels
+plt.gca()\
+    .set_xticks(plt.gca().get_xticks(),
+        [label.get_text().replace(' - ', '\n') \
+            for label in ax.get_xticklabels()])
+
+# move legend on the bottom
+sns.move_legend(ax, "lower center", 
+                ncol=3, bbox_to_anchor=(0.5, -0.6))
+
+# adjust figure
+plt.subplots_adjust(bottom=0.375, top=0.95, 
+                    left=0.15, right=0.85)
 
 
 axes = fig.add_axes([0.8, -0.05, 0.2, 0.35])
@@ -174,6 +261,8 @@ if not os.path.exists('figs' + os.path.sep + 'energyTransitionCost'):
     os.makedirs('figs' + os.path.sep + 'energyTransitionCost')
 fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \
             os.path.sep + 'CostLearningAssumptions.png')
+fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \
+            os.path.sep + 'CostLearningAssumptions.eps')
 
 # read data
 df = pd.read_csv('energySim' + os.path.sep + 'TechnologyExpansion.csv')
@@ -181,11 +270,28 @@ df = pd.read_csv('energySim' + os.path.sep + 'TechnologyExpansion.csv')
 # remove less relevant scenarios
 df = df.loc[~df['Scenario'].str.contains('nuclear|historical') ]
 
+# initial production level from Supplementary Material of Way et al., (2022)
+df.loc[df['Technology']=='electrolyzers', 
+       'Initial production [EJ]'] = 1e-10
+df.loc[df['Technology']=='multi-day storage', 
+       'Initial production [EJ]'] = 3.6e-8
+df.loc[df['Technology']=='daily batteries', 
+       'Initial production [EJ]'] = 3.6e-6
+df.loc[df['Technology']=='solar pv electricity', 
+       'Initial production [EJ]'] = 3.6e-5
+df.loc[df['Technology']=='wind electricity', 
+       'Initial production [EJ]'] = 3.6e-3
+df.loc[df['Technology']=='biopower electricity', 
+       'Initial production [EJ]'] = 5
+df.loc[df['Technology']=='hydroelectricity', 
+       'Initial production [EJ]'] = 378
+df.loc[df['Technology']=='nuclear electricity', 
+       'Initial production [EJ]'] = 1.8
 
 # create figure
 fig, ax = plt.subplots(3,1, 
                        sharex=True, sharey=True, 
-                       figsize=(12,7))
+                       figsize=(12,8))
 
 # counter for scenarios
 count = 0
@@ -203,27 +309,65 @@ for s in ['no transition', 'slow transition', 'fast transition']:
         sel = df.loc[df['Technology']==t]\
                 .loc[df['Scenario']==s]
         
-        # plot line from initial to final cumulative production
+        # plot line from Initial to reference cumulative production
         ax[count].plot(
             [sel['Initial production [EJ]'].values[0], 
-            sel['Final production [EJ]'].values[0]], 
-            [countl, countl],
+            sel['Reference production [EJ]'].values[0]], 
+            [10**(np.log10(sel['Reference cost [USD/GJ]'].values[0]) + \
+                sel['Learning exponent'].values[0] * \
+                    (np.log10(sel['Reference production [EJ]'].values[0]) - \
+                     np.log10(sel['Initial production [EJ]'].values[0]))), 
+            sel['Reference cost [USD/GJ]'].values[0]],
             color=techcolors[countl+5], 
-            label=t)
+            label=t.capitalize().replace('pv','PV'),
+            zorder=-1)
         
-        # add initial point
+        # plot line from Reference to final cumulative production
+        ax[count].plot(
+            [sel['Reference production [EJ]'].values[0], 
+            sel['Final production [EJ]'].values[0]], 
+            [sel['Reference cost [USD/GJ]'].values[0],
+             10**(np.log10(sel['Reference cost [USD/GJ]'].values[0]) - \
+                sel['Learning exponent'].values[0] * \
+                    (np.log10(sel['Final production [EJ]'].values[0]) - \
+                     np.log10(sel['Reference production [EJ]'].values[0])))
+            ],
+            color=techcolors[countl+5],
+            linestyle='--',
+            zorder=-1)
+        
+        # add Initial point
         ax[count].scatter(
             sel['Initial production [EJ]'].values[0], 
-            countl,
+            10**(np.log10(sel['Reference cost [USD/GJ]'].values[0]) + \
+                sel['Learning exponent'].values[0] * \
+                    (np.log10(sel['Reference production [EJ]'].values[0]) - \
+                     np.log10(sel['Initial production [EJ]'].values[0]))),
             color=techcolors[countl+5], 
-            marker='o')
+            edgecolor='k',
+            marker='s',
+            zorder=2)
+        
+        # add Reference point
+        ax[count].scatter(
+            sel['Reference production [EJ]'].values[0], 
+            sel['Reference cost [USD/GJ]'].values[0],
+            color=techcolors[countl+5],  
+            edgecolor='k',
+            marker='o',
+            zorder=2)
         
         # add triangle for final point to obtain arrow
         ax[count].scatter(
             sel['Final production [EJ]'].values[0], 
-            countl,
-            color=techcolors[countl+5], 
-            marker='>')
+            10**(np.log10(sel['Reference cost [USD/GJ]'].values[0]) - \
+                sel['Learning exponent'].values[0] * \
+                    (np.log10(sel['Final production [EJ]'].values[0]) - \
+                     np.log10(sel['Reference production [EJ]'].values[0]))),
+            color=techcolors[countl+5],  
+            edgecolor='k',
+            marker='>',
+            zorder=2)
         countl += 1
 
     # remove y axis ticks
@@ -235,17 +379,19 @@ for s in ['no transition', 'slow transition', 'fast transition']:
 
 # set axes scale, labels and limits 
 ax[0].set_xscale('log', base=10)
-ax[-1].set_xlabel('Production [EJ]')
-ax[0].set_ylim(-1,countl+1)
+ax[0].set_yscale('log', base=10)
+ax[-1].set_xlabel('Cumulative Production [EJ]')
+# ax[0].set_ylim(-1,countl+1)
+ax[1].set_ylabel('Cost [USD/GJ]')
 
 # adjust figure
 fig.subplots_adjust(hspace=0.3, wspace=0.1, 
                     top=0.95, bottom=0.1, 
-                    left=0.05, right=0.725)
+                    left=0.1, right=0.725)
 
 # add legend
-fig.legend(handles = ax[0].get_legend_handles_labels()[0],
-            labels = ax[0].get_legend_handles_labels()[1],
+fig.legend(handles = ax[0].get_legend_handles_labels()[0][::-1],
+            labels = ax[0].get_legend_handles_labels()[1][::-1],
             loc='center right', 
             bbox_to_anchor=(1, 0.5),
             title='Energy technology'
@@ -253,5 +399,7 @@ fig.legend(handles = ax[0].get_legend_handles_labels()[0],
 
 fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \
             os.path.sep + 'TechnologiesProductionRange.png')
+fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \
+            os.path.sep + 'TechnologiesProductionRange.eps')
 
 plt.show()

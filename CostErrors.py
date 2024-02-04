@@ -39,12 +39,16 @@ dfObsErr = dfObsErr.loc[dfObsErr['Training horizon']>=1]\
                      .loc[dfObsErr['Max forecast horizon']>=1]
 
 
-fig, ax = plottingFunctions.plotObsPredErr(dfObsErr)
+# fig, ax = plottingFunctions.plotObsPredErr(dfObsErr)
+
+fig, ax = plottingFunctions.plotErr(dfObsErr)
 
 if not os.path.exists('figs' + os.path.sep + 'costError'):
     os.makedirs('figs' + os.path.sep + 'costError')
 fig.savefig('figs' + os.path.sep + 'costError' + \
             os.path.sep + 'ObsPredErr.png')
+fig.savefig('figs' + os.path.sep + 'costError' + \
+            os.path.sep + 'ObsPredErr.eps')
 
 # for supplementary material
 fig, ax = plottingFunctions.plotErrTrFor(dfObsErrAll)  
@@ -81,7 +85,9 @@ dfObsErr = dfObsErr.loc[dfObsErr['Training horizon']>=1]\
                      .loc[dfObsErr['Max forecast horizon']>=1]
 
 
-fig, ax = plottingFunctions.plotObsPredErr(dfObsErr)
+# fig, ax = plottingFunctions.plotObsPredErr(dfObsErr)
+
+fig, ax = plottingFunctions.plotErr(dfObsErr)
 
 fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
             os.path.sep + 'ObsPredErr_removeTechExamined.png')

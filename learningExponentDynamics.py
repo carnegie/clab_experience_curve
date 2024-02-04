@@ -63,8 +63,8 @@ for tech in selTechs:
     ax[1].scatter(res.params[1], res.params[1], 
                   color='gold', marker='*', 
                   s=200, edgecolor='k')
-    ax[1].set_xlabel('Observed learning exponent')
-    ax[1].set_ylabel('Future learning exponent')
+    ax[1].set_xlabel('Learning exponent - Calibration')
+    ax[1].set_ylabel('Learning exponent - Test')
 
     # diffc = np.diff(np.log10(df[df.columns[0]].values))
     # diffp = np.diff(np.log10(df[df.columns[3]].values))
@@ -177,6 +177,9 @@ for tech in selTechs:
     fig.savefig('figs' + os.path.sep + 
                 'learningExponentDynamics' +
                  os.path.sep + tech + '.png')
+    fig.savefig('figs' + os.path.sep + 
+                'learningExponentDynamics' +
+                 os.path.sep + tech + '.eps')
 
 
 

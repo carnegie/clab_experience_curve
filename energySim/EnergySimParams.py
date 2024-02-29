@@ -289,21 +289,21 @@ learningRateTechs = ['nuclear electricity',
 # average learning rate
 avgLR = []
 for el in costparams['omega'].keys():
-    if el in learningRateTechs:
+    if el in learningRateTechs and el not in ['nuclear electricity','hydroelectricity']:
         avgLR.append(costparams['omega'][el])
 avgLR = np.mean(avgLR)
 
 # standard error of learning rate
 stderrLR = []
 for el in costparams['sigmaOmega'].keys():
-    if el in learningRateTechs:
+    if el in learningRateTechs and el not in ['nuclear electricity','hydroelectricity']:
         stderrLR.append(costparams['sigmaOmega'][el])
 stderrLR = np.mean(stderrLR)
 
 # standard deviation of errors
 stdN = []
 for el in costparams['sigma'].keys():
-    if el in learningRateTechs:
+    if el in learningRateTechs and el not in ['nuclear electricity','hydroelectricity']:
         stdN.append(costparams['sigma'][el])
 stdN = np.mean(stdN)
 
@@ -319,54 +319,59 @@ expCurveParams = pd.read_csv(currentPath+'/ExpCurveParams.csv')
 
 # modify learning rate assumptions
 for t in learningRateTechs:
+
+    if t in ['nuclear electricity','hydroelectricity']:
+        continue
+
     ### all techs based
     costparams2['omega'][t] = \
          - expCurveParams.loc[\
             expCurveParams['Aggregation'] == 'All techs',\
                         'Mean slope'].values[0]
-    costparams2['sigmaOmega'][t] = \
-        expCurveParams.loc[\
-            expCurveParams['Aggregation'] == 'All techs',\
-                        'Standard error of mean slope'].values[0]
-    costparams2['sigma'][t] = \
-        expCurveParams.loc[\
-            expCurveParams['Aggregation'] == 'All techs',\
-                        'Standard deviation of errors'].values[0]
+    costparams2['sigmaOmega'][t] = 0#\
+    #     expCurveParams.loc[\
+    #         expCurveParams['Aggregation'] == 'All techs',\
+    #                     'Standard error of mean slope'].values[0]
+    # costparams2['sigma'][t] = 0#\
+    #     expCurveParams.loc[\
+    #         expCurveParams['Aggregation'] == 'All techs',\
+    #                     'Standard deviation of errors'].values[0]
 
     ### energy sector based
     costparams3['omega'][t] = \
         - expCurveParams.loc[\
             expCurveParams['Aggregation'] == 'Energy sector',\
                         'Mean slope'].values[0]
-    costparams3['sigmaOmega'][t] = \
-        expCurveParams.loc[\
-            expCurveParams['Aggregation'] == 'Energy sector',\
-                        'Standard error of mean slope'].values[0]
-    costparams3['sigma'][t] = \
-        expCurveParams.loc[\
-            expCurveParams['Aggregation'] == 'Energy sector',\
-                        'Standard deviation of errors'].values[0]
+    costparams3['sigmaOmega'][t] = 0#\
+    #     expCurveParams.loc[\
+    #         expCurveParams['Aggregation'] == 'Energy sector',\
+    #                     'Standard error of mean slope'].values[0]
+    # costparams3['sigma'][t] = 0#\
+    #     expCurveParams.loc[\
+    #         expCurveParams['Aggregation'] == 'Energy sector',\
+    #                     'Standard deviation of errors'].values[0]
 
     ### energy sector based - way et al average & worst case
     costparams4['omega'][t] = avgLR
-    costparams4['sigmaOmega'][t] = stderrLR
-    costparams4['sigma'][t] = stdN
+    costparams4['sigmaOmega'][t] = 0#stderrLR
+    # costparams4['sigma'][t] = 0#stdN
+
     ### energy sector based - without nuclear
     costparams5['omega'][t] = \
         - expCurveParams.loc[\
             expCurveParams['Aggregation'] == \
                 'Energy sector without nuclear',\
                         'Mean slope'].values[0]
-    costparams5['sigmaOmega'][t] = \
-        expCurveParams.loc[\
-            expCurveParams['Aggregation'] == \
-                'Energy sector without nuclear',\
-                        'Standard error of mean slope'].values[0]
-    costparams5['sigma'][t] = \
-        expCurveParams.loc[\
-            expCurveParams['Aggregation'] == \
-                'Energy sector without nuclear',\
-                        'Standard deviation of errors'].values[0]
+    costparams5['sigmaOmega'][t] = 0#\
+    #     expCurveParams.loc[\
+    #         expCurveParams['Aggregation'] == \
+    #             'Energy sector without nuclear',\
+    #                     'Standard error of mean slope'].values[0]
+    # costparams5['sigma'][t] = 0#\
+    #     expCurveParams.loc[\
+    #         expCurveParams['Aggregation'] == \
+    #             'Energy sector without nuclear',\
+    #                     'Standard deviation of errors'].values[0]
     
 # create labels different cost assumptions
 costsAssumptions = {}

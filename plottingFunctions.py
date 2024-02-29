@@ -8,9 +8,12 @@ import analysisFunctions
 def plotErr(dfObsErr):
 
     # create figure
-    fig, ax = plt.subplots(1, 4, 
-                        figsize = (15,5),
-                        subplot_kw=dict(box_aspect=1),)
+    fig, ax = plt.subplots(1, 3, 
+                        figsize = (15,8),
+                        sharex=True,
+                        sharey=True,
+                        # subplot_kw=dict(box_aspect=1),
+                        )
 
     # plot boxplots
 
@@ -20,9 +23,9 @@ def plotErr(dfObsErr):
     upper = [10**(1/3), 10**(2/3), 10**(1), 10**(4/3)]
 
     # iterate over variables for which to plot boxplots
-    for var in [['Error (Tech)', 1, sns.color_palette('colorblind')[0]],
-                ['Error (Avg)', 2, sns.color_palette('colorblind')[2]],
-                ['Observation', 3, sns.color_palette('colorblind')[3]]]:
+    for var in [['Error (Tech)', 0, sns.color_palette('colorblind')[0]],
+                ['Error (Avg)', 1, sns.color_palette('colorblind')[2]],
+                ['Observation', 2, sns.color_palette('colorblind')[3]]]:
 
         # create lists to store data
         upp, low = [0], [0]
@@ -50,15 +53,15 @@ def plotErr(dfObsErr):
                         .quantile([0.05, 0.25, 0.5, 0.75, 0.95])
             
             # plot boxplots
-            ax[var[1]].plot(\
-                [medium[i]-0.25, medium[i]+0.25], 
-                10**np.array([q50, q50]), 
-                color='black', lw=1.5)
-            ax[var[1]].plot(\
-                [medium[i]-0.25, medium[i]+0.25, 
-                    medium[i]+0.25, medium[i]-0.25, medium[i]-0.25], 
-                10**np.array([q25, q25, q75, q75, q25]), 
-                color='black', lw=1.5)
+            # ax[var[1]].plot(\
+            #     [medium[i]-0.25, medium[i]+0.25], 
+            #     10**np.array([q50, q50]), 
+            #     color='black', lw=1.5)
+            # ax[var[1]].plot(\
+            #     [medium[i]-0.25, medium[i]+0.25, 
+            #         medium[i]+0.25, medium[i]-0.25, medium[i]-0.25], 
+            #     10**np.array([q25, q25, q75, q75, q25]), 
+            #     color='black', lw=1.5)
             
             # append data to lists
             upp.append(q95)
@@ -70,52 +73,128 @@ def plotErr(dfObsErr):
         # plot shaded area and median line
         ax[var[1]].fill_between(\
             [1,*medium], 10**np.array(low), 10**np.array(upp), 
-            color=var[2], alpha=.2)    
+            color=var[2], alpha=.3, lw=0)    
         ax[var[1]].fill_between(\
             [1,*medium], 10**np.array(p25), 10**np.array(p75), 
-            color=var[2], alpha=.4)    
+            color=var[2], alpha=.6, lw=0)    
         ax[var[1]].plot(\
-            [1,*medium], 10**np.array(med), color='black', lw=1.5)    
+            [1,*medium], 10**np.array(med), color='w', lw=2,
+            linestyle='--')    
+        ax[var[1]].plot(\
+            [1,*medium], [1 for x in range(len(medium)+1)], 
+            color='k', lw=1,
+            linestyle='--')
+
 
     # annotate figure
 
-    ax[1].annotate('Technology-specific', 
-                    xy=(6.5,6),
+    # ax[1].annotate('Technology-specific', 
+    #                 xy=(6.5,6),
+    #                 ha='center', va='center',
+    #                 xycoords='data',
+    #                 color=sns.color_palette('colorblind')[0])
+    ax[0].set_title('Technology-specific')
+    # ax[2].annotate('Technology-mean',
+    #                     xy=(6.5,6),
+    #                     ha='center', va='center',
+    #                     xycoords='data',
+    #                     color=sns.color_palette('colorblind')[2])
+    ax[1].set_title('Technology-mean')
+
+    # ax[3].annotate('No cost change',
+    #                     xy=(6.5,6),
+    #                     ha='center', va='center',
+    #                     xycoords='data',
+    #                     color=sns.color_palette('colorblind')[3])
+    ax[2].set_title('Constant cost')
+
+    ax[0].axhline(1, 1, 1.5, color='k', linestyle='--', lw=1, clip_on=False)
+    ax[1].axhline(1, 1, 1.5, color='k', linestyle='--', lw=1, clip_on=False)
+    ax[2].axhline(1, 1, 1.5, color='k', linestyle='--', lw=1, clip_on=False)
+    ax[2].annotate('Underestimates\nfuture learning',
+                    xy=(15,.5),
                     ha='center', va='center',
                     xycoords='data',
-                    color=sns.color_palette('colorblind')[0])
-    ax[2].annotate('Technology-mean',
-                        xy=(6.5,6),
+                    color='k',
+                    fontsize=16, annotation_clip=False)
+    ax[2].annotate('Overestimates\nfuture learning',
+                    xy=(15,2),
+                    ha='center', va='center',
+                    xycoords='data',
+                    color='k',
+                    fontsize=16, annotation_clip=False)
+    ax[2].annotate('',
+                    xy=(15,1.5),
+                    xytext=(15,0.66),
+                    xycoords='data',
+                    color='k',
+                    arrowprops=dict(facecolor='k',
+                                    color='k', arrowstyle='<->'),
+                                    annotation_clip=False)
+    
+    for axc in [[0,0],[1,2],[2,3]]:
+        ax[axc[0]].plot([4.5,5.5], [10**np.log10(4),10**np.log10(4)], 
+                color='w', lw=2,
+                linestyle='--'
+                )
+        ax[axc[0]].fill_between([4.5,5.5], 
+                        [10**(np.log10(4)-.15),10**(np.log10(4)-.15)], 
+                        [10**(np.log10(4)+.15),10**(np.log10(4)+.15)], 
+                        color=sns.color_palette('colorblind')[axc[1]], lw=0,
+                        alpha=0.3)
+        ax[axc[0]].fill_between([4.5,5.5], 
+                        [10**(np.log10(4)-.075),10**(np.log10(4)-.075)], 
+                        [10**(np.log10(4)+.075),10**(np.log10(4)+.075)], 
+                        color=sns.color_palette('colorblind')[axc[1]], lw=0,
+                        alpha=0.6)
+        ax[axc[0]].annotate('Median', xy=(6.75,10**np.log10(4)),
                         ha='center', va='center',
                         xycoords='data',
-                        color=sns.color_palette('colorblind')[2])
-
-    ax[3].annotate('No cost change',
-                        xy=(6.5,6),
+                        color='k',
+                        fontsize=12, annotation_clip=False)
+        ax[axc[0]].plot([4.25,3,3,4.25], 
+                        [10**(np.log10(4)-.075),10**(np.log10(4)-.075),10**(np.log10(4)+.075),10**(np.log10(4)+.075)],
+                        color=sns.color_palette('colorblind')[axc[1]], lw=1,
+                        )
+        ax[axc[0]].plot([4.25,2,2,4.25], 
+                        [10**(np.log10(4)-.15),10**(np.log10(4)-.15),10**(np.log10(4)+.15),10**(np.log10(4)+.15)],
+                        color=sns.color_palette('colorblind')[axc[1]], lw=1,
+                        )
+                        
+        ax[axc[0]].annotate('50%', xy=(3.75,10**np.log10(4)),
                         ha='center', va='center',
                         xycoords='data',
-                        color=sns.color_palette('colorblind')[3])
+                        color='k',
+                        fontsize=12, annotation_clip=False)
+        ax[axc[0]].annotate('90%', xy=(3.75,10**(np.log10(4)+.11)),
+                        ha='center', va='center',
+                        xycoords='data',
+                        color='k',
+                        fontsize=12, annotation_clip=False)
+                            
+                            
 
-    # add boxplot legend
-    ax[0].plot([0,.5], [1,1], color='black', lw=1.5)
-    ax[0].plot([0,.5,.5,0,0], [0.5,0.5,1.5,1.5,0.5], color='black', lw=1.5)
-    ax[0].fill_between([0,.5], [0,0], [2,2], color='black', alpha=.2)
-    ax[0].fill_between([0,.5], [.5,.5], [1.5,1.5], color='black', alpha=.2)
-    ax[0].set_ylim(-1,3)
-    ax[0].set_xlim(-1.8,3)
-    ax[0].annotate('50%', xy=(-.5,1),
-                        ha='center', va='center',
-                        xycoords='data')
-    ax[0].annotate('90%', xy=(-1.5,1),
-                        ha='center', va='center',
-                        xycoords='data')
-    ax[0].annotate('Median', xy=(.6,1),
-                    ha='left', va='center',
-                        xycoords='data')
-    ax[0].plot([-.1,-.5,-.5], [1.5,1.5,1.25], color='black')
-    ax[0].plot([-.1,-.5,-.5], [.5,.5,.75], color='black')
-    ax[0].plot([-.1,-1.5,-1.5], [2,2,1.25], color='silver')
-    ax[0].plot([-.1,-1.5,-1.5], [0,0,.75], color='silver')
+
+    # # add boxplot legend
+    # ax[0].plot([0,.5], [1,1], color='black', lw=1.5)
+    # ax[0].plot([0,.5,.5,0,0], [0.5,0.5,1.5,1.5,0.5], color='black', lw=1.5)
+    # ax[0].fill_between([0,.5], [0,0], [2,2], color='black', alpha=.2)
+    # ax[0].fill_between([0,.5], [.5,.5], [1.5,1.5], color='black', alpha=.2)
+    # ax[0].set_ylim(-1,3)
+    # ax[0].set_xlim(-1.8,3)
+    # ax[0].annotate('50%', xy=(-.5,1),
+    #                     ha='center', va='center',
+    #                     xycoords='data')
+    # ax[0].annotate('90%', xy=(-1.5,1),
+    #                     ha='center', va='center',
+    #                     xycoords='data')
+    # ax[0].annotate('Median', xy=(.6,1),
+    #                 ha='left', va='center',
+    #                     xycoords='data')
+    # ax[0].plot([-.1,-.5,-.5], [1.5,1.5,1.25], color='black')
+    # ax[0].plot([-.1,-.5,-.5], [.5,.5,.75], color='black')
+    # ax[0].plot([-.1,-1.5,-1.5], [2,2,1.25], color='silver')
+    # ax[0].plot([-.1,-1.5,-1.5], [0,0,.75], color='silver')
 
     # ## plot error boxplot comparison
 
@@ -177,11 +256,11 @@ def plotErr(dfObsErr):
 
 
     # remove empty panels
-    ax[0].axis('off')
+    # ax[0].axis('off')
 
     # set axes labels
-    ax[1].set_ylabel('Predictive error')
-    ax[2].set_xlabel('Cumulative production'
+    ax[0].set_ylabel('Prediction error')
+    ax[1].set_xlabel('Cumulative production'
                     ' relative to reference')
     # ax[0].annotate('Cumulative production'
     #                ' relative to reference',
@@ -192,25 +271,25 @@ def plotErr(dfObsErr):
     #                )
 
     # adjust axes limits
-    ax[1].set_xticks([1,5,10],[1,5,10])
-    ax[2].set_xticks([1,5,10],[1,5,10])
-    ax[3].set_xticks([1,5,10],[1,5,10])
+    ax[0].set_xticks([1,5,10],[1,5,10])
+    # ax[1].set_xticks([1,5,10],[1,5,10])
+    # ax[2].set_xticks([1,5,10],[1,5,10])
 
-    ax[1].set_ylim(0.1, 10)
-    ax[1].set_xlim(1, 12)
-    ax[2].set_ylim(0.1, 10)
-    ax[2].set_xlim(1,12)
-    ax[3].set_ylim(0.1,10)
-    ax[3].set_xlim(1,12)
+    ax[0].set_ylim(0.1, 10)
+    ax[0].set_xlim(1, 12)
+    # ax[1].set_ylim(0.1, 10)
+    # ax[1].set_xlim(1,12)
+    # ax[2].set_ylim(0.1,10)
+    # ax[2].set_xlim(1,12)
 
     # set log scale for bottom panels
-    ax[1].set_yscale('log', base=10)
-    ax[2].set_yscale('log', base=10)
-    ax[3].set_yscale('log', base=10)
+    ax[0].set_yscale('log', base=10)
+    # ax[2].set_yscale('log', base=10)
+    # ax[3].set_yscale('log', base=10)
 
     # # set yticklabels and xticks for boxplot
-    ax[2].set_yticklabels([])
-    ax[3].set_yticklabels([])
+    # ax[2].set_yticklabels([])
+    # ax[3].set_yticklabels([])
     # ax[3].set_xticks([0,1,2], 
     #                     labels=['Technology\nspecific', 
     #                             'Technology\nmean',
@@ -218,23 +297,23 @@ def plotErr(dfObsErr):
     #                             rotation=90)
 
     # set minor grid log scale plots
-    ax[1].yaxis.grid(which='minor', linewidth=0.5)
-    ax[2].yaxis.grid(which='minor', linewidth=0.5)
-    ax[3].yaxis.grid(which='minor', linewidth=0.5)
+    # ax[1].yaxis.grid(which='minor', linewidth=0.5)
+    # ax[2].yaxis.grid(which='minor', linewidth=0.5)
+    # ax[3].yaxis.grid(which='minor', linewidth=0.5)
 
     ## annotate panels
-    ax[1].annotate('a', xy=(0.05,1.05),
+    ax[0].annotate('a', xy=(0.05,0.05),
                     xycoords='axes fraction',
                     ha='center', va='center')
-    ax[2].annotate('b', xy=(0.05,1.05),
+    ax[1].annotate('b', xy=(0.05,0.05),
                     xycoords='axes fraction',
                     ha='center', va='center')
-    ax[3].annotate('c', xy=(0.05,1.05),
+    ax[2].annotate('c', xy=(0.05,0.05),
                     xycoords='axes fraction',
                     ha='center', va='center')
 
-    fig.subplots_adjust(bottom=0.25, top=0.975,
-                        left=.06, right=.98,
+    fig.subplots_adjust(bottom=0.1, top=0.925,
+                        left=.1, right=.8,
                         hspace=0.25)
     
     return fig, ax
@@ -438,7 +517,7 @@ def plotObsPredErr(dfObsErr):
 
     # set axes labels
     ax[0][0].set_ylabel('Unit cost relative to reference')
-    ax[1][1].set_ylabel('Observation to forecast ratio')
+    ax[1][1].set_ylabel('Prediction error')
     ax[1][1].set_xlabel('Cumulative production'
                     ' relative to reference')
 
@@ -567,7 +646,7 @@ def plotErrorTech(df):
             10**np.array([q25,q25]), 10**np.array([q75,q75]), 
             color=color, alpha=.2)  
 
-    ax[0].set_ylabel('Observation to forecast ratio')
+    ax[0].set_ylabel('Prediction error')
     ax[0].set_xticks([0.5], ['All technologies'],
                      rotation=90)
     
@@ -743,7 +822,7 @@ def plotErrTrFor(df):
     for a in ax[-1]:
         a.set_xticks([])
 
-    ax[1][0].set_ylabel('Observation to forecast ratio')
+    ax[1][0].set_ylabel('Prediction error')
     
     legend = fig.legend(handles = ax[-1][-1].get_legend_handles_labels()[0],
                 labels = ax[-1][-1].get_legend_handles_labels()[1],

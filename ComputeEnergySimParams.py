@@ -24,39 +24,39 @@ for t in df['Tech'].unique():
     result = model.fit()
 
     # store slope, sector, and technology
-    slopes.append([result.params[1], 
+    slopes.append([result.params[1], result.bse[1],
                    analysisFunctions.sectorsinv[t], 
                    t])
 
 # create dataframe from list
-slopes = pd.DataFrame(slopes, columns=['Slope','Sector','Tech'])
+slopes = pd.DataFrame(slopes, columns=['Slope','Standard Error', 'Sector','Tech'])
 
 # store information in list
 expCurveParams = [['All techs', slopes['Slope'].mean(), 
-      slopes['Slope'].sem()]]
+      slopes['Standard Error'].mean()]]
+
 
 # compute average slope and its standard error by sector
 smean = slopes.groupby(['Sector']).mean(numeric_only=True)
-ssem = slopes.groupby(['Sector']).sem(numeric_only=True)
-
-
+# ssem = slopes.groupby(['Sector'])['Standard Error'].mean(numeric_only=True)
+print(smean.loc['Energy']['Slope'])
 # store information in list
 expCurveParams.append(\
     ['Energy sector', 
-     smean.loc['Energy'].values[0], 
-      ssem.loc['Energy'].values[0]])
+     smean.loc['Energy']['Slope'], 
+      smean.loc['Energy']['Standard Error']])
 
 # compute average slope and its standard error by sector
 # after excluding nuclear technologies
 slopes = slopes.loc[~(slopes['Tech'].str.contains('Nuclear'))]
 smean = slopes.groupby(['Sector']).mean(numeric_only=True)
-ssem = slopes.groupby(['Sector']).sem(numeric_only=True)
+# ssem = slopes.groupby(['Sector'])['Standard Error'].sem(numeric_only=True)
 
 # store information in list
 expCurveParams.append(\
     ['Energy sector without nuclear',
-     smean.loc['Energy'].values[0], 
-      ssem.loc['Energy'].values[0]])
+     smean.loc['Energy']['Slope'], 
+      smean.loc['Energy']['Standard Error']])
 
 # compute standard deviation of errors
 # when using the average learning rates 

@@ -10,7 +10,7 @@ matplotlib.rc('font',
               **{'family':'sans-serif',
                  'sans-serif':'Helvetica'})
 matplotlib.rcParams['pdf.fonttype'] = 42
-sns.set_style('whitegrid')
+sns.set_style('ticks')
 sns.set_palette('colorblind')
 sns.set_context('talk')
 
@@ -77,7 +77,7 @@ dfObsErr = pd.DataFrame(dfObsErr,
                                  'Error (Avg)',
                                  'Max trainingt horizon',
                                  'Max forecast horizon',
-                                 'Tech'])
+                                 'Tech'])\
 
 dfObsErrAll = dfObsErr.copy()
 

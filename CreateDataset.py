@@ -127,7 +127,7 @@ df['Sector'] = [\
 # create figure
 fig, ax = plt.subplots(2, 1, sharex=True, 
 		       height_ratios=[1,0.5],
-			   figsize=(10,8))
+			   figsize=(7,10))
 
 # create list to store the range of cumulative production
 # covered by each of the technologies
@@ -189,7 +189,7 @@ fig.subplots_adjust(right=0.9, left=0.15,
 
 # create figure, only above panel
 fig, ax = plt.subplots(1, 1, 
-			   figsize=(10,8))
+			   figsize=(9,10))
 
 ax.set_xscale('log', base=10)
 ax.set_yscale('log', base=10)
@@ -246,8 +246,8 @@ ax.set_xlabel(
 ax.set_ylabel('Unit cost relative to initial')
 
 
-fig.subplots_adjust(right=0.9, left=0.15, 
-					top=0.95, bottom=0.15, 
+fig.subplots_adjust(right=0.95, left=0.15, 
+					top=0.975, bottom=0.08, 
 					hspace=0.2)
 
 fig.savefig('figs' + os.path.sep + 'Data.png')

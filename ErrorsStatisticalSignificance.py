@@ -176,7 +176,7 @@ for r1 in enumerate(rangesmed):
         # - the training horizon
         # - the forecast horizon
         # - the p value of the paired t-test
-        # - the p value of the mann whitney test
+        # - the p value of the wilcoxon signed rank test
         allTests.append([r1[1], r2[1], 
             scipy.stats.ttest_rel(\
                 [np.mean([x**2 for x in a])**0.5 for a in errTech],

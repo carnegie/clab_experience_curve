@@ -260,25 +260,30 @@ for x in np.arange(minv, maxv, stepv):
         axmean[0].fill_between([x-0.03, x-0.01],
                             np.percentile(cals, 25),
                             np.percentile(cals, 75),
-                            color=sns.color_palette('colorblind')[5], alpha=0.5)
+                            color=sns.color_palette('colorblind')[5], 
+                            alpha=0.5)
         axmean[0].fill_between([x-0.03, x-0.01],
                             np.percentile(cals, 5),
                             np.percentile(cals, 95),
-                            color=sns.color_palette('colorblind')[5], alpha=0.25)
+                            color=sns.color_palette('colorblind')[5], 
+                            alpha=0.25)
         axmean[0].plot([x+0.01,x+0.03], 
                     [np.median(vals),np.median(vals)],
                         color=sns.color_palette('colorblind')[4])
         axmean[0].fill_between([x+0.01, x+0.03],
                             np.percentile(vals, 25),
                             np.percentile(vals, 75),
-                            color=sns.color_palette('colorblind')[4], alpha=0.5,
+                            color=sns.color_palette('colorblind')[4], 
+                            alpha=0.5,
                             zorder=2)
         axmean[0].fill_between([x+0.01, x+0.03],
                             np.percentile(vals, 5),
                             np.percentile(vals, 95),
-                            color=sns.color_palette('colorblind')[4], alpha=0.25)
+                            color=sns.color_palette('colorblind')[4], 
+                            alpha=0.25)
         [axmean[0].plot([x-0.02, x+0.02],
-                    [cals[i], vals[i]], color=sns.color_palette('colorblind')[0], 
+                    [cals[i], vals[i]], 
+                    color=sns.color_palette('colorblind')[0], 
                     lw=0.25, alpha=0.25,
                     marker='o', markersize=2.5,
                     zorder=-100)
@@ -291,14 +296,14 @@ for x in np.arange(minv, maxv, stepv):
                         color=sns.color_palette('colorblind')[0],
                         zorder=10)
         axmean[1].fill_between([x-0.02, x],
-                            np.percentile(np.array(cals) - np.array(vals), 25),
-                            np.percentile(np.array(cals) - np.array(vals), 75),
-                            color=sns.color_palette('colorblind')[0], alpha=0.5,
-                            zorder=2)
+                        np.percentile(np.array(cals) - np.array(vals), 25),
+                        np.percentile(np.array(cals) - np.array(vals), 75),
+                        color=sns.color_palette('colorblind')[0], alpha=0.5,
+                        zorder=2)
         axmean[1].fill_between([x-0.02, x],
-                            np.percentile(np.array(cals) - np.array(vals), 5),
-                            np.percentile(np.array(cals) - np.array(vals), 95),
-                            color=sns.color_palette('colorblind')[0], alpha=0.25)
+                        np.percentile(np.array(cals) - np.array(vals), 5),
+                        np.percentile(np.array(cals) - np.array(vals), 95),
+                        color=sns.color_palette('colorblind')[0], alpha=0.25)
         
         # meanlr = np.mean(cals)
         axmean[1].plot([x,x+0.02], 
@@ -309,11 +314,13 @@ for x in np.arange(minv, maxv, stepv):
         axmean[1].fill_between([x, x+0.02],
                             np.percentile(meanlr - np.array(vals), 25),
                             np.percentile(meanlr - np.array(vals), 75),
-                            color=sns.color_palette('colorblind')[2], alpha=0.5)
+                            color=sns.color_palette('colorblind')[2], 
+                            alpha=0.5)
         axmean[1].fill_between([x, x+0.02],
                             np.percentile(meanlr - np.array(vals), 5),
                             np.percentile(meanlr - np.array(vals), 95),
-                            color=sns.color_palette('colorblind')[2], alpha=0.25)
+                            color=sns.color_palette('colorblind')[2], 
+                            alpha=0.25)
     
     cals = np.log2(1 - cals/100)
     vals = np.log2(1 - vals/100)
@@ -608,20 +615,23 @@ figmean.subplots_adjust(top=0.95)
 
 style = "Simple, tail_width=0.5, head_width=4, head_length=8"
 kw = dict(arrowstyle=style, color=sns.color_palette('colorblind')[5])
-a = matplotlib.patches.FancyArrowPatch((0.25, -69), (0.192, -63), connectionstyle="arc3,rad=.1", **kw)
+a = matplotlib.patches.FancyArrowPatch((0.25, -69), (0.192, -63), 
+                                connectionstyle="arc3,rad=.1", **kw)
 axmean[0].add_patch(a)
 style = "Simple, tail_width=0.5, head_width=4, head_length=8"
 kw = dict(arrowstyle=style, color=sns.color_palette('colorblind')[4])
-a = matplotlib.patches.FancyArrowPatch((0.25, 78), (0.232, 46), connectionstyle="arc3,rad=-.1", **kw)
+a = matplotlib.patches.FancyArrowPatch((0.25, 78), (0.232, 46), 
+                                connectionstyle="arc3,rad=-.1", **kw)
 axmean[0].add_patch(a)
 style = "Simple, tail_width=0.5, head_width=4, head_length=8"
 kw = dict(arrowstyle=style, color=sns.color_palette('colorblind')[0])
-a = matplotlib.patches.FancyArrowPatch((0.25, -58), (0.202, -36), connectionstyle="arc3,rad=.1", **kw)
+a = matplotlib.patches.FancyArrowPatch((0.25, -58), (0.202, -36), 
+                                connectionstyle="arc3,rad=.1", **kw)
 axmean[1].add_patch(a)
 kw = dict(arrowstyle=style, color=sns.color_palette('colorblind')[2])
-a = matplotlib.patches.FancyArrowPatch((0.25, 27), (0.222, -0.1), connectionstyle="arc3,rad=-.1", **kw)
+a = matplotlib.patches.FancyArrowPatch((0.25, 27), (0.222, -0.1), 
+                                connectionstyle="arc3,rad=-.1", **kw)
 axmean[1].add_patch(a)
-
 axmean[1].set_xlim((0.14, 0.86))
 
 figmean.subplots_adjust(right=0.825)
@@ -632,8 +642,10 @@ axes.set_xlim(-3,3)
 axes.set_ylim(-3,3)
 axes.axis('off')
 axes.plot([.2,.8], [0,0], color=sns.color_palette('colorblind')[9], )
-axes.fill_between([.2,.8], -.5, .5, color=sns.color_palette('colorblind')[9], alpha=0.5)
-axes.fill_between([.2,.8], -1, 1, color=sns.color_palette('colorblind')[9], alpha=0.25)
+axes.fill_between([.2,.8], -.5, .5, 
+                  color=sns.color_palette('colorblind')[9], alpha=0.5)
+axes.fill_between([.2,.8], -1, 1, 
+                  color=sns.color_palette('colorblind')[9], alpha=0.25)
 
 axes.annotate('Median', xy=(-1.25, 0), 
                 xycoords='data',

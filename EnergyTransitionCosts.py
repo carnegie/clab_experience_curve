@@ -413,8 +413,9 @@ fig.subplots_adjust(hspace=0.3, wspace=0.1,
 handles, labels = ax[0].get_legend_handles_labels()
 handles = handles[::-1]
 labels = labels[::-1]
-handles.append(matplotlib.lines.Line2D([0],[0], color='none', marker='none', 
-                                        markerfacecolor='none', markersize=10))
+handles.append(matplotlib.lines.Line2D([0],[0], 
+                            color='none', marker='none', 
+                            markerfacecolor='none', markersize=10))
 labels.append('')
 syms = [['Initial','s'],['Present','o'],['Future','>']]
 for sym in syms:
@@ -451,13 +452,19 @@ fig, ax = plt.subplots(1,3,
                           figsize=(14,9))
 
 
-df['Final production [EJ]'] = df['Final production [EJ]']/df['Reference production [EJ]']
-df['Initial production [EJ]'] = df['Initial production [EJ]']/df['Reference production [EJ]']
-df['Reference production [EJ]'] = df['Reference production [EJ]']/df['Reference production [EJ]']
+df['Final production [EJ]'] = \
+    df['Final production [EJ]']/df['Reference production [EJ]']
+df['Initial production [EJ]'] = \
+    df['Initial production [EJ]']/df['Reference production [EJ]']
+df['Reference production [EJ]'] = \
+    df['Reference production [EJ]']/df['Reference production [EJ]']
 
-df['Final cost [USD/GJ]'] = (df['Final cost [USD/GJ]']/df['Reference cost [USD/GJ]'])
-df['Initial cost [USD/GJ]'] = (df['Initial cost [USD/GJ]']/df['Reference cost [USD/GJ]'])
-df['Reference cost [USD/GJ]'] = (df['Reference cost [USD/GJ]']/df['Reference cost [USD/GJ]'])
+df['Final cost [USD/GJ]'] = \
+    (df['Final cost [USD/GJ]']/df['Reference cost [USD/GJ]'])
+df['Initial cost [USD/GJ]'] = \
+    (df['Initial cost [USD/GJ]']/df['Reference cost [USD/GJ]'])
+df['Reference cost [USD/GJ]'] = \
+    (df['Reference cost [USD/GJ]']/df['Reference cost [USD/GJ]'])
 
 count = 0
 # iterate over scenarios
@@ -476,16 +483,23 @@ for s in ['no transition', 'slow transition', 'fast transition']:
         sel = df.loc[df['Technology']==t]\
                 .loc[df['Scenario']==s]
 
-        ax[count].plot(sel[['Initial production [EJ]', 'Reference production [EJ]']].values[0],
+        ax[count].plot(sel[['Initial production [EJ]', 
+                                'Reference production [EJ]']].values[0],
                        10 ** (3 * (countl-9)) * 
-                       sel[['Initial cost [USD/GJ]', 'Reference cost [USD/GJ]']].values[0],
-                       marker = 'o', markeredgecolor='k', color=techcolors[countl-3], linestyle='-')
-        ax[count].plot(sel[['Reference production [EJ]', 'Final production [EJ]']].values[0],
+                       sel[['Initial cost [USD/GJ]', 
+                                'Reference cost [USD/GJ]']].values[0],
+                       marker = 'o', markeredgecolor='k', 
+                        color=techcolors[countl-3], linestyle='-')
+        ax[count].plot(sel[['Reference production [EJ]', 
+                                'Final production [EJ]']].values[0],
                        10 ** (3 * (countl-9)) *  
-                          sel[['Reference cost [USD/GJ]', 'Final cost [USD/GJ]']].values[0],
-                          marker = 'o', markeredgecolor='k', linestyle='--', color=techcolors[countl-3])
+                          sel[['Reference cost [USD/GJ]', 
+                               'Final cost [USD/GJ]']].values[0],
+                          marker = 'o', markeredgecolor='k', 
+                          linestyle='--', color=techcolors[countl-3])
         ax[count].annotate(t.capitalize().replace('pv','PV'),
-                            xy=(sel['Reference production [EJ]'].values[0] * 1.5, 
+                            xy=(sel['Reference production [EJ]'].values[0]\
+                                     * 1.5, 
                                  10 ** (3 * (0.1+countl-9)) * 
                                  sel['Reference cost [USD/GJ]'].values[0]),
                             xycoords='data',
@@ -494,30 +508,26 @@ for s in ['no transition', 'slow transition', 'fast transition']:
                             style='italic',
                             fontsize=14,
                             color=techcolors[countl-3])
-        # ax[count].annotate('- '+str(round(100 * (1 - sel['Reference cost [USD/GJ]'].values[0])))+' %',
-        #                     xy=(sel['Reference production [EJ]'].values[0] * 0.5,
-        #                         10 ** (-0.2+countl) * 
-        #                         sel['Reference cost [USD/GJ]'].values[0]**0.25),
-        #                     xycoords='data',
-        #                     ha='center',
-        #                     va='top',
-        #                     fontsize=12,
-        #                     color=techcolors[countl-3])
-        ax[count].annotate('- '+str(round(100 * (1 - sel['Final cost [USD/GJ]'].values[0]/\
-                                                 sel['Reference cost [USD/GJ]'].values[0])))+' %',
-                            xy=(sel['Final production [EJ]'].values[0] * 5,
-                                10 ** (3*(countl-9)) * 
-                                sel['Final cost [USD/GJ]'].values[0]),
-                            xycoords='data',
-                            ha='left',
-                            va='center',
-                            fontsize=14,
-                            color=techcolors[countl-3])
+
+        ax[count].annotate(
+            '- ' + \
+                str(round(100 * 
+                    (1 - sel['Final cost [USD/GJ]'].values[0]/\
+                    sel['Reference cost [USD/GJ]'].values[0]))) + ' %',
+                    xy=(sel['Final production [EJ]'].values[0] * 5,
+                        10 ** (3*(countl-9)) * 
+                        sel['Final cost [USD/GJ]'].values[0]),
+                    xycoords='data',
+                    ha='left',
+                    va='center',
+                    fontsize=14,
+                    color=techcolors[countl-3])
 
         countl += 1
 
         ax[count].set_xscale('log', base=10)
         ax[count].set_yscale('log', base=10)
+
     ax[count].set_yticklabels([])
     [ax[count].axhline(10**x, color='k', linestyle='-', 
                        lw=.25, alpha=0.75, zorder=-5)
@@ -526,19 +536,13 @@ for s in ['no transition', 'slow transition', 'fast transition']:
 
     minorticks = []
     for val in range(2,19):
-        # [ax[count].axhline(10*(x-1), color='k', linestyle='-', 
-        #                    lw=.05, alpha=0.5, zorder=-10) 
-        #  for x in np.arange(10**(val),10**(val+1),10**(val))]
         [minorticks.append(10*(x-1)) for x in np.arange(10**(val),10**(val+1),10**(val))]
     ax[count].set_yticks(minorticks, minor=True)
-
-
     [ax[count].axvline(10**x, color='k', linestyle='-',
                       lw=.25, alpha=0.75, zorder=-5)
         for x in range(-9,12,3)]
-    
-
     count += 1
+    
 ax[0].set_xlim(1e-8,10**12)
 ax[0].set_ylim(500,6*10**18)
 ax[0].set_xticks([1e-6,1e-3,1,1e3,1e6,1e9,1e12],)
@@ -557,241 +561,6 @@ fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \
             os.path.sep + 'TechnologiesProductionRangeRelative.png')
 fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \
             os.path.sep + 'TechnologiesProductionRangeRelative.eps')
-
-# # combine figures
-
-# fig = plt.figure(figsize=(15,13))
-
-# gs0 = matplotlib.gridspec.GridSpec(2, 1, figure=fig, height_ratios=[2,1])
-
-# gs00 = matplotlib.gridspec.GridSpecFromSubplotSpec(1, 3, subplot_spec=gs0[0])
-# gs01 = matplotlib.gridspec.GridSpecFromSubplotSpec(1, 2, subplot_spec=gs0[1])
-
-# ax = gs00.subplots(sharex=True, sharey=True)
-
-# count = 0
-# # iterate over scenarios
-# for s in ['no transition', 'slow transition', 'fast transition']:
-
-#     # counter for technologies
-#     countl = 10
-
-#     # iterate over technologies
-#     for t in df['Technology'].unique():
-
-#         if t in ['hydroelectricity', 'nuclear electricity']:
-#             continue
-
-#         # select data for specific technology and scenario
-#         sel = df.loc[df['Technology']==t]\
-#                 .loc[df['Scenario']==s]
-
-#         ax[count].plot(sel[['Initial production [EJ]', 'Reference production [EJ]']].values[0],
-#                        10 ** (3 * (countl-9)) * 
-#                        sel[['Initial cost [USD/GJ]', 'Reference cost [USD/GJ]']].values[0],
-#                        marker = 'o', markeredgecolor='k', color=techcolors[countl-3], linestyle='-')
-#         ax[count].plot(sel[['Reference production [EJ]', 'Final production [EJ]']].values[0],
-#                        10 ** (3 * (countl-9)) *  
-#                           sel[['Reference cost [USD/GJ]', 'Final cost [USD/GJ]']].values[0],
-#                           marker = 'o', markeredgecolor='k', linestyle='--', color=techcolors[countl-3])
-#         ax[count].annotate(t.capitalize().replace('pv','PV'),
-#                             xy=(sel['Reference production [EJ]'].values[0] * 1.5, 
-#                                  10 ** (3 * (0.05+countl-9)) * 
-#                                  sel['Reference cost [USD/GJ]'].values[0]),
-#                             xycoords='data',
-#                             ha='left',
-#                             va='bottom',
-#                             style='italic',
-#                             fontsize=16,
-#                             color=techcolors[countl-3])
-#         # ax[count].annotate('- '+str(round(100 * (1 - sel['Reference cost [USD/GJ]'].values[0])))+' %',
-#         #                     xy=(sel['Reference production [EJ]'].values[0] * 0.5,
-#         #                         10 ** (-0.2+countl) * 
-#         #                         sel['Reference cost [USD/GJ]'].values[0]**0.25),
-#         #                     xycoords='data',
-#         #                     ha='center',
-#         #                     va='top',
-#         #                     fontsize=12,
-#         #                     color=techcolors[countl-3])
-#         ax[count].annotate('- '+str(round(100 * (1 - sel['Final cost [USD/GJ]'].values[0]/\
-#                                                  sel['Reference cost [USD/GJ]'].values[0])))+' %',
-#                             xy=(sel['Final production [EJ]'].values[0] * 5,
-#                                 10 ** (3*(countl-9)) * 
-#                                 sel['Final cost [USD/GJ]'].values[0]),
-#                             xycoords='data',
-#                             ha='left',
-#                             va='center',
-#                             fontsize=16,
-#                             color=techcolors[countl-3])
-
-#         countl += 1
-
-#         ax[count].set_xscale('log', base=10)
-#         ax[count].set_yscale('log', base=10)
-#     ax[count].set_yticklabels([])
-#     [ax[count].axhline(10**x, color='k', linestyle='-', 
-#                        lw=.25, alpha=0.75, zorder=-5)
-#         for x in range(3,19,3)]
-#     ax[count].set_yticks([10**x for x in range(1,19)])
-
-#     minorticks = []
-#     for val in range(2,19):
-#         # [ax[count].axhline(10*(x-1), color='k', linestyle='-', 
-#         #                    lw=.05, alpha=0.5, zorder=-10) 
-#         #  for x in np.arange(10**(val),10**(val+1),10**(val))]
-#         [minorticks.append(10*(x-1)) for x in np.arange(10**(val),10**(val+1),10**(val))]
-#     ax[count].set_yticks(minorticks, minor=True)
-
-
-#     [ax[count].axvline(10**x, color='k', linestyle='-',
-#                       lw=.25, alpha=0.75, zorder=-5)
-#         for x in range(-9,12,3)]
-    
-
-#     count += 1
-# ax[0].set_xlim(1e-8,10**12)
-# ax[0].set_ylim(500,6*10**18)
-# ax[0].set_xticks([1e-6,1e-3,1,1e3,1e6,1e9,1e12],)
-# labels = ax[0].get_xticklabels()
-# labels[2] = '1'
-# ax[0].set_xticklabels(labels)
-# ax[0].set_title('No transition')
-# ax[1].set_title('Slow transition')
-# ax[2].set_title('Fast transition')
-# ax[0].set_ylabel('Change in cost relative to present')
-# ax[1].set_xlabel('Change in cumulative production relative to present')
-# ax[0].annotate('a',
-#             xy=(0.05, 0.97),
-#             xycoords='axes fraction',
-#             ha='center',
-#             va='center',)
-# ax[1].annotate('b',
-#             xy=(0.05, 0.97),
-#             xycoords='axes fraction',
-#             ha='center',
-#             va='center',)
-# ax[2].annotate('c',
-#             xy=(0.05, 0.97),
-#             xycoords='axes fraction',
-#             ha='center',
-#             va='center',)
-
-# # read data
-# df = pd.read_csv('energySim' + os.path.sep + 'Costs_all.csv')
-
-
-# # convert scenario name to Sentence case formatting
-# df['Scenario'] = df['Scenario'].str.title()
-
-# ax = gs01.subplots(sharex=True, sharey=True)
-
-# count = 0
-# for hyp in ['Technology-specific - Way et al. (2022)',
-#             'Technology-mean - PCDB']:
-#     counts = 0
-#     for s in ['No Transition', 'Slow Transition', 'Fast Transition']:
-
-#         sel = df.loc[df['Learning rate assumptions']==hyp]\
-#                 .loc[df['Scenario']==s]
-        
-#         ax[count].fill_between([-.75+3*counts,.75+3*counts],
-#                         sel['Net Present Cost [trillion USD]'].quantile([.05,.05]),
-#                         sel['Net Present Cost [trillion USD]'].quantile([.95,.95]),
-#                         color=sns.color_palette('colorblind')[counts], lw=0, alpha=.3)
-#         ax[count].fill_between([-.75+3*counts,.75+3*counts],
-#                         sel['Net Present Cost [trillion USD]'].quantile([.25,.25]),
-#                         sel['Net Present Cost [trillion USD]'].quantile([.75,.75]),
-#                         color=sns.color_palette('colorblind')[counts], lw=0, alpha=.6)
-#         ax[count].plot([-.75+3*counts,.75+3*counts],
-#                        [sel['Net Present Cost [trillion USD]'].median(),
-#                         sel['Net Present Cost [trillion USD]'].median()],
-#                        color='w', linestyle='--', lw=2)
-#         counts += 1
-#     count += 1
-
-# ax[0].set_title('Technology-specific')
-# ax[1].set_title('Technology-mean')
-# ax[0].set_ylabel('Net Present Cost (T $)')
-# ax[0].set_xticks([])
-# ax[1].set_xticks([])
-# ax[0].annotate('d',
-#                 xy=(.05,.9),
-#                 xycoords='axes fraction',
-#                 weight='bold')
-# ax[1].annotate('e',
-#                 xy=(.05,.9),
-#                 xycoords='axes fraction',
-#                 weight='bold')
-# ax[0].annotate('No transition',
-#                 xy=(0,220),
-#                 xycoords='data',
-#                 ha='center',
-#                 va='center',
-#                 color=sns.color_palette('colorblind')[0])
-# ax[0].annotate('Slow transition',
-#                 xy=(3,235),
-#                 xycoords='data',
-#                 ha='center',
-#                 va='center',
-#                 color=sns.color_palette('colorblind')[1])
-# ax[0].annotate('Fast transition',
-#                 xy=(6,250),
-#                 xycoords='data',
-#                 ha='center',
-#                 va='center',
-#                 color=sns.color_palette('colorblind')[2])
-# ax[1].annotate('No transition',
-#                 xy=(0,220),
-#                 xycoords='data',
-#                 ha='center',
-#                 va='center',
-#                 color=sns.color_palette('colorblind')[0])
-# ax[1].annotate('Slow transition',
-#                 xy=(3,200),
-#                 xycoords='data',
-#                 ha='center',
-#                 va='center',
-#                 color=sns.color_palette('colorblind')[1])
-# ax[1].annotate('Fast transition',
-#                 xy=(6,180),
-#                 xycoords='data',
-#                 ha='center',
-#                 va='center',
-#                 color=sns.color_palette('colorblind')[2])
-
-# for axx in [ax[0], ax[1]]:
-#     axx.fill_between([0.2,.6], [112,112], [150,150], color='gray', alpha=.3)
-#     axx.fill_between([0.2,.6], [122,122], [140,140], color='gray', alpha=.6)
-#     axx.plot([0.2,.6], [132,132], color='w', linestyle='--', lw=2)
-#     axx.annotate('90%', xy=(-.1,145), xycoords='data', 
-#                 ha='center', va='center', color='k',
-#                 fontsize=12
-#                 )
-#     axx.annotate('50%', xy=(-.1,135), xycoords='data', 
-#                 ha='center', va='center', color='k',
-#                 fontsize=12
-#                 )
-#     axx.annotate('Median', xy=(1.1,132), xycoords='data', 
-#                 ha='center', va='center', color='k',
-#                 fontsize=12
-#                 )
-#     axx.plot([.1,-.45,-.45,.1], [140,140,122,122], color='k', lw=.2)
-#     axx.plot([.1,-.7,-.7,.1], [150,150,112,112], color='k', lw=.2)
-
-# ax[0].set_ylim(110,260)
-# ax[0].set_xlim(-1.5,7.5)
-
-
-# fig.subplots_adjust(top=0.95, bottom=0.025, 
-#                     left=0.1, right=0.95,
-#                     hspace=0.25, wspace=0.1)
-
-
-# fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \
-#             os.path.sep + 'EnergySystemCost.png')
-# fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \
-#             os.path.sep + 'EnergySystemCost.eps')     
-
 
 # separate the above into two figures
 # aggregate the three panels into one
@@ -842,16 +611,6 @@ for t in df['Technology'].unique():
                         style='italic',
                         fontsize=16,
                         color=techcolors[countl-3])
-    # ax.annotate('- '+str(round(100 * (1 - sel['Final cost [USD/GJ]'].values[0]/\
-    #                                             sel['Reference cost [USD/GJ]'].values[0])))+' %',
-    #                     xy=(sel['Final production [EJ]'].values[0] * 5,
-    #                         10 ** (3*(countl-9)) * 
-    #                         sel['Final cost [USD/GJ]'].values[0]),
-    #                     xycoords='data',
-    #                     ha='left',
-    #                     va='center',
-    #                     fontsize=16,
-    #                     color=techcolors[countl-3])
 
     countl += 1
 
@@ -865,9 +624,6 @@ ax.set_yticks([10**x for x in range(1,19)])
 
 minorticks = []
 for val in range(2,19):
-    # [ax[count].axhline(10*(x-1), color='k', linestyle='-', 
-    #                    lw=.05, alpha=0.5, zorder=-10) 
-    #  for x in np.arange(10**(val),10**(val+1),10**(val))]
     [minorticks.append(10*(x-1)) for x in np.arange(10**(val),10**(val+1),10**(val))]
 ax.set_yticks(minorticks, minor=True)
 
@@ -884,26 +640,8 @@ ax.set_xticks([1e-6,1e-3,1,1e3,1e6,1e9,1e12],)
 labels = ax.get_xticklabels()
 labels[2] = '1'
 ax.set_xticklabels(labels)
-# ax[0].set_title('No transition')
-# ax[1].set_title('Slow transition')
-# ax[2].set_title('Fast transition')
 ax.set_ylabel('Change in cost relative to present')
 ax.set_xlabel('Change in cumulative production relative to present')
-# ax[0].annotate('a',
-#             xy=(0.05, 0.97),
-#             xycoords='axes fraction',
-#             ha='center',
-#             va='center',)
-# ax[1].annotate('b',
-#             xy=(0.05, 0.97),
-#             xycoords='axes fraction',
-#             ha='center',
-#             va='center',)
-# ax[2].annotate('c',
-#             xy=(0.05, 0.97),
-#             xycoords='axes fraction',
-#             ha='center',
-#             va='center',)
 
 fig.subplots_adjust(top=0.95, bottom=0.1, left=0.1, right=0.725)
 

@@ -213,7 +213,8 @@ def main():
                 bic = computeBIC(rss, n, k)
 
                 # store the information criteria values
-                IC.append([t, n_breaks, aic, bic, x[0], *breaks, *slopes, x.shape[0]])
+                IC.append([t, n_breaks, aic, bic, x[0], 
+                           *breaks, *slopes, x.shape[0]])
             
             if plotFigTech:
                 plt.show()
@@ -225,7 +226,8 @@ def main():
                                     'Breakpoint 4','Breakpoint 5', 
                                     'Breakpoint 6',
                                     'LR 1', 'LR 2', 'LR 3', 'LR 4',
-                                    'LR 5', 'LR 6', 'LR 7', 'Number of observations'])
+                                    'LR 5', 'LR 6', 'LR 7', 
+                                    'Number of observations'])
         IC.to_csv('IC.csv', index=False)
 
     # get the number of technologies 
@@ -278,10 +280,7 @@ def main():
 
     # get the number of technologies 
     AIC = IC.loc[IC.groupby('Tech')['AIC'].idxmin()].reset_index()
-    BIC = IC.loc[IC.groupby('Tech')['BIC'].idxmin()].reset_index()
-
-    [print(n, AIC.loc[AIC['n_breaks'] == n, 'Tech'].unique()) for n in range(max_breakpoints + 1)]
-    
+    BIC = IC.loc[IC.groupby('Tech')['BIC'].idxmin()].reset_index()    
     
     # rename metrics
     AIC['metric'] = 'Akaike'
@@ -304,74 +303,12 @@ def main():
             ax = ax,
             alpha=0.5,
             legend=False)
-    # ax.annotate('Akaike\nInformation\nCriterion', (-.25, 25),
-    #             xycoords='data', color=sns.color_palette()[0],
-    #             ha='center', va='center')
-    # ax.annotate('Bayesian\nInformation\nCriterion', (2.25, 25),
-    #             xycoords='data', color=sns.color_palette()[1],
-    #             ha='center', va='center')
-    
-    # ax.set_xlim(-1,7)
-    
-    # ax.set_title('Distribution of technologies over number of segments minimizing error')
+
     ax.set_xlabel('Number of observations')
     ax.set_ylabel('Number of segments')
     ax.set_xscale('log', base=10)
     
     fig.subplots_adjust(bottom=0.15)
-
-
-    # sel1 = IC.loc[(IC['n_breaks'] == 1) & \
-    #               ((IC.index.isin(IC.groupby('Tech')['AIC'].idxmin().values)) | \
-    #                 (IC.index.isin(IC.groupby('Tech')['BIC'].idxmin().values)))]
-    # sel2 = IC.loc[(IC['n_breaks'] == 2) & \
-    #               ((IC.index.isin(IC.groupby('Tech')['AIC'].idxmin().values)) | \
-    #                 (IC.index.isin(IC.groupby('Tech')['BIC'].idxmin().values)))]
-
-
-    # sel1['Breakpoint divided by initial production'] = \
-    #     10 ** (sel1['Breakpoint 1'] - sel1['Initial production'])
-    # sel2['2nd breakpoint divided by 1st breakpoint'] = \
-    #     10 ** (sel2['Breakpoint 2'] - sel2['Breakpoint 1'])
-    # sel2['1st breakpoint divided by initial production'] = \
-    #     10 ** (sel2['Breakpoint 1'] - sel2['Initial production'])
-    
-
-    # fig, ax = plt.subplots(figsize=(6,6))
-    # sns.boxplot(data=sel1, y='Breakpoint divided by initial production', ax=ax)
-    # plt.gca().set_yscale('log', base=10)
-
-    # plt.subplots_adjust(bottom=0.15, left=0.2, right=0.9)
-
-
-    # fig, ax = plt.subplots(1,3, figsize=(15,6), width_ratios=[2,1,1])
-    # sns.scatterplot(data=sel2, 
-    #                 x='1st breakpoint divided by initial production', 
-    #                 y='2nd breakpoint divided by 1st breakpoint', ax=ax[0])
-    # ax[0].set_yscale('log', base=10)
-    # ax[0].set_xscale('log', base=10)
-    # ax[0].set_aspect('equal')
-    # xlim = ax[0].get_xlim()
-    # ylim = ax[0].get_ylim()
-    # ax[0].plot([min(xlim[0], ylim[0]), max(xlim[1], ylim[1])], 
-    #             [min(xlim[0], ylim[0]), max(xlim[1], ylim[1])], 
-    #             '--', lw=1)
-    # ax[0].annotate('1:1', (0.45, 0.55), rotation=45,
-    #                 xycoords='axes fraction', 
-    #                 ha='center', va='center')
-
-    # ax[0].set_xlim(min(xlim[0], ylim[0]), max(xlim[1], ylim[1]))
-    # ax[0].set_ylim(min(xlim[0], ylim[0]), max(xlim[1], ylim[1]))
-
-    # sns.boxplot(data=sel2, y='1st breakpoint divided by initial production', ax=ax[1])
-    # ax[1].set_yscale('log', base=10)
-    # ax[1].set_ylim(0.9, 1e8)
-    # sns.boxplot(data=sel2, y='2nd breakpoint divided by 1st breakpoint', ax=ax[2])
-    # ax[2].set_yscale('log', base=10)
-    # ax[2].set_ylim(0.9, 1e8)
-    
-    # fig.subplots_adjust(wspace=0.3, bottom=0.15, left=0.1, right=0.95)
-
 
     fig, ax = plt.subplots(max_breakpoints, 2, figsize=(15,10), 
                            sharex=True, sharey='col')
@@ -379,8 +316,10 @@ def main():
 
     for n_break in range(1, max_breakpoints + 1):
         sel = IC.loc[(IC['n_breaks'] == n_break) & \
-                ((IC.index.isin(IC.groupby('Tech')['AIC'].idxmin().values)) | \
-                (IC.index.isin(IC.groupby('Tech')['BIC'].idxmin().values)))]
+                ((IC.index.isin(IC.groupby('Tech')\
+                                ['AIC'].idxmin().values)) | \
+                (IC.index.isin(IC.groupby('Tech')\
+                               ['BIC'].idxmin().values)))]
 
         for i in range(n_break +  1):
             ax[n_break-1][0].plot([i-0.2, i+0.2],
@@ -410,20 +349,22 @@ def main():
                                   s=25)
             if i < n_break:
                 ax[n_break-1][1].bar(i+0.5, np.corrcoef(sel['LR '+str(i+1)],
-                                                    sel['LR '+str(i+2)])[0,1],
-                                                    color=sns.color_palette()[0])
+                                                sel['LR '+str(i+2)])[0,1],
+                                                color=sns.color_palette()[0])
                 
             
         for t in sel['Tech'].unique():
             ax[n_break-1][0].plot([x for x in range(n_break +1)], 
-                                 sel[sel['Tech'] == t][['LR '+str(i+1) for i in range(n_break + 1)]].values[0],
+                                 sel[sel['Tech'] == t][['LR '+str(i+1) 
+                                    for i in range(n_break + 1)]].values[0],
                                  color=sns.color_palette()[0],
                                  lw=.5,)
             
-        ax[n_break-1][0].axhline(0, color='k', ls='--', lw=.5, alpha=.5, zorder=-5)
-        ax[n_break-1][1].axhline(0, color='k', ls='--', lw=.5, alpha=.5, zorder=-5)
-        # ax[n_break-1][0].set_title(str(n_break+1) + ' segments')
-
+        ax[n_break-1][0].axhline(0, color='k', 
+                                 ls='--', lw=.5, alpha=.5, zorder=-5)
+        ax[n_break-1][1].axhline(0, color='k', 
+                                 ls='--', lw=.5, alpha=.5, zorder=-5)
+    
     ax[0][0].set_ylim(-120, 120)
     ax[0][1].set_ylim(-1.2, 1.2)
     ax[0][-1].set_xticks([])

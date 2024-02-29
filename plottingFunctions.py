@@ -12,7 +12,6 @@ def plotErr(dfObsErr):
                         figsize = (15,8),
                         sharex=True,
                         sharey=True,
-                        # subplot_kw=dict(box_aspect=1),
                         )
 
     # plot boxplots

@@ -58,10 +58,6 @@ for tech in selTechs:
             vmax=df[df.columns[1]].unique()[-1])   
     
     # create figure
-    # fig, ax = plt.subplots(2,1, figsize=(7,10))
-    # # scatter unit cost vs cumulative production
-    # ax[0].scatter(df[df.columns[3]].values, 
-    #               df[df.columns[0]].values, color='k')
     sns.scatterplot(data=df, x=df.columns[3], y=df.columns[0],
                     hue=df.columns[1], ax=ax[0], palette=cmap,
                     legend=False, edgecolor='k', s=100)
@@ -75,21 +71,8 @@ for tech in selTechs:
     model = sm.OLS(np.log10(df[df.columns[0]].values),
                      sm.add_constant(np.log10(df[df.columns[3]].values)))
     res = model.fit()
-    # ax[1].scatter(100*(1 - 2**res.params[1]), 
-    #               100*(1 - 2**res.params[1]), 
-    #               color=cmap(2009), marker='*', 
-    #               s=200, edgecolor='k')
     ax[1].set_xlabel('Past learning rate [%]')
     ax[1].set_ylabel('Future learning rate [%]')
-
-    # diffc = np.diff(np.log10(df[df.columns[0]].values))
-    # diffp = np.diff(np.log10(df[df.columns[3]].values))
-    # lexp = sum([a*b for a,b in zip(diffc,diffp)])/\
-    #             sum([a**2 for a in diffp])
-    
-    # ax[1].scatter(lexp, lexp, color='gold', marker='x',
-    #                 s=200, edgecolor='k')
-
 
 
     # iterate over all years from 2nd to second to last
@@ -109,17 +92,6 @@ for tech in selTechs:
                                 np.log10(val[val.columns[3]].values)))
         rescal = modelcal.fit()
         resval = modelval.fit()
-
-        # # alternative estimate
-        # diffcalc = np.diff(np.log10(cal[cal.columns[0]].values))
-        # diffcalp = np.diff(np.log10(cal[cal.columns[3]].values))
-        # diffvalc = np.diff(np.log10(val[val.columns[0]].values))
-        # diffvalp = np.diff(np.log10(val[val.columns[3]].values))
-
-        # lexpcal = sum([a*b for a,b in zip(diffcalc,diffcalp)])/\
-        #             sum([a**2 for a in diffcalp])
-        # lexpval = sum([a*b for a,b in zip(diffvalc,diffvalp)])/\
-        #             sum([a**2 for a in diffvalp])
 
         # add lines to scatter plot
         if i == 1983 or i == 2003:
@@ -155,7 +127,8 @@ for tech in selTechs:
                         hspace=0.25)
     # cbar_ax = fig.add_axes([0.75, 0.25, 0.05, 0.5])
     cbar_ax = fig.add_axes([0.1, 0.525, 0.8, 0.02])
-    cbar = fig.colorbar(smap, cax=cbar_ax, label='Year', orientation='horizontal')
+    cbar = fig.colorbar(smap, cax=cbar_ax, label='Year', 
+                        orientation='horizontal')
     cbar.set_ticks([x for x in [1977, 1980, 1985, 1990, 
                                 1995, 2000, 2005, 2009]])
     cbar.set_ticklabels([str(int(x)) for x in
@@ -169,23 +142,9 @@ for tech in selTechs:
     ax[1].plot([-20,40],[-20,40], color='k', ls='--', lw=1, zorder=-10)
     ax[1].set_xlim(lims)
     ax[1].set_ylim(lims)
-    # ticks = [round(x,3) for x in 
-    #          np.arange(int(lims[0]*10-1.2)*0.1,
-    #                    int(lims[1]*10+1.2)*0.1,
-    #                    0.1)]
-    # ax[1].set_xticks(ticks)
-    # ax[1].set_yticks(ticks)
     ax[1].set_aspect('equal')
-    
-    # add title and adjust spacing
-    # fig.suptitle(tech.split('_')[0] + ' (' + 
-    #              df[df.columns[1]].values[0].astype(str) +
-    #                 '-' +
-    #             df[df.columns[1]].values[-1].astype(str) + ')')
-    # fig.subplots_adjust(wspace=0.25, 
-    #                     left=0.075, right=0.95,
-    #                     bottom=0.15, top=0.85)
-    # # annotate panels
+
+    ## annotate panels
     ax[0].annotate('a', xy=(0.05, 0.15),
                     xycoords='axes fraction',
                     ha='center', va='center')
@@ -270,6 +229,8 @@ sns.barplot(data=metrics,
         hue='Metric',
         ax = ax,
         legend=False)
+
+# annotate figure
 ax.annotate('Akaike\nInformation\nCriterion', (-.25, 25),
             xycoords='data', color=sns.color_palette()[0],
             ha='center', va='center', fontsize=14)
@@ -278,12 +239,13 @@ ax.annotate('Bayesian\nInformation\nCriterion', (2.25, 25),
             ha='center', va='center', fontsize=14)
 style = "Simple, tail_width=0.5, head_width=4, head_length=8"
 kw = dict(arrowstyle=style, color=sns.color_palette('colorblind')[0])
-a = matplotlib.patches.FancyArrowPatch((-.25, 21), (.5, 18), connectionstyle="arc3,rad=.1", **kw)
+a = matplotlib.patches.FancyArrowPatch((-.25, 21), (.5, 18), 
+                                       connectionstyle="arc3,rad=.1", **kw)
 ax.add_patch(a)
 kw = dict(arrowstyle=style, color=sns.color_palette('colorblind')[1])
-a = matplotlib.patches.FancyArrowPatch((2.25, 21), (1.5, 18), connectionstyle="arc3,rad=-.1", **kw)
+a = matplotlib.patches.FancyArrowPatch((2.25, 21), (1.5, 18), 
+                                       connectionstyle="arc3,rad=-.1", **kw)
 ax.add_patch(a)
-
 ax.annotate('c', xy=(0.025, 0.1),
                     xycoords='axes fraction',
                     ha='center', va='center')

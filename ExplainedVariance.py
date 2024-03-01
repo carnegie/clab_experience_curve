@@ -10,7 +10,7 @@ matplotlib.rc('savefig', dpi=300)
 sns.set_palette([cmcrameri.cm.batlowS(x) for x in range(10)])
 sns.set_palette('colorblind')
 sns.set_context('talk')
-sns.set_style('whitegrid')
+sns.set_style('ticks')
 matplotlib.rc('font', family='Helvetica')
 
 # read data

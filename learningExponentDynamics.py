@@ -10,7 +10,7 @@ matplotlib.rc('savefig', dpi=300)
 sns.set_palette([cmcrameri.cm.batlowS(x) for x in range(10)])
 sns.set_palette('colorblind')
 sns.set_context('talk')
-sns.set_style('whitegrid')
+sns.set_style('ticks')
 matplotlib.rc('font', family='Helvetica')
 
 
@@ -250,7 +250,7 @@ ax.annotate('c', xy=(0.025, 0.1),
                     xycoords='axes fraction',
                     ha='center', va='center')
 
-ax.yaxis.grid(lw=.5)
+# ax.yaxis.grid(lw=.5)
 
 ax.set_xlim(-1,7)
 ax.set_xlabel('Optimal number of segments')
@@ -270,10 +270,10 @@ if not(os.path.exists('figs' +
 
 fig.savefig('figs' + os.path.sep + 
             'learningExponentDynamics' +
-                os.path.sep + tech + '.png')
+                os.path.sep + tech + '_InformationCriteria.png')
 fig.savefig('figs' + os.path.sep + 
             'learningExponentDynamics' +
-                os.path.sep + tech + '.eps')
+                os.path.sep + tech + '_InformationCriteria.eps')
 
 
 plt.show()

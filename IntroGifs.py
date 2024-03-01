@@ -7,7 +7,7 @@ import matplotlib.animation as animation
 import seaborn as sns
 
 matplotlib.rc('savefig', dpi=300)
-sns.set_style('whitegrid')
+sns.set_style('ticks')
 matplotlib.rc('font',
                 **{'family':'sans-serif',
                    'sans-serif':'Helvetica'})

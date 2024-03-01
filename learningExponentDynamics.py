@@ -20,6 +20,8 @@ cmap = cmcrameri.cm.hawaii
 # select techs to be plotted
 selTechs = ['Photovoltaics_2']
 
+ourWorldInData = True
+
 # set column names 
 cols = ['Unit cost', 'Year',
         'Production','Cumulative production']
@@ -34,11 +36,20 @@ ax = [fig.add_subplot(gs[0,0]), fig.add_subplot(gs[0,1])]
 for tech in selTechs:
 
     # read data and drop nan values
-    df = pd.read_csv('expCurveData/' + tech + '.csv').dropna()
+    if ourWorldInData:
+        df = pd.read_csv('OurWorldInData/'+
+                         'solar-pv-prices-vs-cumulative-capacity.csv')\
+                            .dropna()
+        df = df[df.columns[2:5]]
+        df.columns = ['Year','Unit cost (USD/W)','Cumulative production (MW)']
+        df['Production (MW)'] = np.diff(np.insert(df['Cumulative production (MW)'].values,0,0))
+        df = df[['Unit cost (USD/W)','Year','Production (MW)','Cumulative production (MW)']]
+    else:
+        df = pd.read_csv('expCurveData/' + tech + '.csv').dropna()
 
-    # rename columns
-    df.columns = [ a + ' ('+b.split('(')[1]
-                   for a,b in zip(cols,df.columns)]
+        # rename columns
+        df.columns = [ a + ' ('+b.split('(')[1]
+                    for a,b in zip(cols,df.columns)]
 
     # convert data to float
     for col in df.columns:
@@ -94,7 +105,23 @@ for tech in selTechs:
         resval = modelval.fit()
 
         # add lines to scatter plot
-        if i == 1983 or i == 2003:
+        if (i == 1983 or i == 2003) and not ourWorldInData:
+            ax[0].plot(cal[cal.columns[3]].values,
+                        10**rescal.predict(
+                            sm.add_constant(
+                                np.log10(cal[cal.columns[3]].values))),
+                        # color=cmap(norm(i)),
+                        color='k',
+                        zorder=1, lw=2)
+            ax[0].plot(val[val.columns[3]].values,
+                            10**rescal.predict(
+                                sm.add_constant(
+                                    np.log10(val[val.columns[3]].values))),
+                            # color=cmap(norm(i)),
+                            color='k',
+                           zorder=1, lw=2, 
+                            linestyle='--')
+        if ourWorldInData and (i == 1983 or i == 2003 or i==2011):
             ax[0].plot(cal[cal.columns[3]].values,
                         10**rescal.predict(
                             sm.add_constant(
@@ -129,17 +156,21 @@ for tech in selTechs:
     cbar_ax = fig.add_axes([0.1, 0.525, 0.8, 0.02])
     cbar = fig.colorbar(smap, cax=cbar_ax, label='Year', 
                         orientation='horizontal')
-    cbar.set_ticks([x for x in [1977, 1980, 1985, 1990, 
-                                1995, 2000, 2005, 2009]])
-    cbar.set_ticklabels([str(int(x)) for x in
-                             [1977, 1980, 1985, 1990, 
-                                1995, 2000, 2005, 2009]])
+    if not ourWorldInData:
+        cbar.set_ticks([x for x in [1977, 1980, 1985, 1990, 
+                                    1995, 2000, 2005, 2009]])
+        cbar.set_ticklabels([str(int(x)) for x in
+                                [1977, 1980, 1985, 1990, 
+                                    1995, 2000, 2005, 2009]])
     # fig.colorbar(smap, ax=ax[1], label='Year')
 
     # add identity line to learning exponent dynamics
     lims = [ax[1].get_xlim(), ax[1].get_ylim()]
-    lims = [min(lims[0][0],lims[1][0]), max(lims[0][1],lims[1][1])]
-    ax[1].plot([-20,40],[-20,40], color='k', ls='--', lw=1, zorder=-10)
+    if ourWorldInData:
+        lims = [0, max(lims[0][1], lims[1][1])]
+    else:
+        lims = [min(lims[0][0],lims[1][0]), max(lims[0][1],lims[1][1])]
+    ax[1].plot([-20,100],[-20,100], color='k', ls='--', lw=1, zorder=-10)
     ax[1].set_xlim(lims)
     ax[1].set_ylim(lims)
     ax[1].set_aspect('equal')
@@ -158,46 +189,44 @@ for tech in selTechs:
     ax[0].annotate('All technologies', xy=(0.5, 0.4),
                     xycoords='figure fraction',
                     ha='center', va='center')
-    
-    ax[0].annotate('Underestimates\nfuture learning',
-                   xy=(0.75, 0.7),
-                    xycoords='axes fraction',
-                    ha='center', va='center',
-                    fontsize=12)
-    ax[0].annotate('Overestimates\nfuture learning',
-                   xy=(0.7, 0.05),
-                    xycoords='axes fraction',
-                    ha='center', va='center',
-                    fontsize=12)
-    
-    ax[1].annotate('', xy=(12,8), xytext=(8,12),
-                   xycoords='data', textcoords='data',
-                     arrowprops=dict(arrowstyle='<->',
-                                      color='k', lw=2))
-    ax[1].annotate('Overestimates\nfuture learning',
-                     xy=(15,5), xycoords='data',
-                     ha='center', va='center',
-                     fontsize=12)
-    ax[1].annotate('Underestimates\nfuture learning',
-                        xy=(5,15), xycoords='data',
+    if not ourWorldInData:    
+        ax[0].annotate('Underestimates\nfuture learning',
+                    xy=(0.75, 0.7),
+                        xycoords='axes fraction',
                         ha='center', va='center',
                         fontsize=12)
-    ax[1].annotate('1:1',
-                        xy=(4.75,6.25), xycoords='data',
-                        ha='center', va='center',
-                        fontsize=12,
-                        rotation=45)
-    
-    ax[1].annotate('1978',
-                   xy=(22.5,28),
-                     xycoords='data',
+        ax[0].annotate('Overestimates\nfuture learning',
+                    xy=(0.7, 0.05),
+                        xycoords='axes fraction',
                         ha='center', va='center',
                         fontsize=12)
-    ax[1].annotate('2008',
-                   xy=(29,18),
-                     xycoords='data',
+        ax[1].annotate('', xy=(12,8), xytext=(8,12),
+                    xycoords='data', textcoords='data',
+                        arrowprops=dict(arrowstyle='<->',
+                                        color='k', lw=2))
+        ax[1].annotate('Overestimates\nfuture learning',
+                        xy=(15,5), xycoords='data',
                         ha='center', va='center',
                         fontsize=12)
+        ax[1].annotate('Underestimates\nfuture learning',
+                            xy=(5,15), xycoords='data',
+                            ha='center', va='center',
+                            fontsize=12)
+        ax[1].annotate('1:1',
+                            xy=(4.75,6.25), xycoords='data',
+                            ha='center', va='center',
+                            fontsize=12,
+                            rotation=45)
+        ax[1].annotate('1978',
+                    xy=(22.5,28),
+                        xycoords='data',
+                            ha='center', va='center',
+                            fontsize=12)
+        ax[1].annotate('2008',
+                    xy=(29,18),
+                        xycoords='data',
+                            ha='center', va='center',
+                            fontsize=12)
                    
 
 
@@ -267,6 +296,9 @@ if not(os.path.exists('figs' +
     os.makedirs('figs' + 
                 os.path.sep +
                     'learningExponentDynamics')
+
+if ourWorldInData:
+    tech = tech + '_OurWorldInData'
 
 fig.savefig('figs' + os.path.sep + 
             'learningExponentDynamics' +

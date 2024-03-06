@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib, scipy, analysisFunctions, plottingFunctions, os
 
-sns.set_style('whitegrid')
+sns.set_style('ticks')
 sns.set_palette('colorblind')
 sns.set_context('talk')
 matplotlib.rc('savefig', dpi=300)
@@ -77,13 +77,13 @@ for r1 in enumerate(rangesmed):
             # - the training horizon
             # - the forecast horizon
             # - the p value of the paired t-test
-            # - the p value of the mann whitney test
+            # - the p value of the wilcoxon signed-rank test
             # - the RMSE of the tech using tech specific method
             # - the RMSE of the tech using average method
             techTests.append([t, r1[1], r2[1],
                 scipy.stats.ttest_rel(\
                     errTech[-1], errAvg[-1])[1],
-                scipy.stats.mannwhitneyu(  
+                scipy.stats.wilcoxon(  
                     errTech[-1], errAvg[-1])[1],
                 np.mean([x**2 for x in errTech[-1]])**0.5,  
                 np.mean([x**2 for x in errAvg[-1]])**0.5])
@@ -92,7 +92,7 @@ for r1 in enumerate(rangesmed):
         # - the training horizon
         # - the forecast horizon
         # - the p value of the paired t-test
-        # - the p value of the mann whitney test
+        # - the p value of the wilcoxon signed-rank test
         allTests.append([r1[1], r2[1], 
             scipy.stats.ttest_rel(\
                 [np.mean([x**2 for x in a])**0.5 for a in errTech],
@@ -114,7 +114,6 @@ allTests.to_csv('StatisticalTests' + os.path.sep + 'AllTests.csv')
 
 # plot tech results
 fig, ax = plottingFunctions.plotStatisticalTestTech(techTests)
-
 
 # repeat selecting only techs that cover all the ranges examined
 techs = sel['Tech'].unique()

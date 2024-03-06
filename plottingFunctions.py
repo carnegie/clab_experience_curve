@@ -800,6 +800,8 @@ def plotStatisticalTestTech(df):
 
             # iterate over sectors
             for sec in analysisFunctions.sectors.keys():
+                if sec == 'Energy':
+                    print(s.loc[s['Sector']==sec])
 
                 # find how many times technology specific 
                 # has lower error and the different is significant

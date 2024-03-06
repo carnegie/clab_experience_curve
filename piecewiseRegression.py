@@ -289,6 +289,8 @@ def main():
     # create new dataframe with tech counts and metrics
     metrics = pd.concat([AIC, BIC]).reset_index(drop=True)
 
+    print(metrics.loc[metrics['n_breaks'] == 0])
+    exit()
     metrics = metrics[['n_breaks','metric', 'Number of observations']]
 
     # rename columns and add number of segments
@@ -383,6 +385,38 @@ def main():
 
     plt.subplots_adjust(hspace=0.3, bottom=0.025, 
                         left=0.1, right=0.95, top=0.95)
+    plt.show()
+
+    twoSegments = IC.loc[IC['n_breaks'] == 1].copy()
+    # twoSegments['LR 1'] = 100 * (1 - 2 ** twoSegments['LR 1'])
+    # twoSegments['LR 2'] = 100 * (1 - 2 ** twoSegments['LR 2'])
+
+    fig, ax = plt.subplots(1,1, figsize=(9,5), sharex=True, sharey=True)
+    sns.scatterplot(data=twoSegments, 
+            x = 'LR 1',
+            y = 'LR 2',
+            ax = ax,
+            alpha=0.5,
+            legend=False)
+
+    twoSegments['LR2 - LR1'] = twoSegments['LR 2'] - twoSegments['LR 1']
+    twoSegments['metric'] = 'All'
+
+    # get the number of technologies 
+    AIC = IC.loc[IC.groupby('Tech')['AIC'].idxmin()].reset_index()
+    BIC = IC.loc[IC.groupby('Tech')['BIC'].idxmin()].reset_index()    
+    AIC = AIC.loc[AIC['n_breaks'] == 1]
+    BIC = BIC.loc[BIC['n_breaks'] == 1]
+
+    plt.figure()
+    AIC['LR2 - LR1'] = AIC['LR 2'] - AIC['LR 1']
+    AIC['metric'] = 'Akaike'
+    BIC['LR2 - LR1'] = BIC['LR 2'] - BIC['LR 1']
+    BIC['metric'] = 'Bayesian'
+    im = sns.boxplot(data=pd.concat([twoSegments, AIC, BIC]), y='LR2 - LR1',
+                showfliers=False, hue='metric')
+    im.legend_.set_title('')
+    plt.ylabel('Late learning rate - Early learning rate (%)')
     plt.show()
 
 if __name__ == "__main__":

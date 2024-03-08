@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import seaborn as sns
 import matplotlib, os, analysisFunctions
+import seaborn.objects as so
 
 matplotlib.rc('savefig', dpi=300)
 sns.set_style('ticks')
@@ -365,5 +366,56 @@ plt.subplots_adjust(bottom=0.3, top=0.975)
 fig.savefig('figs' + os.path.sep + 
 			'SupplementaryFigures' + 
 			 os.path.sep + 'data_time.png')
+
+dfy = df.copy()
+dfy['Max Year'] = 0
+
+for tech in dfy['Tech'].unique():
+	dfy.loc[dfy['Tech']==tech, 'Year'] = \
+		dfy.loc[dfy['Tech']==tech, 'Year'] - \
+		dfy.loc[dfy['Tech']==tech, 'Year'].values[0]
+
+dfy['Year'] = dfy['Year'].astype(int)
+
+yVsSec = []
+for y in dfy['Year'].unique():
+	dfy_ = dfy.loc[dfy['Year']==y].copy()
+	for s in dfy['Sector'].unique():
+		yVsSec.append([y, s, dfy_.loc[dfy_['Sector']==s,'Tech'].count()])
+yVsSec = pd.DataFrame(yVsSec, columns=['Year', 'Sector', 'Count'])
+
+fig, ax = plt.subplots(figsize=(9,7.5))
+ax.stackplot(yVsSec['Year'].unique(),
+			 [[yVsSec.loc[(yVsSec['Year']==y) & \
+							(yVsSec['Sector']==s),'Count'].values[0] for y in yVsSec['Year'].unique()]
+							for s in yVsSec['Sector'].unique()],
+			#  labels=yVsSec['Sector'].unique(),
+			 colors=[sectorsColor[s] for s in yVsSec['Sector'].unique()])
+
+maxYearsTech = []
+for tech in df['Tech'].unique():
+	s = df.loc[df['Tech']==tech].copy()
+	maxYearsTech.append([tech, s['Year'].values[-1] - s['Year'].values[0], s['Sector'].values[0]])
+maxYearsTech = pd.DataFrame(maxYearsTech, columns=['Tech', 'Year', 'Sector'])
+
+fig, ax = plt.subplots(1, 1, figsize=(9,7.5), sharex=True)
+sns.histplot(data=maxYearsTech, x='Year', hue='Sector', 
+			 multiple='stack', ax=ax, binwidth=1)
+ax.axvline(x=maxYearsTech['Year'].mean(), color='k', linestyle='-')
+ax.axvline(x=maxYearsTech['Year'].median(), color='k', linestyle='dashed')
+
+
+
+# # a = so.Plot(data=yVsSec, x="Year", y="Count", color='Sector')\
+# # 		.add(so.Area(), so.Stack())
+# # a.show()
+# # sns.barplot(data=yVsSec, x='Year', hue='Sector',
+# # 				y='Count', dodge=False,
+# # 				ax=ax)
+# yVsSec.plot.area(x='Year', y='Count', 
+# 					stacked=True, 
+# 					hue='Sector')
+
+
 
 plt.show()

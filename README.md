@@ -58,6 +58,7 @@ The scripts `analysisFunctions.py` and `plottingFunctions.py` contain functions 
 The folder `energySim` contains the script `EnergySim.py` used to simulate the energy system transition costs as in *"Empirically grounded technology forecast and the costs of the energy transition"*, Way et al., Joule (2022). The parameters used in the model together with the alternative cost assumptions are reported in the script `EnergySimParams.py`. The script `checkEnergySim.py` simulates the 5 scenarios used in the previously cited paper and reproduces figures coherently with that papers' supplementary material.
 
 
+[![DOI](https://zenodo.org/badge/608206114.svg)](https://zenodo.org/doi/10.5281/zenodo.10823145)
 
 
 

@@ -346,10 +346,8 @@ ax[1].set_xlabel('Change in cumulative production relative to present')
 
 plt.subplots_adjust(top=0.95, bottom=0.1, left=0.05, right=0.975)
 
-fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \
-            os.path.sep + 'TechnologiesProductionRangeRelative.png')
-fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \
-            os.path.sep + 'TechnologiesProductionRangeRelative.eps')
+# fig.savefig('figs' + os.path.sep + 'supplementaryFigures' + \
+#             os.path.sep + 'TechnologiesProductionRangeRelative.png')
 
 
 # aggregate the three panels into one
@@ -471,9 +469,9 @@ axes.annotate('Fast Transition', xy=(1,-1),
 axes.set_xlim(-1,2)
 axes.set_ylim(-2,2)
 
-fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \
+fig.savefig('figs' + os.path.sep + 'supplementaryFigures' + \
             os.path.sep + 'ProductionProjections.png')
-fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \
+fig.savefig('figs' + os.path.sep + 'supplementaryFigures' + \
             os.path.sep + 'ProductionProjections.eps')
 
 # figure for the cost projections (two main scenarios)
@@ -600,6 +598,10 @@ ax[0].set_xlim(-1.5,7.5)
 fig.subplots_adjust(top=0.95, bottom=0.025, 
                     left=0.075, right=0.975,
                     hspace=0.1, wspace=0.1)
+
+
+if not os.path.exists('figs' + os.path.sep + 'energyTransitionCost'):
+    os.makedirs('figs' + os.path.sep + 'energyTransitionCost')
 
 fig.savefig('figs' + os.path.sep + 'energyTransitionCost' + \
             os.path.sep + 'EnergySystemCost.png')

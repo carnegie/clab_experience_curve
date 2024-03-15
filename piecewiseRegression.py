@@ -272,10 +272,10 @@ def main():
         os.makedirs('figs' + os.path.sep + 'SupplementaryFigures')
     fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
                  os.path.sep +
-                'TechCounytVsOptimalSegments.png')
+                'TechCountVsOptimalSegments.png')
     fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
                  os.path.sep +
-                'TechCounytVsOptimalSegments.eps')
+                'TechCountVsOptimalSegments.eps')
 
 
     # get the number of technologies 
@@ -288,9 +288,6 @@ def main():
 
     # create new dataframe with tech counts and metrics
     metrics = pd.concat([AIC, BIC]).reset_index(drop=True)
-
-    print(metrics.loc[metrics['n_breaks'] == 0])
-    exit()
     metrics = metrics[['n_breaks','metric', 'Number of observations']]
 
     # rename columns and add number of segments
@@ -311,6 +308,7 @@ def main():
     ax.set_xscale('log', base=10)
     
     fig.subplots_adjust(bottom=0.15)
+    plt.show()
 
     fig, ax = plt.subplots(max_breakpoints, 2, figsize=(15,10), 
                            sharex=True, sharey='col')
@@ -388,16 +386,6 @@ def main():
     plt.show()
 
     twoSegments = IC.loc[IC['n_breaks'] == 1].copy()
-    # twoSegments['LR 1'] = 100 * (1 - 2 ** twoSegments['LR 1'])
-    # twoSegments['LR 2'] = 100 * (1 - 2 ** twoSegments['LR 2'])
-
-    fig, ax = plt.subplots(1,1, figsize=(9,5), sharex=True, sharey=True)
-    sns.scatterplot(data=twoSegments, 
-            x = 'LR 1',
-            y = 'LR 2',
-            ax = ax,
-            alpha=0.5,
-            legend=False)
 
     twoSegments['LR2 - LR1'] = twoSegments['LR 2'] - twoSegments['LR 1']
     twoSegments['metric'] = 'All'

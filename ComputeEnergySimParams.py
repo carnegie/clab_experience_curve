@@ -38,7 +38,6 @@ expCurveParams = [['All techs', slopes['Slope'].mean(),
 
 # compute average slope and its standard error by sector
 smean = slopes.groupby(['Sector']).mean(numeric_only=True)
-# ssem = slopes.groupby(['Sector'])['Standard Error'].mean(numeric_only=True)
 print(smean.loc['Energy']['Slope'])
 # store information in list
 expCurveParams.append(\
@@ -50,7 +49,6 @@ expCurveParams.append(\
 # after excluding nuclear technologies
 slopes = slopes.loc[~(slopes['Tech'].str.contains('Nuclear'))]
 smean = slopes.groupby(['Sector']).mean(numeric_only=True)
-# ssem = slopes.groupby(['Sector'])['Standard Error'].sem(numeric_only=True)
 
 # store information in list
 expCurveParams.append(\

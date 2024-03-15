@@ -25,29 +25,33 @@ conda env create -f expCurveEnv.yml
 
 Run the scripts:
 - `CreateDataset.py` (Fig. 1, S1, S2)
-- `ExplainedVariance.py` (Fig. 2, S3)
-- `CostErrors.py` (Fig. 3, S4, S5)
-- `ErrorsStatisticalSignificance` (Fig. S6)
-- `EnergyTransitionCosts.py` (Fig. 4, 5)
+- `LearningRateDyamics.py` (Fig. 2, S3)
+- `PiecewiseRegression.py` (Fig. S4)
+- `learningRateError_explainedVariance.py` (Fig. 3, S5, S6)
+- `CostErrors.py` (Fig. 4, S7 - S11)
+- `ErrorsStatisticalSignificance` (Fig. S12, Tables S1, S2)
+- `EnergyTransitionCosts.py` (Fig. 5, S13, S14)
 
 
 # Material
 
 The folder `expCurveData` contains the files for 86 techhnologies as downloaded from the Santa Fe Institute [Performance Curve Database](https://pcdb.santafe.edu/). These are the technologies for which data without missing values is available.
 
-The script `CreateDataset.py` reads in the CSV files for each technology, prepares the data in two CSV files (`ExpCurves.csv` and `NormalizedExpCurves.csv`) and produces figures 1, S1, and S2.
+The script `CreateDataset.py` reads in the CSV files for each technology, prepares the data in two CSV files (`ExpCurves.csv` and `NormalizedExpCurves.csv`) and produces Figs. 1, S1, and S2.
 
 The script `IntroGifs.py` can be used to generate gifs showing how learning rate changed over time by observing how observed and future learning rate evolved over time.
 
-The script `ExplainedVariance.py` examined the fraction of variance of future learning rates that can be explained based on observed learning rates. It produces figures 2 and S3.
+The script `LearningRateDyamics.py` is used to examine the evidence in support of constant learning rate using a single technology (solar PV) and examining the prediction error using model selection criteria across different piecewise regression fits. The piecewise regression fits are computed in the script `PiecewiseRegression.py`. These two scripts produce Figs. 2, S3, S4.
 
-The script `CostErrors.py` compares the magnitude of errors made assuming that all technologies decline with the same learning rate with the standard used of experience curves, i.e., assuming that each technology has a specific learning rate. This script produces figures 3, S4, S5.
+The script `learningRateError_explainedVariance.py` examines the error in learning rate over different fraction of data points considered observed (and using the remaining for testing). Additionally, this script examines the fraction of variance of future learning rates that can be explained based on observed learning rates. It produces Figs. 3, S5, S6.
 
-The script `ErrorsStatisticalSignificance.py` examines whether the error differences between the two methods discussed above are significant. This script produces CSV tables with p-values for paired t test and Wilcoxon signed-ranks test which are stored in the folder `StatisticalTests` and figure S6.
+The script `CostErrors.py` compares the magnitude of errors made assuming that all technologies decline with the same learning rate with the standard used of experience curves, i.e., assuming that each technology has a specific learning rate. This script produces Figs. 4, S7 - S11.
+
+The script `ErrorsStatisticalSignificance.py` examines whether the error differences between the two methods discussed above are significant. This script produces CSV tables with p-values for paired t test and Wilcoxon signed-ranks test which are stored in the folder `StatisticalTests`. This script are used to produce Fig. S12, and Supplementary Tables S1, S2.
 
 The script `ComputeEnergySimParams.py` is used to derive alternative assumptions for computing the cost of technologies that follow experience curves whose values are stored in the folder `energySim` in the file `ExpCurveParams.csv`. 
 
-These alternatives parameters assumptions are used in the script `EnergyTransitionCosts.py` to evaluate the importance of these assumptions in determining the cost of the energy transition. This script produces figures 4 and 5.
+These alternatives parameters assumptions are used in the script `EnergyTransitionCosts.py` to evaluate the importance of these assumptions in determining the cost of the energy transition. This script produces Figs. 5, S13, S14.
 
 The scripts `analysisFunctions.py` and `plottingFunctions.py` contain functions used to analyze data and produce figures.
 

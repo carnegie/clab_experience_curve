@@ -126,14 +126,12 @@ for tech in selTechs:
                         10**rescal.predict(
                             sm.add_constant(
                                 np.log10(cal[cal.columns[3]].values))),
-                        # color=cmap(norm(i)),
                         color='k',
                         zorder=1, lw=2)
             ax[0].plot(val[val.columns[3]].values,
                             10**rescal.predict(
                                 sm.add_constant(
                                     np.log10(val[val.columns[3]].values))),
-                            # color=cmap(norm(i)),
                             color='k',
                            zorder=1, lw=2, 
                             linestyle='--')
@@ -143,8 +141,6 @@ for tech in selTechs:
                         y=[100*(1-2**resval.params[1])],
                         color=cmap(norm(i)), edgecolor='k', s=100,
                         ax=ax[1], zorder=1, legend=False)
-        # ax[1].scatter(lexpcal, lexpval,
-        #                 color=cmap(norm(i)), zorder=1, marker='x')
         
     
     # add colorbar
@@ -290,21 +286,25 @@ plt.subplots_adjust(left=0.1, bottom=0.075,
                     hspace=0.8, wspace=0.5)
 
 # save figure
-if not(os.path.exists('figs' + 
-                        os.path.sep + 
-                        'learningExponentDynamics')):
-    os.makedirs('figs' + 
-                os.path.sep +
-                    'learningExponentDynamics')
 
 if ourWorldInData:
     tech = tech + '_OurWorldInData'
+    folder = 'supplementaryFigures'
+else:
+    folder = 'learningRateDynamics'
+
+if not(os.path.exists('figs' + 
+                        os.path.sep + 
+                        folder)):
+    os.makedirs('figs' + 
+                os.path.sep +
+                    folder)
 
 fig.savefig('figs' + os.path.sep + 
-            'learningExponentDynamics' +
+            folder +
                 os.path.sep + tech + '_InformationCriteria.png')
 fig.savefig('figs' + os.path.sep + 
-            'learningExponentDynamics' +
+            folder +
                 os.path.sep + tech + '_InformationCriteria.eps')
 
 

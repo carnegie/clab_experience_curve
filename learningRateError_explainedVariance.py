@@ -521,13 +521,14 @@ fig.subplots_adjust(wspace=0.3, hspace=0.3,
                     top=0.95, bottom=0.1,
                     left=0.2, right=0.8)
 
-if not(os.path.exists('figs' + os.path.sep + 'explainedVariance')):
-    os.makedirs('figs' + os.path.sep + 'explainedVariance')
 
-fig.savefig('figs' + os.path.sep + 'explainedVariance' + \
+if not(os.path.exists('figs' + os.path.sep + 'SupplementaryFigures')):
+    os.makedirs('figs' + os.path.sep + 'SupplementaryFigures')
+
+fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
             os.path.sep + 'explainedVariance.png')
 
-fig.savefig('figs' + os.path.sep + 'explainedVariance' + \
+fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
             os.path.sep + 'explainedVariance.eps')
 
 # plot explained variance vs fraction of data treated as observed
@@ -581,7 +582,7 @@ if not(os.path.exists('figs' + os.path.sep + 'SupplementaryFigures')):
     os.makedirs('figs' + os.path.sep + 'SupplementaryFigures')
 
 fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
-            os.path.sep + 'ExplainedVariance.png')
+            os.path.sep + 'ExplainedVariance_extended.png')
 
 
 
@@ -663,11 +664,12 @@ axes.plot([1,2.8,2.8,1],[-1,-1,1,1], color='k', lw=0.5)
 axes.plot([1,2.5,2.5,1],[-.5,-.5,.5,.5], color='k', lw=0.5)
 
 
+if not(os.path.exists('figs' + os.path.sep + 'learningRateError')):
+    os.makedirs('figs' + os.path.sep + 'learningRateError')
 
-
-figmean.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+figmean.savefig('figs' + os.path.sep + 'learningRateError' + \
             os.path.sep + 'LearningRateError.png')
-figmean.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+figmean.savefig('figs' + os.path.sep + 'learningRateError' + \
             os.path.sep + 'LearningRateError.eps')
 
 plt.show()

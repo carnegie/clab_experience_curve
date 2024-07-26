@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import scipy
 
 # model class
 class EnergyModel:
@@ -804,6 +805,11 @@ class EnergyModel:
             self.z[t] = np.zeros(self.yend - self.y0 + 1)
             self.omega[t] = 0.0
             self.u[t] = np.zeros(self.yend - self.y0 + 1)
+
+            # if breakpoints are used, initialize breaks
+            if costparams['breakpoints']['active'][0]:
+                self.breaks = []
+                self.lrchanges = []
         
             # iterate over the years
             for y in range(self.y0, self.yend):
@@ -820,6 +826,29 @@ class EnergyModel:
                         self.omega[t] = np.random.normal(\
                             costparams['omega'][t], \
                                 costparams['sigmaOmega'][t])
+
+                        # sample first breakpoint
+                        if costparams['breakpoints']['active'][0]:
+                            self.breaks.append(\
+                                self.z[t][0] * \
+                                    10**scipy.stats.lognorm.rvs(\
+                                        costparams['breakpoints']\
+                                                ['distance - lognormal']
+                                                ['shape'], 
+                                        costparams['breakpoints']\
+                                                ['distance - lognormal']
+                                                ['loc'], 
+                                        costparams['breakpoints']\
+                                                ['distance - lognormal']
+                                                ['scale'], )
+                            )
+                            self.lrchanges.append(scipy.stats.norm.rvs(\
+                                costparams['breakpoints']
+                                            ['exponent change - normal']['mu'], \
+                                    costparams['breakpoints']
+                                            ['exponent change - normal']['scale']))
+                            
+
                 
                 # if not using experience curves
                 # use ar1 model
@@ -844,13 +873,88 @@ class EnergyModel:
                                         np.sqrt(\
                                             costparams['sigma'][t]**2 / \
                                                         (1 + 0.19**2) ) )
-                    self.c[t][y+1-self.y0] = \
-                        np.exp((np.log(self.c[t][y-self.y0]) - \
-                                self.omega[t] * \
-                                np.log(self.z[t][y+1-self.y0] / \
-                                        self.z[t][y-self.y0]) + \
-                                self.u[t][y+1-self.y0] + \
-                                    0.19 * self.u[t][y-self.y0]))
+                    
+                    # is the additional production crossing a breakpoint?
+                    if costparams['breakpoints']['active'][0] and\
+                        self.z[t][y+1-self.y0] > self.breaks[-1]:
+
+                        ## store breakpoints and learning exponent change 
+                        breaks = [self.breaks[-1]]
+                        lrchanges = [self.lrchanges[-1]]
+                        
+                        ## sample until next cumulative production is met
+                        while self.z[t][y+1-self.y0] > self.breaks[-1]:
+                            self.breaks.append(\
+                                self.breaks[-1] * \
+                                    10**scipy.stats.lognorm.rvs(\
+                                        costparams['breakpoints']\
+                                                ['distance - lognormal']
+                                                ['shape'], 
+                                        costparams['breakpoints']\
+                                                ['distance - lognormal']
+                                                ['loc'], 
+                                        costparams['breakpoints']\
+                                                ['distance - lognormal']
+                                                ['scale'], )
+                                )
+                            breaks.append(self.breaks[-1])
+                            lrchanges.append(scipy.stats\
+                                .norm.rvs(\
+                                    costparams['breakpoints']
+                                            ['exponent change - normal']['mu'], \
+                                    costparams['breakpoints']
+                                            ['exponent change - normal']['scale']) + \
+                                -0.26585740971836214 * self.lrchanges[-1])
+                            self.lrchanges.append(lrchanges[-1])
+                        
+                        ## compute from last production to first breakpoint
+                        ## noise is added in this step as it depends on 
+                        ## the previous production
+                        tempc = np.exp((np.log(self.c[t][y-self.y0]) - \
+                                        self.omega[t] * \
+                                        np.log(breaks[0] / \
+                                                self.z[t][y-self.y0]) + \
+                                        self.u[t][y-self.y0] + \
+                                            0.19 * self.u[t][y-self.y0]))
+                        self.omega[t] += lrchanges[0]
+
+
+                        ## compute from first to last breakpoint
+                        for i in range(1,len(breaks)-1):
+                            tempc = np.exp((np.log(tempc) - \
+                                            self.omega[t] * \
+                                            np.log(breaks[i] / \
+                                                    breaks[i-1])))
+                            self.omega[t] += lrchanges[i]
+
+
+
+
+                        
+                        ## compute from last breakpoint to current production
+                        self.c[t][y+1-self.y0] = tempc
+
+
+                    # if no breakpoints are used - standard learning curve
+                    else:
+                        self.c[t][y+1-self.y0] = \
+                            np.exp((np.log(self.c[t][y-self.y0]) - \
+                                    self.omega[t] * \
+                                    np.log(self.z[t][y+1-self.y0] / \
+                                            self.z[t][y-self.y0]) + \
+                                    self.u[t][y+1-self.y0] + \
+                                        0.19 * self.u[t][y-self.y0]))
+            
+            # if t in self.learningRateTechs:
+            #     plt.figure()
+            #     plt.plot(self.z[t], self.c[t], marker='.')
+            #     plt.xscale('log')
+            #     plt.yscale('log')
+            #     if costparams['breakpoints']['active'][0]:
+            #         [plt.axvline(br, ls='--') for br in self.breaks]
+            #     plt.title(t + costparams['breakpoints']['active'][0]*' with breakpoints')
+
+
 
         # compute total cost of technologies
         for t in self.technology[:13]:

@@ -2,7 +2,11 @@
 .DS_Store
 figs/*
 figs/
-Old/
+Old/*
+energySim/*
+EnergyTransitionCosts.py
+AdditionalData/BolingerEtAl2022/*
+AdditionalData/OurWorldInData/*
 
 
 # Byte-compiled / optimized / DLL files

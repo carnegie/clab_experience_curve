@@ -21,13 +21,14 @@ simulate = False
 nsim = 1000
 
 
-
 # create labels for different cost assumptions
 labels = ['Technology-specific - Way et al. (2022)',
-          'Technology-mean - PCDB',
-          'Technology-mean - PCDB-Energy, no nuclear',
-          'Technology-mean - PCDB-Energy',
-          'Technology-mean - Way et al. (2022)']
+        #   'Technology-mean - PCDB',
+        #   'Technology-mean - PCDB-Energy, no nuclear',
+        #   'Technology-mean - PCDB-Energy',
+        #   'Technology-mean - Way et al. (2022)',
+        'Breakpoint - Way et al. (2022)'
+          ]
 
 # define colors for technologies
 techcolors = ['black','saddlebrown','darkgray',
@@ -76,7 +77,7 @@ if simulate:
                     model.computeCost(\
                         EnergySimParams.costsAssumptions[l],
                         EnergySimParams.learningRateTechs)[1])
-
+            plt.show()
         # append technology expansion to list
         for t in model.technology[5:13]:
             techExp.append([t, scenario,
@@ -487,7 +488,7 @@ df['Scenario'] = df['Scenario'].str.title()
 count = 0
 # iterate over cost assumptions
 for hyp in ['Technology-specific - Way et al. (2022)',
-            'Technology-mean - PCDB']:
+            'Breakpoint - Way et al. (2022)']:
     counts = 0
     # iterate over scenarios
     for s in ['No Transition', 'Slow Transition', 'Fast Transition']:
@@ -519,8 +520,8 @@ for hyp in ['Technology-specific - Way et al. (2022)',
     count += 1
 
 # set limits and labels
-ax[0].set_title('Technology-specific')
-ax[1].set_title('Technology-mean')
+ax[0].set_title('Constant learning rate')
+ax[1].set_title('Dynamic learning rate')
 ax[0].set_ylabel('Net Present Cost (T $)')
 ax[0].set_xticks([])
 ax[1].set_xticks([])
@@ -534,37 +535,37 @@ ax[1].annotate('b',
                 xycoords='axes fraction',
                 weight='bold')
 ax[0].annotate('No transition',
-                xy=(0,220),
+                xy=(0,250),
                 xycoords='data',
                 ha='center',
                 va='center',
                 color=sns.color_palette('colorblind')[0])
 ax[0].annotate('Slow transition',
-                xy=(3,235),
+                xy=(3,300),
                 xycoords='data',
                 ha='center',
                 va='center',
                 color=sns.color_palette('colorblind')[1])
 ax[0].annotate('Fast transition',
-                xy=(6,250),
+                xy=(6,350),
                 xycoords='data',
                 ha='center',
                 va='center',
                 color=sns.color_palette('colorblind')[2])
 ax[1].annotate('No transition',
-                xy=(0,220),
+                xy=(0,125),
                 xycoords='data',
                 ha='center',
                 va='center',
                 color=sns.color_palette('colorblind')[0])
 ax[1].annotate('Slow transition',
-                xy=(3,200),
+                xy=(3,75),
                 xycoords='data',
                 ha='center',
                 va='center',
                 color=sns.color_palette('colorblind')[1])
 ax[1].annotate('Fast transition',
-                xy=(6,180),
+                xy=(6,25),
                 xycoords='data',
                 ha='center',
                 va='center',
@@ -572,32 +573,35 @@ ax[1].annotate('Fast transition',
 
 # set boxplot legend
 for axx in [ax[0], ax[1]]:
-    axx.fill_between([0.2,.6], [112,112], [150,150], 
+    axx.fill_between([0.2,.6], [400,400], [600,600], 
                      color='gray', alpha=.3)
-    axx.fill_between([0.2,.6], [122,122], [140,140], 
+    axx.fill_between([0.2,.6], [440,440], [560,560], 
                      color='gray', alpha=.6)
-    axx.plot([0.2,.6], [131,131], color='w', linestyle='--', lw=2)
-    axx.annotate('90%', xy=(-.1,145), xycoords='data', 
+    axx.plot([0.2,.6], [500,500], color='w', linestyle='--', lw=2)
+    axx.annotate('90%', xy=(-.15,620), xycoords='data', 
                 ha='center', va='center', color='k',
                 fontsize=12
                 )
-    axx.annotate('50%', xy=(-.1,135), xycoords='data', 
+    axx.annotate('50%', xy=(-.15,540), xycoords='data', 
                 ha='center', va='center', color='k',
                 fontsize=12
                 )
-    axx.annotate('Median', xy=(1.1,131), xycoords='data', 
+    axx.annotate('Median', xy=(1.2,500), xycoords='data', 
                 ha='center', va='center', color='k',
                 fontsize=12
                 )
-    axx.plot([.1,-.45,-.45,.1], [140,140,122,122], color='k', lw=.2)
-    axx.plot([.1,-.7,-.7,.1], [150,150,112,112], color='k', lw=.2)
+    axx.plot([.1,-.55,-.55,.1], [440,440,560,560], color='k', lw=.2)
+    axx.plot([.1,-.7,-.7,.1], [600,600,400,400], color='k', lw=.2)
 
-ax[0].set_ylim(110,260)
-ax[0].set_xlim(-1.5,7.5)
+# ax[0].set_ylim(110,1500)
+ax[0].set_xlim(-1.75,7.75)
+ax[0].set_ylim(0,1220)
+# ax[0].set_yscale('log', base=10)
 
-fig.subplots_adjust(top=0.95, bottom=0.025, 
-                    left=0.075, right=0.975,
+fig.subplots_adjust(top=0.9, bottom=0.05, 
+                    left=0.1, right=0.95,
                     hspace=0.1, wspace=0.1)
+
 
 
 if not os.path.exists('figs' + os.path.sep + 'energyTransitionCost'):

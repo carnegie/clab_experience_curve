@@ -265,6 +265,24 @@ costparams['omega']['electrolyzers'] = 0.129
 costparams['sigmaOmega']['electrolyzers'] = 0.067
 costparams['sigma']['electrolyzers'] = 0.201
 
+# set breakpoint params (in this case no breakpoints)
+# breakpoints: [lognormal shape, lognormal scale, lognormal location]
+# change in learning exponent at each breakpoint
+# parameters: [mu=0, scale]
+# breakpoint params:
+# - breakpoint presence (True/False)
+# - breakpoint  - lognormal distribution parameters 
+# - change in learning exponent - normal parameters
+costparams['breakpoints'] = {}
+costparams['breakpoints']['active'] = [False]
+costparams['breakpoints']['distance - lognormal'] = {}
+costparams['breakpoints']['distance - lognormal']['shape'] = np.nan
+costparams['breakpoints']['distance - lognormal']['scale'] = np.nan
+costparams['breakpoints']['distance - lognormal']['loc'] = np.nan
+costparams['breakpoints']['exponent change - normal'] = {}
+costparams['breakpoints']['exponent change - normal']['mu'] = np.nan
+costparams['breakpoints']['exponent change - normal']['scale'] = np.nan
+
 ### histElec has been generated 
 ### by running the Historical Mix scenario
 ### and saving the electricity demand
@@ -383,7 +401,26 @@ labels = ['Technology-specific - Way et al. (2022)',
 
 # assign label to cost assumptions
 costsAssumptions['Technology-specific - Way et al. (2022)'] = costparams
-costsAssumptions['Technology-mean - PCDB'] = costparams2
-costsAssumptions['Technology-mean - PCDB-Energy'] = costparams3
-costsAssumptions['Technology-mean - PCDB-Energy, no nuclear'] = costparams5
-costsAssumptions['Technology-mean - Way et al. (2022)'] = costparams4
+# costsAssumptions['Technology-mean - PCDB'] = costparams2
+# costsAssumptions['Technology-mean - PCDB-Energy'] = costparams3
+# costsAssumptions['Technology-mean - PCDB-Energy, no nuclear'] = costparams5
+# costsAssumptions['Technology-mean - Way et al. (2022)'] = costparams4
+
+# create breakpoint scenario
+
+costparams2 = copy.deepcopy(costparams)
+
+# set breakpoint params (in this case breakpoints)
+
+costparams2['breakpoints'] = {}
+costparams2['breakpoints']['active'] = [True]
+costparams2['breakpoints']['distance - lognormal'] = {}
+costparams2['breakpoints']['distance - lognormal']['shape'] = 0.6075000635903898
+costparams2['breakpoints']['distance - lognormal']['loc'] = -0.14027836943191924
+costparams2['breakpoints']['distance - lognormal']['scale'] = 0.8774674628197169
+costparams2['breakpoints']['exponent change - normal'] = {}
+costparams2['breakpoints']['exponent change - normal']['mu'] = 0
+costparams2['breakpoints']['exponent change - normal']['scale'] = 0.15243863713865616-0
+
+
+costsAssumptions['Breakpoint - Way et al. (2022)'] = costparams2

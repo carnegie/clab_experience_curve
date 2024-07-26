@@ -70,26 +70,27 @@ sectors = []
 for i in range(breaks.shape[0]):
 
     # store breakpoint distance
-    [blist.append(x) \
-         for x in breaks.loc[i,:].dropna().diff().values[1:]]
+    [break_dist.append(x) \
+        for x in breaks.loc[i,:].dropna().diff().values[1:]]
 
-    #store learning exponent change
+    #store learning exponents
     [lexplist.append(x) \
         for x in lexps.loc[i,:].dropna().values]
 
-    [break_dist.append(x) \
-        for x in breaks.loc[i,:].dropna().diff().values[1:]]
+    # store learning exponent changes
     [lexpchanges.append(x) \
         for x in lexps.loc[i,:].dropna().diff().values[1:]]
+    
+    # store colors and sectors
     [colors.append(BIC.loc[i,'Color']) \
         for x in lexps.loc[i,:].dropna().values[1:]]
     [sectors.append(BIC.loc[i,'Sector']) \
         for x in lexps.loc[i,:].dropna().values]
 
-    # store learning exponent change standard deviation
-    if lexps.loc[i,:].dropna().diff().values[1:].shape[0]>1:
-        lexpchangelist.append(\
-                    np.std(lexps.loc[i,:].dropna().diff().values[1:]))
+plt.figure()
+plt.ecdf(break_dist, label='Breakpoint distance')
+plt.xlabel('Distance between breakpoints (log10)')
+plt.ylabel('ECDF')
 
 # create dataframe with learning exponent changes
 lexplistdf = pd.DataFrame(lexplist, columns=['Learning exponent change'])
@@ -108,6 +109,7 @@ breaks_lexp = pd.DataFrame({'Distance between breakpoints':
                                         lexplist,
                                    'Sector': sectors})
 
+plt.figure()
 sns.scatterplot(data=breaks_lexp, 
                 x='Distance between breakpoints',
                 y='Learning exponent',
@@ -132,7 +134,7 @@ sns.jointplot(data=breaks_lexp,
 )
 plt.gcf().axes[-1].set_xscale('linear')
 # plt.gca().set_xlim(10**0, 10**5)
-# plt.gca().set_ylim(-2, 2)
+plt.gca().set_ylim(-2, 2)
 plt.tight_layout()
 plt.subplots_adjust(top=1, bottom=0.1, right=1)
 plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
@@ -162,24 +164,17 @@ sns.kdeplot(data=breaks_lexp,
             fill=True)
 plt.tight_layout()
 
-print('Standard deviation of learning exponent change:')
-print('Considering all learning exponent changes equally: ', 
-        np.std(lexplist))
-print('Considering learning exponent changes for each technology' + 
-        ' and then averaging or taking the median: ', 
-        np.mean(lexpchangelist), np.median(lexpchangelist))
-
 # calibrate distribution of distance between breakpoints
 dfit = distfit.distfit()
 print('Calibrating model for distance between breakpoints:')
-dfit.fit_transform(np.array(blist).reshape(-1,1))
+dfit.fit_transform(np.array(break_dist).reshape(-1,1))
 print(dfit.summary)
 print('Best model for distance between breakpoints:')
 print(dfit.summary.name[0], dfit.summary.params[0])
 print(dfit.summary.name[1], dfit.summary.params[1])
 print(dfit.summary.params[0])
 
-print('Calibrating model for learning rate changes:')
+print('Calibrating model for learning exponents:')
 dfit.fit_transform(np.array(lexplist).reshape(-1,1))
 print(dfit.summary)
 

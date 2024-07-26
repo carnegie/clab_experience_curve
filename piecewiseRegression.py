@@ -26,7 +26,7 @@ first_diff = False
 max_breakpoints = 6
 
 # set min distance between breakpoints
-min_dist = np.log10(1.01)
+min_dist = np.log10(2)
 
 # set random seed
 np.random.seed(0)

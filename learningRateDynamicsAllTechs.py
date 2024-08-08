@@ -96,8 +96,13 @@ fig.axes[-1]._colorbar.set_ticks([1977,1980,1990,2000,2010,2020,2022])
 fig.axes[-1]._colorbar.set_ticklabels([1977,1980,1990,2000,2010,2020,2022])
 
 # adjust ticks
-ax[0][1].set_xticks([0,10,20,30,40,50])
-ax[0][1].set_yticks([0,10,20,30,40,50])
+# ax[0][1].set_xticks([0,10,20,30,40,50])
+# ax[0][1].set_yticks([0,10,20,30,40,50])
+
+# set equal aspect maintaining box size
+ax[0][0].set_aspect('equal', adjustable='datalim')
+ax[1][0].set_aspect('equal', adjustable='datalim')
+ax[2][0].set_aspect('equal', adjustable='datalim')
 
 # save figure
 plt.savefig('figs' + os.path.sep + 'learningRateDynamics.png')

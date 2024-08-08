@@ -160,6 +160,7 @@ for tech in df['Tech'].unique():
 		markersize=5,
 		color = utils.sectors_colors[s['Sector'].values[0]],
 		alpha=0.5,
+		lw=1,
 		label = s['Sector'].values[0]
 		)
 
@@ -188,7 +189,39 @@ for tech in df['Tech'].unique():
 ax.set_xscale('log', base=10)
 ax.set_yscale('log', base=10)
 ax.set_xlim(1, 8e10)
-ax.set_ylim(0.3*1e-8, 1e2)
+
+ax.set_ylim(1e-10, 1e2)
+x1, x2, y1, y2 = 1, 1e2, .1, 1.5
+
+axes = ax.inset_axes([.1, .075, 0.45, 0.3],
+			  xlim=(x1, x2),
+			  ylim=(y1, y2))
+
+axes.set_yticks([1])
+
+axes.set_xscale('log', base=10)
+axes.set_yscale('log', base=10)
+
+# iterate over all technologies
+for tech in df['Tech'].unique():
+
+	# select data for each technology
+	s = df.loc[df['Tech']==tech].copy()
+
+	# plot normalized unit cost vs
+	# normalized cumulative production
+	axes.plot(s['Normalized cumulative production'], 
+		s['Normalized unit cost'],
+		marker = '.',
+		markersize=5,
+		color = utils.sectors_colors[s['Sector'].values[0]],
+		alpha=0.5,
+		lw=1,
+		label = s['Sector'].values[0]
+		)
+
+ax.indicate_inset_zoom(axes, edgecolor="black", zorder=-1)
+
 ax.set_xlabel(
 	'Cumulative production relative to initial')
 ax.set_ylabel('Unit cost relative to initial')
@@ -231,6 +264,7 @@ ax.legend(handles=legend_elements,
 		   loc='upper right', ncol=1, title='Sectors')
 
 plt.tight_layout()
+plt.subplots_adjust(right=0.975, top=0.975, bottom=0.1)
 fig.savefig('figs' + os.path.sep + 'Data.png')
 fig.savefig('figs' + os.path.sep + 'Data.eps')
 
@@ -359,14 +393,14 @@ pVsSec = pd.DataFrame(p_vs_sec, columns=['Cumulative production increase',
 									   'Sector', 'Count'])
 
 fig, ax = plt.subplots(figsize=(9,7.5))
-ax.stackplot(p_vs_sec['Cumulative production increase'].unique(),
-			 [[p_vs_sec.loc[(p_vs_sec['Cumulative production increase']==p) & \
-							(p_vs_sec['Sector']==s),'Count'].values[0] \
-								for p in p_vs_sec['Cumulative production increase'].unique()]
-								for s in p_vs_sec['Sector'].unique()],
+ax.stackplot(pVsSec['Cumulative production increase'].unique(),
+			 [[pVsSec.loc[(pVsSec['Cumulative production increase']==p) & \
+							(pVsSec['Sector']==s),'Count'].values[0] \
+								for p in pVsSec['Cumulative production increase'].unique()]
+								for s in pVsSec['Sector'].unique()],
 			 colors=[utils.sectors_colors[s] \
-					for s in p_vs_sec['Sector'].unique()],
-					labels=[s for s in p_vs_sec['Sector'].unique()])
+					for s in pVsSec['Sector'].unique()],
+					labels=[s for s in pVsSec['Sector'].unique()])
 ax.set_xscale('log')
 ax.legend()
 ax.set_xlabel('Cumulative production - multiplicative increase')

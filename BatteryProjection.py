@@ -11,6 +11,8 @@ sns.set_context("talk")
 plt.rcParams['font.sans-serif'] = 'Helvetica'
 plt.rcParams['savefig.dpi'] = 300
 
+boxplot = True
+
 # read original li-ion battery data 
 price = pd.read_excel(\
     '..' + os.path.sep + \
@@ -32,16 +34,6 @@ df = df[['Unit cost (2018 USD/kWh)', 'Time (Year)',
          'Production (MWh)','Cumulative production (MWh)']]
 
 df.columns = ['Unit cost', 'Year', 'Production', 'Cumulative production']
-
-fig, ax = plt.subplots()
-
-ax.scatter(df['Cumulative production'], df['Unit cost'], color='k')
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-plt.ylabel('Unit cost (2018 USD/kWh)')
-plt.xlabel('Cumulative production (MWh)')
 
 cost = df['Unit cost'].values
 prod = df['Cumulative production'].values
@@ -259,9 +251,10 @@ sigma = 0.4370592844181447
 proj = []
 nsim = 10000
 # project for 4 order of magnitude increase in cumulative production
-horizon = 1e2
+horizon = 10**((np.log10(prod[-1]) - np.log10(prod[-2])) * (2051-2017))
 fut_prod = np.arange(0, np.log10(horizon), 
                      np.log10(prod[-1]) - np.log10(prod[-2]))
+
 # starting from last observation
 starting_point = 1
 fut_prod += np.log10(prod[-starting_point])
@@ -308,31 +301,80 @@ proj = np.array(proj)
 proj = proj[:,fut_prod>np.log10(prod[-starting_point])-np.log10(2)]
 fut_prod = fut_prod[fut_prod>np.log10(prod[-starting_point])-np.log10(2)]
 
-ax.fill_between(10**fut_prod, 10**np.percentile(proj, 5, axis=0),
-                10**np.percentile(proj, 95, axis=0), 
-                color='#6a4c93', alpha=0.1, zorder=-10)
-ax.fill_between(10**fut_prod, 10**np.percentile(proj, 25, axis=0),
-                10**np.percentile(proj, 75, axis=0),
-                  color='#6a4c93', alpha=0.25, zorder=-10)
-ax.plot(10**fut_prod, 10**np.percentile(proj, 5, axis=0), 
-        color='#6a4c93', ls=':'
-        # , alpha=.25
-        )
-ax.plot(10**fut_prod, 10**np.percentile(proj, 95, axis=0), 
-        color='#6a4c93', ls=':', 
-        # alpha=.25
-        )
-ax.plot(10**fut_prod, 10**np.percentile(proj, 25, axis=0), 
-        color='#6a4c93', ls='--', 
-        # alpha=.5
-        )
-ax.plot(10**fut_prod, 10**np.percentile(proj, 75, axis=0), 
-        color='#6a4c93', ls='--', 
-        # alpha=.5
-        )
+if boxplot:
+    bproj = proj[:,[2030-2017,-1]]
+    bfut_prod = fut_prod[[2030-2017,-1]]
 
-ax.plot(10**fut_prod, 10**np.median(proj, axis=0), '#6a4c93', lw=2,
-        label='Piecewise linear experience curve'
+    for v, pos in zip(bproj.T, bfut_prod-0.125):
+        plt.plot([10**(pos-0.1), 10**(pos+0.1)],
+                 [10**np.percentile(v, 50, axis=0),
+                  10**np.percentile(v, 50, axis=0)],
+                    color='#6a4c93')
+        plt.plot([10**(pos-0.1),10**(pos-0.1), 
+                  10**(pos+0.1),10**(pos+0.1),
+                  10**(pos-0.1)],
+                 [10**np.percentile(v, 25, axis=0),
+                  10**np.percentile(v, 75, axis=0),
+                  10**np.percentile(v, 75, axis=0),
+                  10**np.percentile(v, 25, axis=0),
+                  10**np.percentile(v, 25, axis=0)
+                  ],
+                    color='#6a4c93')
+        plt.fill_between([10**(pos-0.1), 10**(pos+0.1)],
+                 10**np.percentile(v, 25, axis=0),
+                 10**np.percentile(v, 75, axis=0),
+                    color='#6a4c93', alpha=0.1)
+        plt.plot([10**pos, 10**pos],
+                [10**np.percentile(v, 75, axis=0),
+                10**np.percentile(v, 95, axis=0)],
+                    color='#6a4c93')
+        plt.plot([10**(pos-.1),10**(pos+.1)],
+                [10**np.percentile(v, 95, axis=0),
+                10**np.percentile(v, 95, axis=0)],
+                    color='#6a4c93')
+        
+        plt.plot([10**(pos), 10**pos],
+                [10**np.percentile(v, 25, axis=0),
+                10**np.percentile(v, 5, axis=0)],
+                    color='#6a4c93')
+        plt.plot([10**(pos-.1), 10**(pos+.1)],
+                 [10**np.percentile(v, 5, axis=0),
+                  10**np.percentile(v, 5, axis=0)],
+                    color='#6a4c93')
+
+# ax.fill_between(10**fut_prod, 10**np.percentile(proj, 5, axis=0),
+#                 10**np.percentile(proj, 95, axis=0), 
+#                 color='#6a4c93', alpha=0.05, zorder=-10)
+# ax.fill_between(10**fut_prod, 10**np.percentile(proj, 25, axis=0),
+#                 10**np.percentile(proj, 75, axis=0),
+#                 color='#6a4c93', alpha=0.1, zorder=-10)
+# ax.plot(10**fut_prod, 10**np.percentile(proj, 5, axis=0), 
+#         color='#6a4c93', ls=':',
+#         zorder=-8,
+#         # alpha=.25,
+#         lw=1
+#         )
+# ax.plot(10**fut_prod, 10**np.percentile(proj, 95, axis=0), 
+#         color='#6a4c93', ls=':', 
+#         zorder=-8,
+#         # alpha=.25,
+#         lw=1
+#         )
+# ax.plot(10**fut_prod, 10**np.percentile(proj, 25, axis=0), 
+#         color='#6a4c93', ls='--', 
+#         zorder=-8,
+#         lw=1,
+#         # alpha=.5
+#         )
+# ax.plot(10**fut_prod, 10**np.percentile(proj, 75, axis=0), 
+#         color='#6a4c93', ls='--', 
+#         zorder=-8, lw=1,
+#         # alpha=.5
+#         )
+
+ax.plot(10**fut_prod, 10**np.median(proj, axis=0), '#6a4c93', lw=1,
+        label='Piecewise linear experience curve',
+        zorder=-5
         )
 
 ## overlay first difference wright's law projection
@@ -377,30 +419,82 @@ for s in range(nsim):
 
 proj = np.array(proj)
 
-ax.fill_between(10**fut_prod, 10**np.percentile(proj, 5, axis=0),
-                10**np.percentile(proj, 95, axis=0), 
-                color='#1982c4', alpha=0.1, zorder=-10)
-ax.fill_between(10**fut_prod, 10**np.percentile(proj, 25, axis=0),
-                10**np.percentile(proj, 75, axis=0), 
-                color='#1982c4', alpha=0.25, zorder=-10)
-ax.plot(10**fut_prod, 10**np.percentile(proj, 5, axis=0), 
-        color='#1982c4', ls=':', 
-        # alpha=.25
+if boxplot:
+    bproj = proj[:,[2030-2017,-1]]
+    bfut_prod = fut_prod[[2030-2017,-1]]
+
+    for v, pos in zip(bproj.T, bfut_prod+0.125):
+        plt.plot([10**(pos-0.1), 10**(pos+0.1)],
+                 [10**np.percentile(v, 50, axis=0),
+                  10**np.percentile(v, 50, axis=0)],
+                    color='#1982c4')
+        plt.plot([10**(pos-0.1),10**(pos-0.1), 
+                  10**(pos+0.1),10**(pos+0.1),
+                  10**(pos-0.1)],
+                 [10**np.percentile(v, 25, axis=0),
+                  10**np.percentile(v, 75, axis=0),
+                  10**np.percentile(v, 75, axis=0),
+                  10**np.percentile(v, 25, axis=0),
+                  10**np.percentile(v, 25, axis=0)
+                  ],
+                    color='#1982c4')
+        plt.fill_between([10**(pos-0.1), 10**(pos+0.1)],
+                 10**np.percentile(v, 25, axis=0),
+                 10**np.percentile(v, 75, axis=0),
+                    color='#1982c4', alpha=0.1)
+        plt.plot([10**pos, 10**pos],
+                [10**np.percentile(v, 75, axis=0),
+                10**np.percentile(v, 95, axis=0)],
+                    color='#1982c4')
+        plt.plot([10**(pos-.1),10**(pos+.1)],
+                [10**np.percentile(v, 95, axis=0),
+                10**np.percentile(v, 95, axis=0)],
+                    color='#1982c4')
+        
+        plt.plot([10**(pos), 10**pos],
+                [10**np.percentile(v, 25, axis=0),
+                10**np.percentile(v, 5, axis=0)],
+                    color='#1982c4')
+        plt.plot([10**(pos-.1), 10**(pos+.1)],
+                 [10**np.percentile(v, 5, axis=0),
+                  10**np.percentile(v, 5, axis=0)],
+                    color='#1982c4')
+
+# ax.fill_between(10**fut_prod, 10**np.percentile(proj, 5, axis=0),
+#                 10**np.percentile(proj, 95, axis=0), 
+#                 color='#1982c4', alpha=0.05, zorder=-10)
+# ax.fill_between(10**fut_prod, 10**np.percentile(proj, 25, axis=0),
+#                 10**np.percentile(proj, 75, axis=0), 
+#                 color='#1982c4', alpha=0.1, zorder=-10)
+# ax.plot(10**fut_prod, 10**np.percentile(proj, 5, axis=0), 
+#         color='#1982c4', ls=':', 
+#         zorder=-8,
+#         # alpha=.25,
+#         lw=1
+#         )
+# ax.plot(10**fut_prod, 10**np.percentile(proj, 95, axis=0), 
+#         color='#1982c4', ls=':', 
+#         zorder=-8,
+#         # alpha=.25,
+#         lw=1
+#         )
+# ax.plot(10**fut_prod, 10**np.percentile(proj, 25, axis=0), 
+#         color='#1982c4', ls='--', 
+#         zorder=-8,
+#         # alpha=.5,
+#         lw=1
+#         )
+# ax.plot(10**fut_prod, 10**np.percentile(proj, 75, axis=0), 
+#         color='#1982c4', ls='--', 
+#         zorder=-8,
+#         # alpha=.5,
+#         lw=1
+#         )
+
+ax.plot(10**fut_prod, 10**np.median(proj, axis=0), '#1982c4', lw=1,
+        label='First difference Wright\'s law',
+        zorder=-5
         )
-ax.plot(10**fut_prod, 10**np.percentile(proj, 95, axis=0), 
-        color='#1982c4', ls=':', 
-        # alpha=.25
-        )
-ax.plot(10**fut_prod, 10**np.percentile(proj, 25, axis=0), 
-        color='#1982c4', ls='--', 
-        # alpha=.5
-        )
-ax.plot(10**fut_prod, 10**np.percentile(proj, 75, axis=0), 
-        color='#1982c4', ls='--', 
-        # alpha=.5
-        )
-ax.plot(10**fut_prod, 10**np.median(proj, axis=0), '#1982c4', lw=2,
-        label='First difference Wright\'s law')
 
 ax.minorticks_off()
 

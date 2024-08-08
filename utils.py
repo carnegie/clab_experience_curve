@@ -373,7 +373,7 @@ def plot_cost_prod_learning_dynamics(df,
         cal = df[df[df.columns[1]]<=i]
         val = df[df[df.columns[1]]>=i]
 
-        if len(cal) < 2 or len(val) < 2:
+        if len(cal) < 5 or len(val) < 5:
             continue
 
         if not(lafond):
@@ -385,11 +385,19 @@ def plot_cost_prod_learning_dynamics(df,
                                         cumprod_col=val.columns[3],
                                         unitcost_col=val.columns[0])
             
-            # add points to learning exponent dynamics
-            sns.scatterplot(x=[100*(1 - 2**lexp_past)], 
-                            y=[100*(1 - 2**lexp_future)],
-                            color=cmap(norm(i)), edgecolor='k', s=100,
-                            ax=ax[1], zorder=1, legend=False)
+            # add star for central point
+            if len(cal) == len(val) or len(cal) == len(val) + 1:
+                sns.scatterplot(x=[100*(1 - 2**lexp_past)], 
+                                y=[100*(1 - 2**lexp_future)],
+                                color=cmap(norm(i)), edgecolor='k', s=100,
+                                markers='*',
+                                ax=ax[1], zorder=10, legend=False)
+            else:
+                # add points to learning exponent dynamics
+                sns.scatterplot(x=[100*(1 - 2**lexp_past)], 
+                                y=[100*(1 - 2**lexp_future)],
+                                color=cmap(norm(i)), edgecolor='k', s=100,
+                                ax=ax[1], zorder=1, legend=False)
 
         else:
             lexp_past = computeSlopeLafond(cal,
@@ -399,11 +407,23 @@ def plot_cost_prod_learning_dynamics(df,
                                                 cumprod_col=val.columns[3],
                                                 unitcost_col=val.columns[0])
 
-            # add points to learning exponent dynamics
-            sns.scatterplot(x=[100*(1 - 2**lexp_past)], 
-                            y=[100*(1 - 2**lexp_future)],
-                            color=cmap(norm(i)), edgecolor='k', s=100,
-                            ax=ax[1], zorder=1, legend=False)
+            # add star for central point
+            if len(cal) == len(val) or len(cal) == len(val) + 1:
+                sns.scatterplot(x=[100*(1 - 2**lexp_past)], 
+                                y=[100*(1 - 2**lexp_future)],
+                                # color=cmap(norm(i)), ,
+                                color='gold',
+                                edgecolor='k', s=200,
+                                marker='*',
+                                ax=ax[1], zorder=10, legend=False)
+            else:
+                # add points to learning exponent dynamics
+                sns.scatterplot(x=[100*(1 - 2**lexp_past)], 
+                                y=[100*(1 - 2**lexp_future)],
+                                color=cmap(norm(i)), edgecolor='k', s=100,
+                                alpha=0.75,
+                                ax=ax[1], zorder=1, legend=False)
+                
             try:
                 axlim_min = min(axlim_min,
                                  100 * (1 - 2**max(lexp_past, lexp_future)))

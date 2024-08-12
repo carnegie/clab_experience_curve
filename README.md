@@ -55,10 +55,4 @@ The scripts `utils.py` contains functions used to analyze data and produce figur
 
 The script `IntroGifs.py` can be used to generate gifs showing how learning rate changed over time by observing how observed and future learning rate evolved over time.
 
-[![DOI](https://zenodo.org/badge/608206114.svg)](https://zenodo.org/doi/10.5281/zenodo.10823145)
-
-
-
-
-
-
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13308841.svg)](https://doi.org/10.5281/zenodo.13308841)

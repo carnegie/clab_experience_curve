@@ -156,10 +156,8 @@ plt.gcf().axes[-1].set_xscale('linear')
 plt.gca().set_ylim(-2, 2)
 plt.tight_layout()
 plt.subplots_adjust(top=1, bottom=0.1, right=1)
-plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
-                os.path.sep + 'Breakpoints_vs_LEXPchanges' + '.png')
-plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
-                os.path.sep + 'Breakpoints_vs_LEXPchanges' + '.pdf')
+plt.savefig('figs' + os.path.sep + 'Breakpoints_vs_LEXP' + '.png')
+plt.savefig('figs' + os.path.sep + 'Breakpoints_vs_LEXP' + '.pdf')
 
 
 ## fit probability distribution for distance between breakpoints

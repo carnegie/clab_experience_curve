@@ -266,6 +266,7 @@ ax.legend(handles=legend_elements,
 plt.tight_layout()
 plt.subplots_adjust(right=0.975, top=0.975, bottom=0.1)
 fig.savefig('figs' + os.path.sep + 'Data.png')
+fig.savefig('figs' + os.path.sep + 'Data.pdf')
 fig.savefig('figs' + os.path.sep + 'Data.eps')
 
 ### Below some figures for the 
@@ -307,6 +308,9 @@ plt.subplots_adjust(bottom=0.3, top=0.975)
 fig.savefig('figs' + os.path.sep + 
 			'SupplementaryFigures' + 
 			 os.path.sep + 'data_raw.png')
+fig.savefig('figs' + os.path.sep + 
+			'SupplementaryFigures' + 
+			 os.path.sep + 'data_raw.pdf')
 
 ### plot normalized cost and year
 ### color by sector
@@ -340,6 +344,9 @@ plt.subplots_adjust(bottom=0.3, top=0.975)
 fig.savefig('figs' + os.path.sep + 
 		'SupplementaryFigures' + 
 			os.path.sep + 'data_time.png')
+fig.savefig('figs' + os.path.sep + 
+		'SupplementaryFigures' + 
+			os.path.sep + 'data_time.pdf')
 
 ## plot technologies available against time
 dfy = df.copy()

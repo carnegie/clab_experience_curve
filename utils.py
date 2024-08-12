@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import piecewise_regression as pw
 import pandas as pd
+import scipy.stats
 
 ### sectors dictionary
 sectors = {'Energy':['Wind_Turbine_2_(Germany)', 
@@ -205,26 +206,24 @@ def compute_log_likelihood(rss, n):
     
     Returns
     -------
-    llf : float
-        Log likelihood function
+    ll : float
+        Log likelihood
     """
 
     s = np.sqrt(rss / n)
-    llf = - n/2 * np.log(2 * np.pi) - \
+    ll = - n/2 * np.log(2 * np.pi) - \
             n * np.log(s) - 1/(2 * s**2) * rss
-    return llf
+    return ll
 
-def computeAIC(rss, n, k):
+def computeAIC(ll, k):
 
     """
     Compute the Akaike Information Criterion
 
     Parameters
     ----------
-    rss : float
-        Residual sum of squares
-    n : int
-        Number of observations
+    ll : float
+        Log likelihood 
     k : int
         Number of parameters
     
@@ -234,19 +233,19 @@ def computeAIC(rss, n, k):
         Akaike Information Criterion
     """
 
-    aic = -2 * compute_log_likelihood(rss, n) + 2 * k
+    aic = -2 * ll + 2 * k
     return aic
 
 # define a function to compute the Bayesian Information Criterion
-def computeBIC(rss, n, k):
+def computeBIC(ll, n, k):
 
     """
     Compute the Bayesian Information Criterion
     
     Parameters
     ----------
-    rss : float
-        Residual sum of squares
+    ll : float
+        Log likelihood
     n : int
         Number of observations
     k : int
@@ -258,7 +257,7 @@ def computeBIC(rss, n, k):
         Bayesian Information Criterion    
     """
 
-    bic = -2 * compute_log_likelihood(rss, n) + np.log(n) * k
+    bic = -2 * ll + np.log(n) * k
     return bic
 
 
@@ -302,7 +301,7 @@ def plot_cost_prod_learning_dynamics(df,
         Axes object
     
     savefig : bool
-        If True, save figure as .png file
+        If True, save figure as .png and .pdf file
     
     cbar_kws : dict
         Dictionary containing colorbar parameters
@@ -496,6 +495,13 @@ def plot_cost_prod_learning_dynamics(df,
                     'learningRateDynamics'+
                     os.path.sep +
                     tech + '.png')
+        plt.savefig('figs' +
+                    os.path.sep +
+                    'supplementaryFigures'+
+                    os.path.sep +
+                    'learningRateDynamics'+
+                    os.path.sep +
+                    tech + '.pdf')
 
         plt.close(fig)    
 
@@ -503,7 +509,6 @@ def plot_cost_prod_learning_dynamics(df,
 def build_piecewise_regression_dataset(df, 
                                        max_breakpoints=6,
                                        min_dist=np.log10(2),
-                                       first_diff=False,
                                        plot_fig_tech=False,
                                        ):
     
@@ -520,9 +525,6 @@ def build_piecewise_regression_dataset(df,
 
     min_dist : float
         Minimum distance between breakpoints
-
-    first_diff : bool
-        If True, compute first difference of unit cost data
 
     plot_fig_tech : bool
         If True, plot data for each technology
@@ -562,29 +564,16 @@ def build_piecewise_regression_dataset(df,
             # (i.e., simple linear regression)
             if n_breaks == 0:
 
-                if first_diff is False:
 
-                    # fit linear regression
-                    res = sm.OLS(y, sm.add_constant(x)).fit()
+                # fit linear regression after differencing
+                res = sm.OLS(np.diff(y), np.diff(x)).fit()
 
-                    # store the sum of squared residuals
-                    rss = res.ssr
+                # store the sum of squared residuals
+                rss = res.ssr
 
-                    # store the slope
-                    slopes.append( 100 * (1 - 2 ** res.params[1]) )
-                    const = res.params[0]
-
-                else:
-
-                    # fit linear regression after differencing
-                    res = sm.OLS(np.diff(y), np.diff(x)).fit()
-
-                    # store the sum of squared residuals
-                    rss = res.ssr
-
-                    # store slope, constant is nan
-                    slopes.append(100 * (1 - 2 ** res.params[0]) )
-                    const = np.nan
+                # store slope, constant is nan
+                slopes.append(100 * (1 - 2 ** res.params[0]) )
+                const = np.nan
 
 
                 # fill in the remaining slots with NaN
@@ -594,6 +583,36 @@ def build_piecewise_regression_dataset(df,
 
                 if plot_fig_tech:
                     plt.plot(x, res.predict(sm.add_constant(x)))
+
+                # define parameters for information criteria computation
+                n = x.shape[0]
+                k = 1
+
+                # compute information criteria
+                aic = computeAIC(compute_log_likelihood(rss, n-1), k)
+                bic = computeBIC(compute_log_likelihood(rss, n-1), n-1, k)
+
+                # append this data to output list
+                IC.append([t, n_breaks, 1, aic, bic,
+                            np.nan,
+                            x[0], *breaks, x[-1], *slopes, x.shape[0]])
+ 
+                # fit linear regression
+                res = sm.OLS(y, sm.add_constant(x)).fit()
+
+                # store the sum of squared residuals
+                rss = res.ssr
+
+                # store the slope
+                slopes, breaks = [], []
+                slopes.append( 100 * (1 - 2 ** res.params[1]) )
+                const = res.params[0]
+            
+                # fill in the remaining slots with NaN
+                for i in range(n_breaks + 1, max_breakpoints + 1):
+                    slopes.append(np.nan)
+                    breaks.append(np.nan)
+
             
             # handle case with one or more breakpoints
             else:
@@ -694,15 +713,11 @@ def build_piecewise_regression_dataset(df,
             k = 2 + n_breaks * 2 
 
             # calculate the Akaike and Bayesian information criteria
-            if first_diff is False:
-                aic = computeAIC(rss, n, k)
-                bic = computeBIC(rss, n, k)
-            else:
-                aic = computeAIC(rss, n-1, k)
-                bic = computeBIC(rss, n-1, k)
+            aic = computeAIC(compute_log_likelihood(rss, n), k)
+            bic = computeBIC(compute_log_likelihood(rss, n), n , k)
             
             # store the information criteria values
-            IC.append([t, n_breaks, aic, bic,
+            IC.append([t, n_breaks, 0, aic, bic,
                         const,
                         x[0], *breaks, x[-1], *slopes, x.shape[0]])
         
@@ -710,19 +725,75 @@ def build_piecewise_regression_dataset(df,
             plt.show()
 
     # convert the list of information criteria to a pandas DataFrame
-    IC = pd.DataFrame(IC, columns=['Tech', 'n_breaks', 'AIC', 'BIC',
-                                'Intercept',
-                                'Initial production', 'Breakpoint 1',
-                                'Breakpoint 2', 'Breakpoint 3', 
-                                'Breakpoint 4','Breakpoint 5', 
-                                'Breakpoint 6',
-                                'Final production',
-                                'LR 1', 'LR 2', 'LR 3', 'LR 4',
-                                'LR 5', 'LR 6', 'LR 7', 
-                                'Number of observations'])
-    if first_diff is True:
-        IC.to_csv('IC_first_diff.csv', index=False)
-    else:
-        IC.to_csv('IC.csv', index=False)
+    IC = pd.DataFrame(IC, columns=['Tech', 'n_breaks', 'First Diff.', 
+                                   'AIC', 'BIC',
+                                    'Intercept',
+                                    'Initial production', 'Breakpoint 1',
+                                    'Breakpoint 2', 'Breakpoint 3', 
+                                    'Breakpoint 4','Breakpoint 5', 
+                                    'Breakpoint 6',
+                                    'Final production',
+                                    'LR 1', 'LR 2', 'LR 3', 'LR 4',
+                                    'LR 5', 'LR 6', 'LR 7', 
+                                    'Number of observations'])
+
+    IC.to_csv('IC.csv', index=False)
     
     return IC
+
+def fit_probability_dist(data, floc=None):
+    """
+    Fit multiple probability distributions to data
+    and return paremters and Bayesian Information Criterion
+
+    Parameters
+    ----------
+    data : numpy.array
+        Data to fit
+
+    Returns
+    -------
+    summary : Pandas Dataframe 
+        Dataframe containing log likelihood, BIC, number of samples,
+         and parameters for each fitted distribution
+
+    """
+
+    # list of distributions
+    dists = [scipy.stats.norm, scipy.stats.expon, 
+             scipy.stats.lognorm, scipy.stats.uniform]
+    
+    # empty list to store results
+    l = []
+
+    # for the distributions considered
+    for d in dists:
+
+        # handle case with fixed location parameter
+        if d.name in ['lognorm','expon'] and floc is not None:
+            data_ = data[data > floc]
+            params = d.fit(data_, floc=floc)
+            ll = np.sum(d.logpdf(data_, *params))
+            bic = computeBIC(
+                ll, data_.shape[0], len(params))
+            ssize = data_.shape[0]
+        
+        # all other cases
+        else:
+            params = d.fit(data)
+            ll = np.sum(d.logpdf(data, *params))
+            bic = computeBIC(
+                ll, data.shape[0], len(params))
+            ssize = data.shape[0]
+        
+        # append to list
+        l.append([d.name, ll, bic, ssize, *params])
+
+    # create summary dataframe
+    summary = pd.DataFrame(l, columns=['Distribution', 'Log likelihood', 'BIC', 
+                                 'Sample size', 
+                                 'Param1', 'Param2', 'Param3'])
+    # sort by BIC
+    summary = summary.sort_values('BIC')
+
+    return summary

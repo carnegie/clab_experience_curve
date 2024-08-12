@@ -164,7 +164,7 @@ for i in range(best.shape[0]):
                 for i in range(2, len(lexps.columns)+1)]] = lrs
     best.loc[i, ['LEXP '+str(i) \
                  for i in range(1, len(lexps.columns)+1)]] = \
-        best.loc[i, ['LEXP '+str(i) \
+    best.loc[i, ['LEXP '+str(i) \
                      for i in range(1, len(lexps.columns)+1)]].cumsum()
 
 # figure: what number of breaks is best?
@@ -279,10 +279,18 @@ modelerrp = modelerr.params
 modelerrp = np.insert(modelerrp, 0, 0)
 
 # set parameters of distribution of distance betweeen breakpoints
-params = [0.696151716033671, 0.03809062707909341, 0.640013969109441]
-dist_breaks = scipy.stats.lognorm(*params)
-ar1 = 0.0
-sigma = 0.4370592844181447
+params_breaks_lexp = pd.read_csv('params_breaks_lexp.csv')
+# parameters for distance between breakpoints
+params_breaks = params_breaks_lexp.loc[params_breaks_lexp['Variable']=='breaks']
+dist_breaks = getattr(scipy.stats, params_breaks['Distribution'].values[0])
+dist_breaks = dist_breaks(params_breaks['Loc'].values[0],
+                          params_breaks['Scale'].values[0])
+# parameters for learning exponent
+params_lexp = params_breaks_lexp.loc[params_breaks_lexp['Variable']=='lexp']
+dist_lexp = getattr(scipy.stats, params_lexp['Distribution'].values[0])
+dist_lexp = dist_lexp(params_lexp['Loc'].values[0],
+                          params_lexp['Scale'].values[0])
+
 
 ## simulate future costs
 proj = []
@@ -327,9 +335,7 @@ for s in range(nsim):
             costbp = costbp + lr * (next_bp - last_bp)
             last_bp = next_bp * 1.0
             next_bp = next_bp + np.fmax(np.log10(2),dist_breaks.rvs(size=1)[0])
-            lr_change = ar1 * lr_change + sigma * np.random.randn()
-            lr = lr + lr_change
-            lr = np.random.normal(-0.33, 0.36)
+            lr = dist_lexp.rvs(size=1)[0] 
             yi.append(costbp + lr * (xi - last_bp) + error)
     proj.append(yi)
 
@@ -422,8 +428,6 @@ cost_d = np.diff(np.log10(cost))
 prod_d = np.diff(np.log10(prod))
 
 slope = np.sum(cost_d * prod_d) / np.sum(prod_d**2)
-# parameters from Way et al 2022
-slope = -0.319
 
 residuals = []
 for i in range(len(cost_d)):
@@ -437,7 +441,9 @@ res = sm.tsa.SARIMAX(residuals, order=(1,0,0)).fit()
 print(res.summary())
 ar1 = res.params[0]
 sigma = res.params[1]
-# params from Way et al., 2022
+
+# parameters from Way et al 2022
+slope = -0.319
 ar1 = 0.19
 sigma = 0.111
 
@@ -568,5 +574,6 @@ axes.plot([1.1,2,2,1.1], [0.2,0.2,0.8,0.8], color='k', lw=.2)
 axes.plot([1.1,2.1,2.1,1.1], [0,0,1,1], color='k', lw=.2)
 
 plt.gcf().savefig('figs' + os.path.sep + 'SolarPVProjection.png')
+plt.gcf().savefig('figs' + os.path.sep + 'SolarPVProjection.pdf')
 
 plt.show()

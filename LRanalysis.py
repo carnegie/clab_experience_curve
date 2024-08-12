@@ -131,6 +131,7 @@ plt.tight_layout()
 plt.subplots_adjust(top=0.95, right=0.95, bottom=0.1)
 
 fig.savefig('figs' + os.path.sep + 'learning_past_future.png')
+fig.savefig('figs' + os.path.sep + 'learning_past_future.pdf')
 
 # print R2
 print("Pearson's correlation coefficient: ",

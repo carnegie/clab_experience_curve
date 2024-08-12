@@ -106,6 +106,7 @@ ax[2][0].set_aspect('equal', adjustable='datalim')
 
 # save figure
 plt.savefig('figs' + os.path.sep + 'learningRateDynamics.png')
+plt.savefig('figs' + os.path.sep + 'learningRateDynamics.pdf')
 
 plt.show()
 

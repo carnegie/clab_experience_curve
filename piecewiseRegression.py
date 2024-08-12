@@ -20,9 +20,6 @@ plot_fig_tech = False
 # set to True if the regression dataset needs to be built
 build_pwreg_dataset = False
 
-# first differencing
-first_diff = False
-
 # set the maximum number of breakpoints
 max_breakpoints = 6
 
@@ -33,10 +30,7 @@ min_dist = np.log10(2)
 np.random.seed(0)
 
 try:
-    if not(first_diff):
-        IC = pd.read_csv('IC.csv')
-    else:
-        IC = pd.read_csv('IC_first_diff.csv')
+    IC = pd.read_csv('IC.csv')
 except FileNotFoundError:
     build_pwreg_dataset = True
 
@@ -55,7 +49,6 @@ if build_pwreg_dataset:
     IC = utils.build_piecewise_regression_dataset(df,
                                                     max_breakpoints,
                                                     min_dist,
-                                                    first_diff,
                                                     plot_fig_tech)
 
 # get the number of technologies 
@@ -88,7 +81,7 @@ metrics.loc[metrics['Number of segments']=='>3', 'Number of segments'] = '$\geq$
 metrics = metrics.drop_duplicates()
 
 # plot the distribution of technologies over number of segments - pie chart
-fig, ax = plt.subplots(1,2, figsize=(10,7))
+fig, ax = plt.subplots(1,2, figsize=(12.5,8))
 
 metrics.loc[metrics['Metric']=='Akaike'].set_index('Number of segments')\
     .plot.pie(y='Count', autopct='%1.1f%%', 
@@ -117,11 +110,11 @@ fig.subplots_adjust(bottom=0.125, left=0.05, right=0.95)
 plt.tight_layout()
 
 fig.savefig('figs' + os.path.sep + \
-            'PieSegments' + \
-                first_diff * '_first_diff' + '.png')
+            'PieSegments' + '.png')
 fig.savefig('figs' + os.path.sep + \
-            'PieSegments' + \
-                first_diff * '_first_diff' + '.eps')
+            'PieSegments' + '.pdf')
+fig.savefig('figs' + os.path.sep + \
+            'PieSegments' + '.eps')
 
 
 # get the number of technologies 
@@ -188,7 +181,6 @@ metrics['Number of segments'] = metrics['n_breaks'] + 1
 
 metrics.sort_values(by=['n_breaks','Sector','Metric'], inplace=True)
 metrics = metrics.reset_index(drop=True)
-print(metrics.tail(39))
 
 
 for n in range(0, max_breakpoints):
@@ -201,8 +193,6 @@ for n in range(0, max_breakpoints):
 
 metrics.sort_values(by=['n_breaks','Sector','Metric'], inplace=True)
 metrics = metrics.reset_index(drop=True)
-
-print(metrics.loc[metrics['Count']>0].tail(39))
 
 metrics.loc[metrics['Metric']=='Akaike'].set_index('Number of segments')\
     .plot.pie(y='Count', 
@@ -242,8 +232,10 @@ if not os.path.exists('figs' + os.path.sep + 'SupplementaryFigures'):
     os.makedirs('figs' + os.path.sep + 'SupplementaryFigures')
 fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
                 os.path.sep +
-            'PieSegmentsSectors' + \
-                first_diff * '_first_diff' + '.png')
+            'PieSegmentsSectors' + '.png')
+fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+                os.path.sep +
+            'PieSegmentsSectors' + '.pdf')
 
 
 # get the number of technologies 
@@ -251,30 +243,14 @@ AIC = IC.loc[IC.groupby('Tech')['AIC'].idxmin()].reset_index()
 BIC = IC.loc[IC.groupby('Tech')['BIC'].idxmin()].reset_index()    
 
 # rename metrics
-AIC['metric'] = 'Akaike'
-BIC['metric'] = 'Bayesian'
+AIC['Metric'] = 'Akaike'
+BIC['Metric'] = 'Bayesian'
 
 # create new dataframe with tech counts and metrics
 metrics = pd.concat([AIC, BIC]).reset_index(drop=True)
-metrics = metrics[['n_breaks','metric', 'Number of observations']]
+metrics = metrics[['n_breaks','Metric', 'Number of observations']]
 
 metrics['Number of segments'] = metrics['n_breaks'] + 1
-
-# plot number of segments vs number of observations
-fig, ax = plt.subplots(1,1, figsize=(9,5), sharex=True, sharey=True)
-sns.scatterplot(data=metrics, 
-        x = 'Number of observations',
-        y = 'Number of segments',
-        hue='Metric',
-        ax = ax,
-        alpha=0.5,
-        legend=False)
-
-ax.set_xlabel('Number of observations')
-ax.set_ylabel('Number of segments')
-ax.set_xscale('log', base=10)
-
-fig.subplots_adjust(bottom=0.15)
 
 # plot learning rates and correlation coefficients
 fig, ax = plt.subplots(max_breakpoints, 2, figsize=(15,10), 

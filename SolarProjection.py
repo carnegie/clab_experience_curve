@@ -13,6 +13,9 @@ plt.rcParams['savefig.dpi'] = 300
 
 boxplot = True
 
+validation = True
+val_year = 2000
+
 # load data
 df = pd.read_csv('ExpCurves.csv')
 
@@ -83,6 +86,14 @@ plt.figure()
 plt.scatter(np.log10(prod), np.log10(cost), marker='o')
 res = sm.OLS(np.log10(cost), sm.add_constant(np.log10(prod))).fit()
 plt.plot(np.log10(prod), res.params[0] + res.params[1]*np.log10(prod))
+
+if validation:
+    prod = new_solar_series\
+            .loc[new_solar_series['Time (Year)']<val_year,
+                 'Cumulative production (MWh)'].values
+    cost = new_solar_series\
+            .loc[new_solar_series['Time (Year)']<val_year,
+                 'Unit cost (2022 USD/MWh)'].values
 
 # repeat for number of experiments
 for i in range(nexp):
@@ -187,8 +198,10 @@ plt.yscale('log')
 ## plot data available
 fig, ax = plt.subplots(figsize=(7,7))
 
-ax.scatter(prod, cost, marker='o', 
-           edgecolors='#EF476F', facecolors='none', 
+ax.scatter(new_solar_series['Cumulative production (MWh)'], 
+           new_solar_series['Unit cost (2022 USD/MWh)'], 
+           marker='o', 
+           edgecolors='k', facecolors='k', 
            label='Observations (1979-2022)')
 ax.set_xscale('log')
 ax.set_yscale('log')
@@ -304,6 +317,13 @@ fut_prod = np.arange(0, np.log10(horizon),
 starting_point = 1
 fut_prod += np.log10(prod[-starting_point])
 
+if validation:
+    starting_point = 1
+    fut_prod = np.log10(
+        new_solar_series\
+            .loc[new_solar_series['Time (Year)']>=val_year,
+                 'Cumulative production (MWh)'].values)
+
 for s in range(nsim):
     # get last cost at breakpoint
     costbp = IC['Intercept'].values[0] + \
@@ -345,64 +365,69 @@ proj = proj[:,fut_prod>np.log10(prod[-starting_point])-np.log10(2)]
 fut_prod = fut_prod[fut_prod>np.log10(prod[-starting_point])-np.log10(2)]
 
 if boxplot:
-    bproj = proj[:,[2030-2023,-1]]
-    bfut_prod = fut_prod[[2030-2023,-1]]
 
-    for v, pos in zip(bproj.T, bfut_prod-0.125):
-        plt.plot([10**(pos-0.1), 10**(pos+0.1)],
-                 [10**np.percentile(v, 50, axis=0),
-                  10**np.percentile(v, 50, axis=0)],
-                    color='#6a4c93')
-        plt.plot([10**(pos-0.1),10**(pos-0.1), 
-                  10**(pos+0.1),10**(pos+0.1),
-                  10**(pos-0.1)],
-                 [10**np.percentile(v, 25, axis=0),
-                  10**np.percentile(v, 75, axis=0),
-                  10**np.percentile(v, 75, axis=0),
-                  10**np.percentile(v, 25, axis=0),
-                  10**np.percentile(v, 25, axis=0)
-                  ],
-                    color='#6a4c93')
-        plt.fill_between([10**(pos-0.1), 10**(pos+0.1)],
-                 10**np.percentile(v, 25, axis=0),
-                 10**np.percentile(v, 75, axis=0),
-                    color='#6a4c93', alpha=0.1)
-        plt.plot([10**pos, 10**pos],
-                [10**np.percentile(v, 75, axis=0),
-                10**np.percentile(v, 95, axis=0)],
-                    color='#6a4c93')
-        plt.plot([10**(pos-.1),10**(pos+.1)],
-                [10**np.percentile(v, 95, axis=0),
-                10**np.percentile(v, 95, axis=0)],
-                    color='#6a4c93')
+    if validation:
+        bproj = proj[:,[-1]]
+        bfut_prod = fut_prod[[-1]]
+    else:
+        bproj = proj[:,[2030-2017,-1]]
+        bfut_prod = fut_prod[[2030-2017,-1]]
+
+    # for v, pos in zip(bproj.T, bfut_prod-0.125):
+    #     plt.plot([10**(pos-0.1), 10**(pos+0.1)],
+    #              [10**np.percentile(v, 50, axis=0),
+    #               10**np.percentile(v, 50, axis=0)],
+    #                 color='#6a4c93')
+    #     plt.plot([10**(pos-0.1),10**(pos-0.1), 
+    #               10**(pos+0.1),10**(pos+0.1),
+    #               10**(pos-0.1)],
+    #              [10**np.percentile(v, 25, axis=0),
+    #               10**np.percentile(v, 75, axis=0),
+    #               10**np.percentile(v, 75, axis=0),
+    #               10**np.percentile(v, 25, axis=0),
+    #               10**np.percentile(v, 25, axis=0)
+    #               ],
+    #                 color='#6a4c93')
+    #     plt.fill_between([10**(pos-0.1), 10**(pos+0.1)],
+    #              10**np.percentile(v, 25, axis=0),
+    #              10**np.percentile(v, 75, axis=0),
+    #                 color='#6a4c93', alpha=0.1)
+    #     plt.plot([10**pos, 10**pos],
+    #             [10**np.percentile(v, 75, axis=0),
+    #             10**np.percentile(v, 95, axis=0)],
+    #                 color='#6a4c93')
+    #     plt.plot([10**(pos-.1),10**(pos+.1)],
+    #             [10**np.percentile(v, 95, axis=0),
+    #             10**np.percentile(v, 95, axis=0)],
+    #                 color='#6a4c93')
         
-        plt.plot([10**(pos), 10**pos],
-                [10**np.percentile(v, 25, axis=0),
-                10**np.percentile(v, 5, axis=0)],
-                    color='#6a4c93')
-        plt.plot([10**(pos-.1), 10**(pos+.1)],
-                 [10**np.percentile(v, 5, axis=0),
-                  10**np.percentile(v, 5, axis=0)],
-                    color='#6a4c93')
+    #     plt.plot([10**(pos), 10**pos],
+    #             [10**np.percentile(v, 25, axis=0),
+    #             10**np.percentile(v, 5, axis=0)],
+    #                 color='#6a4c93')
+    #     plt.plot([10**(pos-.1), 10**(pos+.1)],
+    #              [10**np.percentile(v, 5, axis=0),
+    #               10**np.percentile(v, 5, axis=0)],
+    #                 color='#6a4c93')
                   
-# ax.fill_between(10**fut_prod, 10**np.percentile(proj, 5, axis=0),
-#                 10**np.percentile(proj, 95, axis=0), 
-#                 color='#6a4c93', alpha=0.05, zorder=-10)
+ax.fill_between(10**fut_prod, 10**np.percentile(proj, 5, axis=0),
+                10**np.percentile(proj, 95, axis=0), 
+                color='#6a4c93', alpha=0.1, zorder=-10, lw=0)
 # ax.fill_between(10**fut_prod, 10**np.percentile(proj, 25, axis=0),
 #                 10**np.percentile(proj, 75, axis=0),
 #                 color='#6a4c93', alpha=0.1, zorder=-10)
-# ax.plot(10**fut_prod, 10**np.percentile(proj, 5, axis=0), 
-#         color='#6a4c93', ls=':',
-#         zorder=-8,
-#         # alpha=.25,
-#         lw=1
-#         )
-# ax.plot(10**fut_prod, 10**np.percentile(proj, 95, axis=0), 
-#         color='#6a4c93', ls=':', 
-#         zorder=-8,
-#         # alpha=.25,
-#         lw=1
-#         )
+ax.plot(10**fut_prod, 10**np.percentile(proj, 5, axis=0), 
+        color='#6a4c93', ls=':',
+        zorder=-8,
+        # alpha=.25,
+        lw=1
+        )
+ax.plot(10**fut_prod, 10**np.percentile(proj, 95, axis=0), 
+        color='#6a4c93', ls=':', 
+        zorder=-8,
+        # alpha=.25,
+        lw=1
+        )
 # ax.plot(10**fut_prod, 10**np.percentile(proj, 25, axis=0), 
 #         color='#6a4c93', ls='--', 
 #         zorder=-8,
@@ -415,7 +440,7 @@ if boxplot:
 #         # alpha=.5
 #         )
 
-ax.plot(10**fut_prod, 10**np.median(proj, axis=0), '#6a4c93', lw=1,
+ax.plot(10**fut_prod, 10**np.median(proj, axis=0), '#6a4c93', lw=2,
         label='Piecewise linear experience curve',
         zorder=-5
         )
@@ -442,10 +467,14 @@ print(res.summary())
 ar1 = res.params[0]
 sigma = res.params[1]
 
-# parameters from Way et al 2022
-slope = -0.319
-ar1 = 0.19
-sigma = 0.111
+# parameters from Way et al., 2022
+if validation is False:
+    slope = -0.421
+    ar1 = .19
+    sigma = 0.103
+else:
+    ar1 = .19
+    sigma = (np.var(residuals, ddof=1)/(1+ar1**2))**0.5
 
 ## simulate future costs
 proj = []
@@ -465,64 +494,69 @@ for s in range(nsim):
 proj = np.array(proj)
 
 if boxplot:
-    bproj = proj[:,[2030-2023,-1]]
-    bfut_prod = fut_prod[[2030-2023,-1]]
 
-    for v, pos in zip(bproj.T, bfut_prod+0.125):
-        plt.plot([10**(pos-0.1), 10**(pos+0.1)],
-                 [10**np.percentile(v, 50, axis=0),
-                  10**np.percentile(v, 50, axis=0)],
-                    color='#1982c4')
-        plt.plot([10**(pos-0.1),10**(pos-0.1), 
-                  10**(pos+0.1),10**(pos+0.1),
-                  10**(pos-0.1)],
-                 [10**np.percentile(v, 25, axis=0),
-                  10**np.percentile(v, 75, axis=0),
-                  10**np.percentile(v, 75, axis=0),
-                  10**np.percentile(v, 25, axis=0),
-                  10**np.percentile(v, 25, axis=0)
-                  ],
-                    color='#1982c4')
-        plt.fill_between([10**(pos-0.1), 10**(pos+0.1)],
-                 10**np.percentile(v, 25, axis=0),
-                 10**np.percentile(v, 75, axis=0),
-                    color='#1982c4', alpha=0.1)
-        plt.plot([10**pos, 10**pos],
-                [10**np.percentile(v, 75, axis=0),
-                10**np.percentile(v, 95, axis=0)],
-                    color='#1982c4')
-        plt.plot([10**(pos-.1),10**(pos+.1)],
-                [10**np.percentile(v, 95, axis=0),
-                10**np.percentile(v, 95, axis=0)],
-                    color='#1982c4')
+    if validation:
+        bproj = proj[:,[-1]]
+        bfut_prod = fut_prod[[-1]]
+    else:
+        bproj = proj[:,[2030-2017,-1]]
+        bfut_prod = fut_prod[[2030-2017,-1]]
         
-        plt.plot([10**(pos), 10**pos],
-                [10**np.percentile(v, 25, axis=0),
-                10**np.percentile(v, 5, axis=0)],
-                    color='#1982c4')
-        plt.plot([10**(pos-.1), 10**(pos+.1)],
-                 [10**np.percentile(v, 5, axis=0),
-                  10**np.percentile(v, 5, axis=0)],
-                    color='#1982c4')
+    # for v, pos in zip(bproj.T, bfut_prod+0.125):
+    #     plt.plot([10**(pos-0.1), 10**(pos+0.1)],
+    #              [10**np.percentile(v, 50, axis=0),
+    #               10**np.percentile(v, 50, axis=0)],
+    #                 color='#1982c4')
+    #     plt.plot([10**(pos-0.1),10**(pos-0.1), 
+    #               10**(pos+0.1),10**(pos+0.1),
+    #               10**(pos-0.1)],
+    #              [10**np.percentile(v, 25, axis=0),
+    #               10**np.percentile(v, 75, axis=0),
+    #               10**np.percentile(v, 75, axis=0),
+    #               10**np.percentile(v, 25, axis=0),
+    #               10**np.percentile(v, 25, axis=0)
+    #               ],
+    #                 color='#1982c4')
+    #     plt.fill_between([10**(pos-0.1), 10**(pos+0.1)],
+    #              10**np.percentile(v, 25, axis=0),
+    #              10**np.percentile(v, 75, axis=0),
+    #                 color='#1982c4', alpha=0.1)
+    #     plt.plot([10**pos, 10**pos],
+    #             [10**np.percentile(v, 75, axis=0),
+    #             10**np.percentile(v, 95, axis=0)],
+    #                 color='#1982c4')
+    #     plt.plot([10**(pos-.1),10**(pos+.1)],
+    #             [10**np.percentile(v, 95, axis=0),
+    #             10**np.percentile(v, 95, axis=0)],
+    #                 color='#1982c4')
+        
+    #     plt.plot([10**(pos), 10**pos],
+    #             [10**np.percentile(v, 25, axis=0),
+    #             10**np.percentile(v, 5, axis=0)],
+    #                 color='#1982c4')
+    #     plt.plot([10**(pos-.1), 10**(pos+.1)],
+    #              [10**np.percentile(v, 5, axis=0),
+    #               10**np.percentile(v, 5, axis=0)],
+    #                 color='#1982c4')
 
-# ax.fill_between(10**fut_prod, 10**np.percentile(proj, 5, axis=0),
-#                 10**np.percentile(proj, 95, axis=0), 
-#                 color='#1982c4', alpha=0.05, zorder=-10)
+ax.fill_between(10**fut_prod, 10**np.percentile(proj, 5, axis=0),
+                10**np.percentile(proj, 95, axis=0), 
+                color='#1982c4', alpha=0.1, zorder=-10, lw=0)
 # ax.fill_between(10**fut_prod, 10**np.percentile(proj, 25, axis=0),
 #                 10**np.percentile(proj, 75, axis=0), 
 #                 color='#1982c4', alpha=0.1, zorder=-10)
-# ax.plot(10**fut_prod, 10**np.percentile(proj, 5, axis=0), 
-#         color='#1982c4', ls=':', 
-#         zorder=-8,
-#         # alpha=.25,
-#         lw=1
-#         )
-# ax.plot(10**fut_prod, 10**np.percentile(proj, 95, axis=0), 
-#         color='#1982c4', ls=':', 
-#         zorder=-8,
-#         # alpha=.25,
-#         lw=1
-#         )
+ax.plot(10**fut_prod, 10**np.percentile(proj, 5, axis=0), 
+        color='#1982c4', ls=':', 
+        zorder=-8,
+        # alpha=.25,
+        lw=1
+        )
+ax.plot(10**fut_prod, 10**np.percentile(proj, 95, axis=0), 
+        color='#1982c4', ls=':', 
+        zorder=-8,
+        # alpha=.25,
+        lw=1
+        )
 # ax.plot(10**fut_prod, 10**np.percentile(proj, 25, axis=0), 
 #         color='#1982c4', ls='--', 
 #         zorder=-8,
@@ -536,7 +570,7 @@ if boxplot:
 #         lw=1
 #         )
 
-ax.plot(10**fut_prod, 10**np.median(proj, axis=0), '#1982c4', lw=1,
+ax.plot(10**fut_prod, 10**np.median(proj, axis=0), '#1982c4', lw=2,
         label='First difference Wright\'s law',
         zorder=-5
         )
@@ -551,29 +585,33 @@ axes = fig.add_axes([0.3, 0.4, 0.15, 0.25])
 
 axes.axis('off')
 axes.fill_between([0.5,1], [0,0], [1,1], color='#47666F', alpha=.2, lw=0)
-axes.fill_between([0.5,1], [0.2,0.2], [0.8,0.8], color='#47666F', alpha=.4, lw=0)
+# axes.fill_between([0.5,1], [0.2,0.2], [0.8,0.8], color='#47666F', alpha=.4, lw=0)
 axes.plot([0.5,1], [0.5,0.5], color='#47666F', lw=2)
-axes.plot([0.5,1], [0.8,0.8], color='#47666F', ls='--', lw=2)
-axes.plot([0.5,1], [0.2,0.2], color='#47666F', ls='--', lw=2)
+# axes.plot([0.5,1], [0.8,0.8], color='#47666F', ls='--', lw=2)
+# axes.plot([0.5,1], [0.2,0.2], color='#47666F', ls='--', lw=2)
 axes.plot([0.5,1], [1,1], color='#47666F', ls=':', lw=2)
 axes.plot([0.5,1], [0,0], color='#47666F', ls=':', lw=2)
 axes.annotate('90%', xy=(1.5,1.05), xycoords='data', 
             ha='center', va='center', color='k',
             fontsize=12
             )
-axes.annotate('50%', xy=(1.5,0.85), xycoords='data',
-            ha='center', va='center', color='k',
-            fontsize=12
-            )
+# axes.annotate('50%', xy=(1.5,0.85), xycoords='data',
+#             ha='center', va='center', color='k',
+#             fontsize=12
+#             )
 axes.annotate('Median', xy=(1.5,0.5), xycoords='data',
             ha='center', va='center', color='k',
             fontsize=12
             )
 
-axes.plot([1.1,2,2,1.1], [0.2,0.2,0.8,0.8], color='k', lw=.2)
+# axes.plot([1.1,2,2,1.1], [0.2,0.2,0.8,0.8], color='k', lw=.2)
 axes.plot([1.1,2.1,2.1,1.1], [0,0,1,1], color='k', lw=.2)
 
-plt.gcf().savefig('figs' + os.path.sep + 'SolarPVProjection.png')
-plt.gcf().savefig('figs' + os.path.sep + 'SolarPVProjection.pdf')
+plt.gcf().savefig('figs' + os.path.sep + \
+                    'SolarPVProjection' + \
+                    '_val' * validation + '.png')
+plt.gcf().savefig('figs' + os.path.sep + \
+                    'SolarPVProjection' + \
+                    '_val' * validation + '.pdf')
 
 plt.show()

@@ -20,6 +20,12 @@ plot_fig_tech = False
 # set to True if the regression dataset needs to be built
 build_pwreg_dataset = False
 
+# use half of the data for each technology
+half_data = False
+
+# use half of the technologies in the dataset
+half_techs = False
+
 # set the maximum number of breakpoints
 max_breakpoints = 6
 
@@ -49,7 +55,9 @@ if build_pwreg_dataset:
     IC = utils.build_piecewise_regression_dataset(df,
                                                     max_breakpoints,
                                                     min_dist,
-                                                    plot_fig_tech)
+                                                    plot_fig_tech,
+                                                    half_data,
+                                                    half_techs)
 
 # get the number of technologies 
 AIC = IC.loc[IC.groupby('Tech')['AIC'].idxmin()]\

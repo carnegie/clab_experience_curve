@@ -192,6 +192,51 @@ def computeSlopeLafond(df, cumprod_col=None, unitcost_col=None):
     # return slope
     return slope
 
+def computeNoiseVariance(df, slope, cumprod_col=None, unitcost_col=None):
+
+    """
+    Computes variance of the noise in the first different wright's law
+    
+    Parameters
+    ----------    
+    df : pandas.DataFrame
+        Dataframe containing technology data
+    
+    slope : float
+        Learning exponent
+        
+    cumprod_col : str
+        Column name containing cumulative production data
+        
+    unitcost_col : str
+        Column name containing unit cost data
+    
+    Returns
+    -------
+    noise_variance : float
+        Variance of the noise in the data
+    
+    """
+
+    if cumprod_col is None:
+        cumprod_col = 'Cumulative production'
+    if unitcost_col is None:
+        unitcost_col = 'Unit cost'
+
+    # extract technology data
+    x, y = np.log10(\
+        df[cumprod_col].values), \
+        np.log10(df[unitcost_col].values)
+
+    x_d, y_d = np.diff(x), np.diff(y)
+
+    noise = y_d - slope * x_d
+
+    noise_variance = 1 / (y_d.shape[0] - 1) * np.sum(noise**2)
+
+    return noise_variance
+
+
 def compute_log_likelihood(rss, n):
 
     """
@@ -336,7 +381,7 @@ def plot_cost_prod_learning_dynamics(df,
     # are avaialable for prediction at the end of the year
     for col in [df.columns[1]]:
         df[col] = [int(x) for x in df[col].values]
-
+        
 
     # set norm for colormap
     if time_range is None:
@@ -510,6 +555,10 @@ def build_piecewise_regression_dataset(df,
                                        max_breakpoints=6,
                                        min_dist=np.log10(2),
                                        plot_fig_tech=False,
+                                       half_data=False,
+                                       half_techs=False,
+                                       remove_sector=None,
+                                       output_file=None
                                        ):
     
     """
@@ -529,6 +578,18 @@ def build_piecewise_regression_dataset(df,
     plot_fig_tech : bool
         If True, plot data for each technology
 
+    half_data : bool
+        If True, use only half of the data for each time series
+    
+    half_techs : bool
+        If True, use only half of the technologies in the dataset (randomly selected)
+
+    remove_sector : str
+        Name of the sector to remove from the dataset
+
+    output_file : str
+        Name of the output file to append to "IC" (Information Criteria)
+
     Returns
     -------
     IC : list
@@ -539,14 +600,30 @@ def build_piecewise_regression_dataset(df,
     # Create a list to store the information criteria
     IC = []
 
+    # if half_techs is True, randomly select half of the technologies
+    if half_techs:
+        techs = np.random.choice(df['Tech'].unique(),
+                                 round(df['Tech'].unique().shape[0]/2),
+                                 replace=False)
+        df = df[df['Tech'].isin(techs)]
+
     # Iterate over the technologies
     for t in df['Tech'].unique():
+
+        if remove_sector is not None:
+            if sectorsinv[t] == remove_sector:
+                continue
         
         # extract log10 of cumulative production and unit cost
         x = np.log10(df[df['Tech'] == t]\
                         ['Cumulative production'].values)
         y = np.log10(df[df['Tech'] == t]\
                         ['Unit cost'].values)
+        
+        # if half_data is True, use only half of the data
+        if half_data:
+            x = x[:round(x.shape[0]/2)]
+            y = y[:round(y.shape[0]/2)]
 
         if plot_fig_tech:
             plt.figure()
@@ -737,7 +814,7 @@ def build_piecewise_regression_dataset(df,
                                     'LR 5', 'LR 6', 'LR 7', 
                                     'Number of observations'])
 
-    IC.to_csv('IC.csv', index=False)
+    IC.to_csv('IC' + output_file + '.csv', index=False)
     
     return IC
 
@@ -797,3 +874,124 @@ def fit_probability_dist(data, floc=None):
     summary = summary.sort_values('BIC')
 
     return summary
+
+
+def forecast(initial_cost, initial_prod,
+             future_prod, model_params, 
+             last_lexp=None,
+             last_break=None,
+             last_cost=None,
+             noise_std=0,
+             model='pwlinear'):
+    
+    """
+    
+    Forecast future cost given initial cost,
+    initial production, future production, and model parameters
+    using the piecewise linear experience curve model or
+    the first difference wright's model
+
+    Parameters
+    ----------
+    initial_cost : float
+        Initial cost
+    
+    initial_prod : float
+        Initial production
+
+    future_prod : np.array
+        Production values for which to produce a unit cost forecast
+    
+    model_params : pandas DataFrame
+        List containing model parameters
+        This DataFrame should have the columns:
+        - Variable, Distribution, Loc, Scale
+        One variable is 'breaks', the other one is 'lexp'.
+        The distribution for 'breaks' is 'expon'.
+        The distribution for 'lexp' is 'norm'.
+
+    last_lexp : float
+        Last learning exponent (if available, otherwise sampled later)
+
+    last_break : float
+        Last breakpoint (if available, otherwise the starting point is used)
+
+    last_break_cost : float
+        cost at last break (if available, otherwise the initial cost is used)
+        Only used for the piecewise linear model
+
+    model : str
+        Model to use for forecasting
+        Options are 'pwlinear' or 'lafond'
+    
+    Returns
+    -------
+
+    forecast : np.array
+        Forecasted unit costs at future production levels
+
+        
+    """
+
+    # extract parameters
+    breaks = model_params[model_params['Variable'] == 'breaks']
+    lexp = model_params[model_params['Variable'] == 'lexp']
+
+    # build distributions
+    breaks_dist = scipy.stats.expon(loc=breaks['Loc'].values[0],
+                                    scale=breaks['Scale'].values[0])
+    lexp_dist = scipy.stats.norm(loc=lexp['Loc'].values[0],
+                                scale=lexp['Scale'].values[0])
+    
+    # handle cases of no previous information on the data series
+
+    if last_lexp is None:
+        last_lexp = lexp_dist.rvs()
+    
+    if last_break is None:
+        last_break = initial_prod
+    
+    if last_cost is None and model == 'pwlinear':
+        last_cost = initial_cost
+    
+    if model=='lafond':
+        noise = 0
+        last_forecast = initial_cost
+        last_prod = initial_prod
+
+    # sample next breakpoint
+    next_break = last_break + max(np.log10(2), breaks_dist.rvs())
+
+    # start the loop
+    forecast = np.empty(0)
+    for i in future_prod.shape[[0]]:
+
+        if model == 'pwlinear':
+            # check if we need to update the learning exponent
+            if future_prod[i] >= next_break:
+                last_lexp = lexp_dist.rvs()
+                last_break = next_break
+                next_break = last_break + max(np.log10(2), breaks_dist.rvs())
+            
+            # forecast the cost
+            forecast = np.append(forecast, 
+                                 last_cost + last_lexp * \
+                                        (future_prod[i] - last_break) + 
+                                        noise_std * np.random.randn()
+                                    )
+        
+        elif model == 'lafond':
+            noise = 0.19 * noise + noise_std * np.random.randn()
+            forecast = np.append(forecast,
+                                 last_forecast + last_lexp * \
+                                    (future_prod[i] - last_prod) + noise)
+            last_forecast = forecast[-1]
+            last_prod = future_prod[i]
+
+    return forecast 
+                                 
+
+
+
+
+    

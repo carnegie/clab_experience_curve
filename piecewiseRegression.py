@@ -2,8 +2,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import piecewise_regression as pw
-import statsmodels.api as sm
 import os, utils
 
 # set figures' parameters
@@ -19,6 +17,12 @@ plot_fig_tech = False
 
 # set to True if the regression dataset needs to be built
 build_pwreg_dataset = False
+
+# use half of the data for each technology
+half_data = False
+
+# use half of the technologies in the dataset
+half_techs = False
 
 # set the maximum number of breakpoints
 max_breakpoints = 6
@@ -49,13 +53,20 @@ if build_pwreg_dataset:
     IC = utils.build_piecewise_regression_dataset(df,
                                                     max_breakpoints,
                                                     min_dist,
-                                                    plot_fig_tech)
+                                                    plot_fig_tech,
+                                                    half_data,
+                                                    half_techs)
 
-# get the number of technologies 
-AIC = IC.loc[IC.groupby('Tech')['AIC'].idxmin()]\
-            .groupby('n_breaks').count()['Tech'].reset_index()
-BIC = IC.loc[IC.groupby('Tech')['BIC'].idxmin()]\
-            .groupby('n_breaks').count()['Tech'].reset_index()
+# get the number of technologies belonging to each number of segments
+AIC = (IC.loc[IC.groupby('Tech')['AIC']
+              .idxmin()]
+              .groupby('n_breaks')
+              .count()['Tech']
+              .reset_index())
+BIC = (IC.loc[IC.groupby('Tech')['BIC']
+              .idxmin()]
+              .groupby('n_breaks')
+              .count()['Tech'].reset_index())
 
 # rename metrics
 AIC['metric'] = 'Akaike'
@@ -68,33 +79,37 @@ metrics = pd.concat([AIC, BIC]).reset_index(drop=True)
 metrics.columns = ['n_breaks', 'Count', 'Metric']
 metrics['Number of segments'] = metrics['n_breaks'] + 1
 
+# group technologies with more than 3 segments
 metrics.loc[metrics['Number of segments']>3, 'Number of segments'] = '>3'
 metrics.loc[metrics['Number of segments'] == '>3', 'n_breaks'] = 3
+# sum metrics for technologies with more than 3 segments
 for m in metrics['Metric'].unique():
-    s = metrics.loc[(metrics['Number of segments']=='>3') & \
+    s = metrics.loc[(metrics['Number of segments']=='>3') & 
                     (metrics['Metric']==m),'Count'].sum()
-    metrics.loc[(metrics['Number of segments']=='>3') & \
-                (metrics['Metric']==m),'Count'] = \
-            metrics.loc[(metrics['Number of segments']=='>3') & \
+    metrics.loc[(metrics['Number of segments']=='>3') & 
+                (metrics['Metric']==m),'Count'] = metrics.loc[
+                    (metrics['Number of segments']=='>3') & 
                         (metrics['Metric']==m),'Count'].sum()
-metrics.loc[metrics['Number of segments']=='>3', 'Number of segments'] = '$\geq$4'
+# rename number of segments
+metrics.loc[metrics['Number of segments']=='>3', 
+            'Number of segments'] = '$\geq$4'
 metrics = metrics.drop_duplicates()
 
 # plot the distribution of technologies over number of segments - pie chart
 fig, ax = plt.subplots(1,2, figsize=(12.5,8))
 
-metrics.loc[metrics['Metric']=='Akaike'].set_index('Number of segments')\
+metrics.loc[metrics['Metric']=='Akaike']\
+    .set_index('Number of segments')\
     .plot.pie(y='Count', autopct='%1.1f%%', 
-                # startangle=90, 
                 counterclock=False,
                 pctdistance = 1.25, labeldistance=.6,
                 ax=ax[0], legend=False, 
                 label='',
                 colors=sns.color_palette(palette))
 
-metrics.loc[metrics['Metric']=='Bayesian'].set_index('Number of segments')\
+metrics.loc[metrics['Metric']=='Bayesian']\
+    .set_index('Number of segments')\
     .plot.pie(y='Count', autopct='%1.1f%%', 
-                # startangle=90, 
                 counterclock=False,
                 pctdistance = 1.25, labeldistance=.6,
                 ax=ax[1], legend=False, 
@@ -109,19 +124,28 @@ ax[1].set_title('Bayesian Information Criterion')
 fig.subplots_adjust(bottom=0.125, left=0.05, right=0.95)
 plt.tight_layout()
 
-fig.savefig('figs' + os.path.sep + \
-            'PieSegments' + '.png')
-fig.savefig('figs' + os.path.sep + \
-            'PieSegments' + '.pdf')
-fig.savefig('figs' + os.path.sep + \
-            'PieSegments' + '.eps')
+fig.savefig('figs' + os.path.sep 
+            + 'PieSegments' + '.png')
+fig.savefig('figs' + os.path.sep
+            + 'PieSegments' + '.pdf')
+fig.savefig('figs' + os.path.sep 
+            + 'PieSegments' + '.eps')
 
+# repeat the same analysis with sectors, 
+# without aggregating the number of segments above 3
+# and separating one segments vs all other number of segments
 
 # get the number of technologies 
-AIC = IC.loc[IC.groupby('Tech')['AIC'].idxmin()]\
-            .groupby('n_breaks').count()['Tech'].reset_index()
-BIC = IC.loc[IC.groupby('Tech')['BIC'].idxmin()]\
-            .groupby('n_breaks').count()['Tech'].reset_index()
+AIC = (IC.loc[IC.groupby('Tech')['AIC']
+              .idxmin()]
+              .groupby('n_breaks')
+              .count()['Tech']
+              .reset_index())
+BIC = (IC.loc[IC.groupby('Tech')['BIC']
+              .idxmin()]
+              .groupby('n_breaks')
+              .count()['Tech']
+              .reset_index())
 
 # rename metrics
 AIC['metric'] = 'Akaike'
@@ -134,14 +158,17 @@ metrics = pd.concat([AIC, BIC]).reset_index(drop=True)
 metrics.columns = ['n_breaks', 'Count', 'Metric']
 metrics['Number of segments'] = metrics['n_breaks'] + 1
 
-# plot the distribution of technologies over number of segments and sectors - pie chart
+# plot the distribution of technologies 
+# over number of segments and sectors - pie chart
 fig, ax = plt.subplots(1,2, figsize=(12.5,8))
+# at the same time store the right panel in a separate figure
+figbic, axbic = plt.subplots(1,1,figsize=(12.5,8))
 
 size = .3
 
-metrics.loc[metrics['Metric']=='Akaike'].set_index('Number of segments')\
+metrics.loc[metrics['Metric']=='Akaike']\
+    .set_index('Number of segments')\
     .plot.pie(y='Count', autopct='%1.1f%%', 
-                # startangle=90, 
                 counterclock=False,
                 pctdistance = 1.25, labeldistance=175,
                 ax=ax[0], radius = 1,
@@ -149,12 +176,23 @@ metrics.loc[metrics['Metric']=='Akaike'].set_index('Number of segments')\
                 legend=False, label='',
                 colors=sns.color_palette(palette))
 
-metrics.loc[metrics['Metric']=='Bayesian'].set_index('Number of segments')\
+metrics.loc[metrics['Metric']=='Bayesian']\
+    .set_index('Number of segments')\
     .plot.pie(y='Count', autopct='%1.1f%%', 
-                # startangle=90, 
                 counterclock=False,
                 pctdistance = 1.25, labeldistance=175,
                 ax=ax[1], radius = 1,
+                wedgeprops=dict(width=size, edgecolor='w'),
+                legend=False, 
+                label='', colors=sns.color_palette(palette))
+
+# use for separate segments plot
+metrics.loc[metrics['Metric']=='Bayesian']\
+    .set_index('Number of segments')\
+    .plot.pie(y='Count', autopct='%1.1f%%', 
+                counterclock=False,
+                pctdistance = 1.25, labeldistance=None,
+                ax=axbic, radius = 1,
                 wedgeprops=dict(width=size, edgecolor='w'),
                 legend=False, 
                 label='', colors=sns.color_palette(palette))
@@ -163,12 +201,18 @@ fig.legend(metrics['Number of segments'].unique(),
             title='Optimal number of segments',
             loc='lower center', ncol=6)
 
+
+## get the number of sectors belonging to each number of segments
 IC['Sector'] = IC['Tech'].apply(lambda x: utils.sectorsinv[x])
 
-AIC = IC.loc[IC.groupby('Tech')['AIC'].idxmin()]\
-            .groupby(['n_breaks', 'Sector']).count()['Tech'].reset_index()
-BIC = IC.loc[IC.groupby('Tech')['BIC'].idxmin()]\
-            .groupby(['n_breaks', 'Sector']).count()['Tech'].reset_index()
+AIC = (IC.loc[IC.groupby('Tech')['AIC']
+              .idxmin()]
+              .groupby(['n_breaks', 'Sector'])
+              .count()['Tech'].reset_index())
+BIC = (IC.loc[IC.groupby('Tech')['BIC']
+              .idxmin()]
+              .groupby(['n_breaks', 'Sector'])
+              .count()['Tech'].reset_index())
 
 AIC['metric'] = 'Akaike'
 BIC['metric'] = 'Bayesian'
@@ -178,36 +222,37 @@ metrics = pd.concat([AIC, BIC]).reset_index(drop=True)
 metrics.columns = ['n_breaks', 'Sector', 'Count', 'Metric']
 metrics['Number of segments'] = metrics['n_breaks'] + 1
 
-
+# prepare inner circle data (sectors belonging to one segment)
 metrics.sort_values(by=['n_breaks','Sector','Metric'], inplace=True)
 metrics = metrics.reset_index(drop=True)
-
 
 for n in range(0, max_breakpoints):
     for s in metrics['Sector'].unique():
         for m in metrics['Metric'].unique():
-            if metrics.loc[metrics['Sector'] == s]\
-                .loc[metrics['n_breaks'] == n]\
-                .loc[metrics['Metric']==m].shape[0] == 0:
+            if (metrics.loc[metrics['Sector'] == s]
+                .loc[metrics['n_breaks'] == n]
+                .loc[metrics['Metric']==m].shape[0] == 0):
                 metrics.loc[metrics.shape[0]] = [n,s,0.,m,n]
 
 metrics.sort_values(by=['n_breaks','Sector','Metric'], inplace=True)
 metrics = metrics.reset_index(drop=True)
 
-metrics.loc[metrics['Metric']=='Akaike'].set_index('Number of segments')\
+# plot inner circles
+
+metrics.loc[metrics['Metric']=='Akaike']\
+    .set_index('Number of segments')\
     .plot.pie(y='Count', 
                 labeldistance=175,
-                # startangle=90, 
                 counterclock=False,
                 ax=ax[0], radius = 1 - size - 0.05,
                 wedgeprops=dict(width=size, edgecolor='w'),
                 legend=False, label='',
                 colors=utils.sectors_colors.values())
 
-metrics.loc[metrics['Metric']=='Bayesian'].set_index('Number of segments')\
+metrics.loc[metrics['Metric']=='Bayesian']\
+    .set_index('Number of segments')\
     .plot.pie(y='Count', 
                 labeldistance=175,
-                # startangle=90, 
                 counterclock=False,
                 ax=ax[1], radius = 1 - size - 0.05,
                 wedgeprops=dict(width=size, edgecolor='w'),
@@ -215,6 +260,25 @@ metrics.loc[metrics['Metric']=='Bayesian'].set_index('Number of segments')\
                 label='', 
                 colors=utils.sectors_colors.values())
 
+# use for separate segments plot
+pie = metrics.loc[metrics['Metric']=='Bayesian']\
+    .set_index('Number of segments')\
+    .plot.pie(y='Count', 
+                labeldistance=None,
+                counterclock=False,
+                ax=axbic, radius = 1 - size - 0.05,
+                wedgeprops=dict(width=size, edgecolor='w'),
+                legend=False, 
+                label='', 
+                colors=utils.sectors_colors.values())
+
+# separate segments plot
+for i,w in enumerate(pie.patches):
+    if i == 0 or ( i > 5 and i < 12):
+        w.set_center((.2,-.2))
+
+pie.patches[0].set_facecolor([.4*x for x in pie.patches[0].get_facecolor()])
+pie.texts[0].set_position([x*1.2 for x in pie.texts[0].get_position()])
 
 fig.legend(handles=ax[0].patches[-6:],
            labels=utils.sectors_colors.keys(),
@@ -223,20 +287,31 @@ fig.legend(handles=ax[0].patches[-6:],
             loc='center',
             ncol=3)
 
+figbic.legend(handles=axbic.patches[:6],
+            labels=[x for x in range(1,7)],
+            title='Optimal number of segments',
+            loc='upper right', ncol=1)
+
+legend = figbic.legend(handles=axbic.patches[-6:],
+            labels=utils.sectors_colors.keys(),
+            title='Sector',
+            loc='lower right',
+            ncol=1)
+
 ax[0].set_title('Akaike Information Criterion')
 ax[1].set_title('Bayesian Information Criterion')
 fig.subplots_adjust(bottom=0.3, left=0.05, right=0.95, top=0.95)
-plt.tight_layout()
+figbic.subplots_adjust(bottom=0.1, left=0.05, right=0.6, top=0.95)
+figbic.savefig('figs'+os.path.sep+'BIC.pdf')
 plt.show()
 if not os.path.exists('figs' + os.path.sep + 'SupplementaryFigures'):
     os.makedirs('figs' + os.path.sep + 'SupplementaryFigures')
-fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
-                os.path.sep +
-            'PieSegmentsSectors' + '.png')
-fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
-                os.path.sep +
-            'PieSegmentsSectors' + '.pdf')
+fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' 
+            + os.path.sep + 'PieSegmentsSectors' + '.png')
+fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' 
+            + os.path.sep + 'PieSegmentsSectors' + '.pdf')
 
+# examine learning rates from piecewise regression
 
 # get the number of technologies 
 AIC = IC.loc[IC.groupby('Tech')['AIC'].idxmin()].reset_index()
@@ -249,19 +324,17 @@ BIC['Metric'] = 'Bayesian'
 # create new dataframe with tech counts and metrics
 metrics = pd.concat([AIC, BIC]).reset_index(drop=True)
 metrics = metrics[['n_breaks','Metric', 'Number of observations']]
-
 metrics['Number of segments'] = metrics['n_breaks'] + 1
 
 # plot learning rates and correlation coefficients
 fig, ax = plt.subplots(max_breakpoints, 2, figsize=(15,10), 
                         sharex=True, sharey='col')
 
-
 for n_break in range(1, max_breakpoints + 1):
-    sel = IC.loc[(IC['n_breaks'] == n_break) & \
-            ((IC.index.isin(IC.groupby('Tech')\
-                            ['AIC'].idxmin().values)) | \
-            (IC.index.isin(IC.groupby('Tech')\
+    sel = IC.loc[(IC['n_breaks'] == n_break) & 
+            ((IC.index.isin(IC.groupby('Tech')
+                            ['AIC'].idxmin().values)) | 
+            (IC.index.isin(IC.groupby('Tech')
                             ['BIC'].idxmin().values)))]
 
     for i in range(n_break +  1):

@@ -1,9 +1,7 @@
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import matplotlib, cmcrameri, os, utils
-import statsmodels.api as sm
+import cmcrameri, os, utils
 
 # set figure parameters
 plt.rcParams['savefig.dpi'] = 300
@@ -23,7 +21,9 @@ for tech in df['Tech'].unique():
     fig, ax = plt.subplots(1,2, figsize=(12,6))
 
     # read data and drop nan values
-    df = pd.read_csv('expCurveData/' + tech + '.csv').dropna()
+    df = pd.read_csv('expCurveData' 
+                     + os.path.sep
+                     + tech + '.csv').dropna()
 
     utils.plot_cost_prod_learning_dynamics(df=df, tech=tech, 
                                            fig=fig, ax=ax,
@@ -60,16 +60,15 @@ utils.plot_cost_prod_learning_dynamics(df=df, tech=tech,
 # define technology
 tech = 'Li-ion battery'
 # read original li-ion battery data 
-price = pd.read_excel(\
-    '..' + os.path.sep + \
-    'MicahTrancik' + os.path.sep + \
-    'LiIonDataSeries_represonly_withcover.xlsx',
-                   sheet_name='RepreSeries_Price_All_Cells')
+filename = ('..' + os.path.sep
+            + 'MicahTrancik' + os.path.sep
+            + 'LiIonDataSeries_represonly_withcover.xlsx')
+price = pd.read_excel(filename,
+    sheet_name='RepreSeries_Price_All_Cells')
 price = price[['IndependentAxisData','DependentAxisData']]
 price.columns = ['Time (Year)','Unit cost (2018 USD/kWh)']
-prod = pd.read_excel(\
-    '../MicahTrancik/LiIonDataSeries_represonly_withcover.xlsx',
-                   sheet_name='RepreSeries_MarketSize_All_MWh')
+prod = pd.read_excel(filename, 
+                     sheet_name='RepreSeries_MarketSize_All_MWh')
 prod = prod[['IndependentAxisData','DependentAxisData']]
 prod.columns = ['Time (Year)','Cumulative production (MWh)']
 prod = prod[['Time (Year)','Cumulative production (MWh)']]
@@ -94,10 +93,6 @@ fig.subplots_adjust(left=0.1, right=0.95,
 # adjust ticks colorbar
 fig.axes[-1]._colorbar.set_ticks([1977,1980,1990,2000,2010,2020,2022])
 fig.axes[-1]._colorbar.set_ticklabels([1977,1980,1990,2000,2010,2020,2022])
-
-# adjust ticks
-# ax[0][1].set_xticks([0,10,20,30,40,50])
-# ax[0][1].set_yticks([0,10,20,30,40,50])
 
 # set equal aspect maintaining box size
 ax[0][0].set_aspect('equal', adjustable='datalim')

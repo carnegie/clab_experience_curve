@@ -3,16 +3,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
 import seaborn as sns
-import utils, os, scipy
+import utils, scipy, os
 import statsmodels.api as sm
 
 sns.set_style("ticks")
 sns.set_context("talk")
 plt.rcParams['font.sans-serif'] = 'Helvetica'
 plt.rcParams['savefig.dpi'] = 300
+savefig = False
+
+# select file to be read
+# please choose among the following options: 
+# 1) '_half_data'
+# 2) '_half_tech'
+# 3) '_half_data_noChemicals'
+input = '_half_data'
 
 # read dataset from piecewise regression
-df = pd.read_csv('IC.csv')
+df = pd.read_csv('IC'+input+'.csv')
 
 # select only the best model for each technology 
 # using Bayesian Information Criterion
@@ -22,8 +30,7 @@ BIC = df.loc[df.groupby('Tech')['BIC'].idxmin()].reset_index()
 BIC['Sector'] = [utils.sectorsinv[x] for x in BIC['Tech'].values]
 BIC['Color'] = BIC['Sector'].map(utils.sectors_colors)
 
-# check if some sectors are more prone to breakpoints u
-# sing the chi square test
+# check if some sectors are more prone to breakpoints using the chi square test
 # create a contingency table
 print('\n\n\n')
 print("Checking if some sectors are more prone to breakpoints ...")
@@ -53,11 +60,11 @@ for i in range(1, 8):
 # compute production increase between breakpoints
 for i in range(1, 7):
     if i == 1:
-        BIC['Prod diff '+str(i)] = (BIC['Breakpoint '+str(i)]
-                                    - BIC['Initial production'])
+        BIC['Prod diff '+str(i)] = BIC['Breakpoint '+str(i)] - \
+                                        BIC['Initial production']
     else:
-        BIC['Prod diff '+str(i)] = (BIC['Breakpoint '+str(i)]
-                                    - BIC['Breakpoint '+str(i-1)])
+        BIC['Prod diff '+str(i)] = BIC['Breakpoint '+str(i)] - \
+                                        BIC['Breakpoint '+str(i-1)]
 
 # analyze breakpoints, learning rate, and learning exponent change
 
@@ -81,10 +88,8 @@ for x in range(len(lexps.columns)-1):
     plt.scatter(s.iloc[:,0], s.iloc[:,1], 
                 color='None', edgecolor='k', alpha=0.5)
     if s.shape[0] > 2:
-        print(scipy.stats.pearsonr(s.iloc[:,0], 
-                                   s.iloc[:,1]),
-            scipy.stats.pearsonr(s.iloc[:,0], 
-                                 s.iloc[:,1]).confidence_interval(0.95))
+        print(scipy.stats.pearsonr(s.iloc[:,0], s.iloc[:,1]),
+            scipy.stats.pearsonr(s.iloc[:,0], s.iloc[:,1]).confidence_interval(0.95))
 
     [lr_corr.append([x,y]) for x,y in zip(s.iloc[:,0], s.iloc[:,1])]
 print('\n\nExamining correlation between successive ' + 
@@ -116,21 +121,21 @@ sectors = []
 for i in range(breaks.shape[0]):
 
     # store breakpoint distance
-    [break_dist.append(x)
+    [break_dist.append(x) \
         for x in breaks.loc[i,:].dropna().diff().values[1:]]
 
     #store learning exponents
-    [lexplist.append(x)
+    [lexplist.append(x) \
         for x in lexps.loc[i,:].dropna().values]
 
     # store learning exponent changes
-    [lexpchanges.append(x)
+    [lexpchanges.append(x) \
         for x in lexps.loc[i,:].dropna().diff().values[1:]]
     
     # store colors and sectors
-    [colors.append(BIC.loc[i,'Color'])
+    [colors.append(BIC.loc[i,'Color']) \
         for x in lexps.loc[i,:].dropna().values[1:]]
-    [sectors.append(BIC.loc[i,'Sector'])
+    [sectors.append(BIC.loc[i,'Sector']) \
         for x in lexps.loc[i,:].dropna().values]
 
 # examine learning exponent and distance between breakpoints
@@ -159,8 +164,9 @@ plt.gcf().axes[-1].set_xscale('linear')
 plt.gca().set_ylim(-2, 2)
 plt.tight_layout()
 plt.subplots_adjust(top=1, bottom=0.1, right=1)
-plt.savefig('figs' + os.path.sep + 'Breakpoints_vs_LEXP' + '.png')
-plt.savefig('figs' + os.path.sep + 'Breakpoints_vs_LEXP' + '.pdf')
+if savefig:
+    plt.savefig('figs' + os.path.sep + 'Breakpoints_vs_LEXP' + '.png')
+    plt.savefig('figs' + os.path.sep + 'Breakpoints_vs_LEXP' + '.pdf')
 
 
 ## fit probability distribution for distance between breakpoints
@@ -173,22 +179,21 @@ plt.tight_layout()
 
 print('\n\n\n')
 print('Calibrating model for distance between breakpoints:')
-summary_breaks = (
-    utils.fit_probability_dist(np.array(break_dist).reshape(-1,1)))
+summary_breaks = \
+    utils.fit_probability_dist(np.array(break_dist).reshape(-1,1))
 
-print('Calibrating model for distance between breakpoints' 
-      + ' including min distance constraint:')
-summary_breaks_constr = (
+print('Calibrating model for distance between breakpoints' + \
+        ' including min distance constraint:')
+summary_breaks_constr = \
     utils.fit_probability_dist(np.array(break_dist).reshape(-1,1), 
-                               floc=np.log10(2)))
+                                floc=np.log10(2))
 print(summary_breaks)
 print(summary_breaks_constr)
 
 # get exponential distribution parameters
-params_expon = (
-    summary_breaks_constr.loc[
-        summary_breaks_constr['Distribution']=='expon',
-        ['Param1', 'Param2']].values[0])
+params_expon = summary_breaks_constr\
+                    .loc[summary_breaks_constr['Distribution']=='expon',
+                         ['Param1', 'Param2']].values[0]\
 
 # create figure
 plt.figure(figsize=(9,6))
@@ -202,10 +207,10 @@ sns.kdeplot(data=breaks_lexp,
             fill=True,
             )     
 plt.plot(10**np.linspace(-1, 5, 1000),
-         scipy.stats.expon.pdf(
-             np.linspace(-1, 5, 1000), 
-             *params_expon),
-         color='k',lw=2)
+             scipy.stats.expon.pdf(np.linspace(-1, 5, 1000),
+                                  *params_expon, ),
+                color='k',
+                lw=2)
 
 # add legend and labels
 legend = plt.gca().get_legend()
@@ -215,10 +220,12 @@ labels = [x.get_text() for x in legend.get_texts()]
 labels.append('Exponential distribution fit')
 plt.legend(handles=handles, labels=labels, loc='best')       
 plt.tight_layout()
-plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' 
-            + os.path.sep + 'Breakpoints_fitting' + '.png')
-plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' 
-            + os.path.sep + 'Breakpoints_fitting' + '.pdf')
+if savefig:
+    plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+                    os.path.sep + 'Breakpoints_fitting' + '.png')
+    plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+                    os.path.sep + 'Breakpoints_fitting' + '.pdf')
+
 
 ## fit probability distribution for learning exponent changes
 
@@ -268,16 +275,17 @@ labels = [x.get_text() for x in legend.get_texts()]
 labels.append('Normal distribution fit')
 plt.legend(handles=handles, labels=labels, loc='best')
 plt.tight_layout()
-plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' 
-            + os.path.sep + 'LEXP_fitting' + '.png')
-plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' 
-            + os.path.sep + 'LEXP_fitting' + '.pdf')
+if savefig:
+    plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+                    os.path.sep + 'LEXP_fitting' + '.png')
+    plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+                    os.path.sep + 'LEXP_fitting' + '.pdf')
 
 params_breaks_lexp = [['breaks','expon',*params_expon],
                       ['lexp','norm',*params_norm]]
 params_breaks_lexp = pd.DataFrame(params_breaks_lexp,
                                     columns=['Variable', 'Distribution',
                                             'Loc', 'Scale',])
-params_breaks_lexp.to_csv('params_breaks_lexp.csv', index=False)
+params_breaks_lexp.to_csv('params_breaks_lexp'+input+'.csv', index=False)
 
 plt.show()

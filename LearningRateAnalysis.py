@@ -2,9 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import sklearn.metrics
 import scipy, utils, os
-import statsmodels.api as sm
 
 plt.rcParams['savefig.dpi'] = 300
 sns.set_style('ticks')
@@ -23,8 +21,8 @@ for tech in df['Tech'].unique():
     # compute past and future learning exponents
     for i in range(1, sel.shape[0] - 1):
 
-        lexp_past = utils.computeSlopeLafond(sel.iloc[:i+1])
-        lexp_future = utils.computeSlopeLafond(sel.iloc[i:])
+        lexp_past = utils.compute_slope_fd_wrights(sel.iloc[:i+1])
+        lexp_future = utils.compute_slope_fd_wrights(sel.iloc[i:])
 
         # append data to list
         lexps.append([tech, lexp_past, lexp_future, 
@@ -55,7 +53,8 @@ for tech in lexps['Tech'].unique():
     # append data to list
     halfpoint.append(sel.loc[sel['Dist']==sel['Dist'].min(), 
                              ['Tech', 'Number of points', 
-                              'Past LEXP', 'Future LEXP','Sector']].values[0])
+                              'Past LEXP', 'Future LEXP',
+                              'Sector']].values[0])
 
 # convert list to dataframe
 halfpoint = pd.DataFrame(halfpoint, columns=['Tech', 
@@ -63,8 +62,8 @@ halfpoint = pd.DataFrame(halfpoint, columns=['Tech',
                                              'Past LEXP', 
                                              'Future LEXP','Sector'])
 
-halfpoint['Color'] = [utils.sectors_colors[x] \
-                        for x in halfpoint['Sector']]
+halfpoint['Color'] = [utils.sectors_colors[x] 
+                      for x in halfpoint['Sector']]
 
 # create a scatter plot
 fig, ax = plt.subplots(figsize=(8,8))
@@ -78,8 +77,8 @@ for tech in halfpoint['Tech'].unique():
 
     sel = halfpoint.loc[halfpoint['Tech']==tech].copy()
 
-    if 100*(1-2**sel['Past LEXP'].values[0])<-40 or\
-        100*(1-2**sel['Future LEXP'].values[0])>60:
+    if (100*(1-2**sel['Past LEXP'].values[0])<-40 or
+         100*(1-2**sel['Future LEXP'].values[0])>60):
         print(sel)
 
     if tech in ['Wind_Electricity', 'Fotovoltaica', 
@@ -134,32 +133,40 @@ fig.savefig('figs' + os.path.sep + 'learning_past_future.png')
 fig.savefig('figs' + os.path.sep + 'learning_past_future.pdf')
 
 # print R2
-print("Pearson's correlation coefficient: ",
-      scipy.stats.pearsonr(halfpoint['Future LEXP'], halfpoint['Past LEXP']),
-        scipy.stats.pearsonr(halfpoint['Future LEXP'].values, 
-                             halfpoint['Past LEXP'].values).confidence_interval(0.95))
+print("Pearson's correlation coefficient: ", 
+      scipy.stats.pearsonr(
+          halfpoint['Future LEXP'], halfpoint['Past LEXP']),
+      scipy.stats.pearsonr(
+          halfpoint['Future LEXP'].values, 
+          halfpoint['Past LEXP'].values).confidence_interval(0.95))
 
 # order dataset by number of points
 halfpoint = halfpoint.sort_values('Number of points')
 
 print("Pearson's correlation coefficient for the longest 44 data series: ",
-        scipy.stats.pearsonr(halfpoint['Future LEXP'].values[-44:], 
-                             halfpoint['Past LEXP'].values[-44:]),
-        scipy.stats.pearsonr(halfpoint['Future LEXP'].values[-44:], 
-                             halfpoint['Past LEXP'].values[-44:]).confidence_interval(0.95))  
+        scipy.stats.pearsonr(
+            halfpoint['Future LEXP'].values[-44:], 
+            halfpoint['Past LEXP'].values[-44:]),
+        scipy.stats.pearsonr(
+            halfpoint['Future LEXP'].values[-44:], 
+            halfpoint['Past LEXP'].values[-44:]).confidence_interval(0.95))  
 print("Pearson's correlation coefficient for the shortest 43 data series: ",
-        scipy.stats.pearsonr(halfpoint['Future LEXP'].values[:43], 
-                             halfpoint['Past LEXP'].values[:43]),
-        scipy.stats.pearsonr(halfpoint['Future LEXP'].values[:43], 
-                             halfpoint['Past LEXP'].values[:43]).confidence_interval(0.95))
+        scipy.stats.pearsonr(
+            halfpoint['Future LEXP'].values[:43], 
+            halfpoint['Past LEXP'].values[:43]),
+        scipy.stats.pearsonr(
+            halfpoint['Future LEXP'].values[:43], 
+            halfpoint['Past LEXP'].values[:43]).confidence_interval(0.95))
 
 # by sector
 print('\n')
 for s in halfpoint['Sector'].unique():
     sel = halfpoint.loc[halfpoint['Sector']==s]
     print("Pearson's correlation coefficient for the ", s," sector: ",
-        scipy.stats.pearsonr(sel['Future LEXP'].values, 
-                             sel['Past LEXP'].values),
-        scipy.stats.pearsonr(sel['Future LEXP'].values, 
-                             sel['Past LEXP'].values).confidence_interval(0.95))  
+        scipy.stats.pearsonr(
+            sel['Future LEXP'].values, sel['Past LEXP'].values),
+        scipy.stats.pearsonr(
+            sel['Future LEXP'].values, 
+            sel['Past LEXP'].values).confidence_interval(0.95))  
 
+plt.show()

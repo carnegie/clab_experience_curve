@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import seaborn as sns
 import matplotlib, os, utils
-import seaborn.objects as so
 
 plt.rcParams['savefig.dpi'] = 300
 sns.set_style('ticks')
@@ -36,25 +35,24 @@ for file in os.listdir(datafolder):
 	# perform correction for initial cumulative production
 	# following procedure described in lafond et al., 2018 
 	if initial_correction:
-		g_d = np.exp(\
-			np.log(\
-					(f['Production'].values[-1] \
-						- f['Production'].values[0]))/\
+		g_d = np.exp(
+			np.log(
+					(f['Production'].values[-1]
+						- f['Production'].values[0]))/
 					(f['Year'].values[-1] - f['Year'].values[0])) - 1
 	if ~np.isnan(g_d) and g_d > 0:
 		cumprod = np.array([f['Production'].values[0]/g_d])
 		for i in range(f['Production'].shape[0] - 1):
-			cumprod = np.append(cumprod, cumprod[-1] + f['Production'].values[i])
+			cumprod = np.append(cumprod, cumprod[-1] 
+					   + f['Production'].values[i])
 		f['Cumulative production'] = cumprod
 
 	# compute cumulative sum of units produce 
 	# and normalize price and cumulative units produced
-	f['Normalized cumulative production'] = \
-		f['Cumulative production'] /\
-		  f['Cumulative production'].values[0]
-	f['Normalized unit cost'] = \
-		f['Unit cost'] /\
-		  f['Unit cost'].values[0]
+	f['Normalized cumulative production'] = (
+		f['Cumulative production'] / f['Cumulative production'].values[0])
+		
+	f['Normalized unit cost'] = (f['Unit cost'] / f['Unit cost'].values[0])
 	
 	# save unit cost, year, cumulative production,
 	# normalized unit cost, normzlied cumulative production, 
@@ -83,36 +81,36 @@ for file in os.listdir(datafolder):
 	fig.tight_layout()
 	if not os.path.exists('figs' + os.path.sep + 'SupplementaryFigures'):
 		os.makedirs('figs' + os.path.sep + 'SupplementaryFigures')
-	if not os.path.exists('figs' + os.path.sep + 
-					   	'SupplementaryFigures' + os.path.sep + 'TechFigures'):
-		os.makedirs('figs' + os.path.sep + 
-			  		'SupplementaryFigures' + os.path.sep + 'TechFigures')
-	fig.savefig('figs' + os.path.sep + 
-			'SupplementaryFigures' + os.path.sep + 'TechFigures' + \
-			os.path.sep + file[:-4] + '.pdf')
+	if not os.path.exists('figs' 
+					   + os.path.sep + 'SupplementaryFigures' 
+					   + os.path.sep + 'TechFigures'):
+		os.makedirs('figs' + os.path.sep + 'SupplementaryFigures' 
+			  + os.path.sep + 'TechFigures')
+	fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' 
+			 + os.path.sep + 'TechFigures'
+			 + os.path.sep + file[:-4] + '.pdf')
 
 	# store position of axes limits
 	xlim = ax.get_xlim()
 	ylim = ax.get_ylim()
 
 	# add regression line to figure
-	model = sm.OLS(np.log10(f['Unit cost']), 
-				sm.add_constant(\
-					np.log10(f['Cumulative production'])))
+	model = sm.OLS(
+		np.log10(f['Unit cost']), 
+		sm.add_constant(np.log10(f['Cumulative production'])))
 	results = model.fit()
 	ax.plot(f['Cumulative production'], 
 		 10**(results.predict(
-			 sm.add_constant(
-				 np.log10(f['Cumulative production'])))), 'k')
+			 sm.add_constant(np.log10(f['Cumulative production'])))), 'k')
 
 	# set position of axes limits
 	ax.set_xlim(xlim)
 	ax.set_ylim(ylim)
 
 	#save figure
-	fig.savefig('figs' + os.path.sep + 
-			'SupplementaryFigures' + os.path.sep + 'TechFigures' + \
-			os.path.sep + file[:-4] + '_fit.pdf')
+	fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' 
+			 + os.path.sep + 'TechFigures' 
+			 + os.path.sep + file[:-4] + '_fit.pdf')
 	plt.close(fig)	
 
 	# append to dataframe
@@ -134,8 +132,7 @@ df_ = df[['Tech',
 if save_data:
 	df_.to_csv('ExpCurves.csv', index=False)
 
-df['Sector'] = [\
-	utils.sectorsinv[tech] for tech in df['Tech']]
+df['Sector'] = [utils.sectorsinv[tech] for tech in df['Tech']]
 
 ### plot normalized cost and cumulative production by sector
 
@@ -227,7 +224,7 @@ ax.set_xlabel(
 ax.set_ylabel('Unit cost relative to initial')
 
 # define legend handles and labels
-legend_elements = [\
+legend_elements = [
 				matplotlib.lines.Line2D([0], [0], 
 					marker='o', 
 					color=utils.sectors_colors['Energy'], 
@@ -289,7 +286,7 @@ for tech in df['Tech'].unique():
 			alpha=0.5,
 			marker='.',
 			markersize=5,
-			color=utils.sectors_colors[\
+			color=utils.sectors_colors[
 				df.loc[df['Tech']==tech,'Sector'].values[0]])
 
 # set axes scales and labels
@@ -305,12 +302,12 @@ fig.legend(handles=legend_elements,
 		   loc='lower center')
 
 plt.subplots_adjust(bottom=0.3, top=0.975)
-fig.savefig('figs' + os.path.sep + 
-			'SupplementaryFigures' + 
-			 os.path.sep + 'data_raw.png')
-fig.savefig('figs' + os.path.sep + 
-			'SupplementaryFigures' + 
-			 os.path.sep + 'data_raw.pdf')
+fig.savefig('figs' + os.path.sep 
+			+ 'SupplementaryFigures' 
+			+ os.path.sep + 'data_raw.png')
+fig.savefig('figs' + os.path.sep 
+			+ 'SupplementaryFigures' 
+			+ os.path.sep + 'data_raw.pdf')
 
 ### plot normalized cost and year
 ### color by sector
@@ -328,7 +325,7 @@ for tech in df['Tech'].unique():
 			alpha=0.5,
 			marker='.',
 			markersize=5,
-			color=utils.sectors_colors[\
+			color=utils.sectors_colors[
 				df.loc[df['Tech']==tech,'Sector'].values[0]])
 
 # set axes scales and labels
@@ -352,9 +349,10 @@ fig.savefig('figs' + os.path.sep +
 dfy = df.copy()
 
 for tech in dfy['Tech'].unique():
-	dfy.loc[dfy['Tech']==tech, 'Year'] = \
-		dfy.loc[dfy['Tech']==tech, 'Year'] - \
-		dfy.loc[dfy['Tech']==tech, 'Year'].values[0]
+	dfy.loc[dfy['Tech']==tech, 'Year'] = (
+		dfy.loc[dfy['Tech']==tech, 'Year']
+		- dfy.loc[dfy['Tech']==tech, 'Year'].values[0])
+		
 
 dfy['Year'] = dfy['Year'].astype(int)
 
@@ -367,13 +365,13 @@ y_vs_sec = pd.DataFrame(y_vs_sec, columns=['Year', 'Sector', 'Count'])
 
 fig, ax = plt.subplots(figsize=(9,7.5))
 ax.stackplot(y_vs_sec['Year'].unique(),
-			 [[y_vs_sec.loc[(y_vs_sec['Year']==y) & \
-							(y_vs_sec['Sector']==s),'Count'].values[0] \
-								for y in y_vs_sec['Year'].unique()]
-								for s in y_vs_sec['Sector'].unique()],
-			 colors=[utils.sectors_colors[s] \
-					for s in y_vs_sec['Sector'].unique()],
-					labels=[s for s in y_vs_sec['Sector'].unique()])
+			 [[y_vs_sec.loc[(y_vs_sec['Year']==y) & 
+							(y_vs_sec['Sector']==s),'Count'].values[0] 
+				for y in y_vs_sec['Year'].unique()]
+				for s in y_vs_sec['Sector'].unique()], 
+			colors=[utils.sectors_colors[s] 
+		   			for s in y_vs_sec['Sector'].unique()],
+			labels=[s for s in y_vs_sec['Sector'].unique()])
 ax.legend()
 ax.set_xlabel('Year')
 ax.set_ylabel('Number of technologies')
@@ -383,10 +381,11 @@ dfp = df.copy()
 
 maxp = []
 for tech in dfp['Tech'].unique():
-	dfp.loc[dfp['Tech']==tech, 'Cumulative production'] = \
-		dfp.loc[dfp['Tech']==tech, 'Cumulative production'] / \
-		dfp.loc[dfp['Tech']==tech, 'Cumulative production'].values[0]
-	maxp.append(dfp.loc[dfp['Tech']==tech, 'Cumulative production'].values[-1])
+	dfp.loc[dfp['Tech']==tech, 'Cumulative production'] = (
+		dfp.loc[dfp['Tech']==tech, 'Cumulative production'] / 
+		dfp.loc[dfp['Tech']==tech, 'Cumulative production'].values[0])
+	maxp.append(dfp.loc[dfp['Tech']==tech, 
+					 'Cumulative production'].values[-1])
 
 maxp.sort()
 maxp.insert(0, 1)
@@ -396,18 +395,20 @@ for p in maxp:
 	dfp_ = dfp.loc[dfp['Cumulative production']>=p].copy()
 	for s in dfp['Sector'].unique():
 		p_vs_sec.append([p, s, dfp_.loc[dfp_['Sector']==s,'Tech'].nunique()])
-pVsSec = pd.DataFrame(p_vs_sec, columns=['Cumulative production increase', 
-									   'Sector', 'Count'])
+pVsSec = pd.DataFrame(p_vs_sec, 
+					  columns=['Cumulative production increase', 
+								'Sector', 'Count'])
 
 fig, ax = plt.subplots(figsize=(9,7.5))
 ax.stackplot(pVsSec['Cumulative production increase'].unique(),
-			 [[pVsSec.loc[(pVsSec['Cumulative production increase']==p) & \
-							(pVsSec['Sector']==s),'Count'].values[0] \
-								for p in pVsSec['Cumulative production increase'].unique()]
-								for s in pVsSec['Sector'].unique()],
-			 colors=[utils.sectors_colors[s] \
-					for s in pVsSec['Sector'].unique()],
-					labels=[s for s in pVsSec['Sector'].unique()])
+			 [[pVsSec.loc[
+				 (pVsSec['Cumulative production increase']==p) & 
+					(pVsSec['Sector']==s),'Count'].values[0] 
+				for p in pVsSec['Cumulative production increase'].unique()]
+				for s in pVsSec['Sector'].unique()],
+			colors=[utils.sectors_colors[s] 
+						for s in pVsSec['Sector'].unique()],
+			labels=[s for s in pVsSec['Sector'].unique()])
 ax.set_xscale('log')
 ax.legend()
 ax.set_xlabel('Cumulative production - multiplicative increase')

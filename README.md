@@ -23,11 +23,12 @@ conda env create -f expCurveEnv.yml
 
 Run the scripts:
 - `CreateDataset.py` (Fig. 1a, S1-2)
-- `LRanalysis.py` (Fig. 1b)
-- `LearningRateDyamicsAllTechs.py` (Fig. 2, S7-S12)
+- `LearningRateanalysis.py` (Fig. 1b)
+- `LearningRateDyamicsAllTechs.py` (Fig. 2)
 - `LearningRateErrorAggregate.py` (Fig. S3)
 - `PiecewiseRegression.py` (Fig. 3a, S4)
-- `AnalyzePiecewise.py` (Fig. 3b, S5-6)
+- `AnalyzePiecewise.py` (Fig. S5, S6, S7)
+- `AnalyzePiecewiseValidation.py` (Fig. 3b)
 - `SolarProjection.py` (Fig. 4a)
 - `WindProjection.py` (Fig. 4b)
 - `BatteryProjection.py` (Fig. 4c)
@@ -45,9 +46,11 @@ The script `LearningRateDynamicsAllTechs.py` is used to examine the learning rat
 
 The script `LearningRateErrorAggregate.py` examines the distance between learning rate estimated from all the data and learning rate at a certain time or cumulative production. This produces Fig. S3.
 
-The piecewise regression fits are computed in the script `PiecewiseRegression.py` suing a function inside the scipt `utils.py`. These two scripts produce Figs. 3a, S4.
+The piecewise regression fits are computed in the script `PiecewiseRegression.py` using a function inside the scipt `utils.py`. These two scripts produce Figs. 3a, S4.
 
-The script `AnalyzePiecewise.py` examines the results of piecewise regression to fit probability distributions to data and use them in the forecasting model. This script produces Figs. 3b, S5-6.
+The script `AnalyzePiecewise.py` examines the results of piecewise regression to fit probability distributions to data and use them in the forecasting model. This script produces Figs. S5, S6, S7.
+
+The script `ComparePiecewiseLafondValidation.py`is used to compare the Continuous Ranked Probability Forecast for using half of the data to calibrate models and the remaining half of data for each data series for validation. This scripts uses results obtained from `BuildValidationDataset.py`, analyzed further in `AnalyzePiecewiseValidation.py`.
 
 The scripts `SolarProjection.py`, `WindProjection.py`, `BatteryProjection.py` build piecewise regressions for solar photovoltaics, wind power, and lithium-ion batteries. They use the parameters estimated from the Performance Curve Database to produce estimates of future cost until 2050 for the three technologies examined. These scripts are used to produce Fig.4.
 

@@ -2,9 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import piecewise_regression as pw
-import statsmodels.api as sm
-import os, utils
+import utils
 
 # set figures' parameters
 sns.set_context('talk')

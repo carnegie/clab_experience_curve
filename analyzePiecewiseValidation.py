@@ -3,16 +3,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
 import seaborn as sns
-import utils, distfit, os, scipy
+import utils, scipy, os
 import statsmodels.api as sm
 
 sns.set_style("ticks")
 sns.set_context("talk")
 plt.rcParams['font.sans-serif'] = 'Helvetica'
 plt.rcParams['savefig.dpi'] = 300
+savefig = False
 
 # select file to be read
-input = '_half_data_noChemicals'
+# please choose among the following options: 
+# 1) '_half_data'
+# 2) '_half_tech'
+# 3) '_half_data_noChemicals'
+input = '_half_data'
 
 # read dataset from piecewise regression
 df = pd.read_csv('IC'+input+'.csv')
@@ -159,8 +164,9 @@ plt.gcf().axes[-1].set_xscale('linear')
 plt.gca().set_ylim(-2, 2)
 plt.tight_layout()
 plt.subplots_adjust(top=1, bottom=0.1, right=1)
-# plt.savefig('figs' + os.path.sep + 'Breakpoints_vs_LEXP' + '.png')
-# plt.savefig('figs' + os.path.sep + 'Breakpoints_vs_LEXP' + '.pdf')
+if savefig:
+    plt.savefig('figs' + os.path.sep + 'Breakpoints_vs_LEXP' + '.png')
+    plt.savefig('figs' + os.path.sep + 'Breakpoints_vs_LEXP' + '.pdf')
 
 
 ## fit probability distribution for distance between breakpoints
@@ -214,10 +220,11 @@ labels = [x.get_text() for x in legend.get_texts()]
 labels.append('Exponential distribution fit')
 plt.legend(handles=handles, labels=labels, loc='best')       
 plt.tight_layout()
-# plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
-#                 os.path.sep + 'Breakpoints_fitting' + '.png')
-# plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
-#                 os.path.sep + 'Breakpoints_fitting' + '.pdf')
+if savefig:
+    plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+                    os.path.sep + 'Breakpoints_fitting' + '.png')
+    plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+                    os.path.sep + 'Breakpoints_fitting' + '.pdf')
 
 
 ## fit probability distribution for learning exponent changes
@@ -268,10 +275,11 @@ labels = [x.get_text() for x in legend.get_texts()]
 labels.append('Normal distribution fit')
 plt.legend(handles=handles, labels=labels, loc='best')
 plt.tight_layout()
-# plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
-#                 os.path.sep + 'LEXP_fitting' + '.png')
-# plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
-#                 os.path.sep + 'LEXP_fitting' + '.pdf')
+if savefig:
+    plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+                    os.path.sep + 'LEXP_fitting' + '.png')
+    plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+                    os.path.sep + 'LEXP_fitting' + '.pdf')
 
 params_breaks_lexp = [['breaks','expon',*params_expon],
                       ['lexp','norm',*params_norm]]

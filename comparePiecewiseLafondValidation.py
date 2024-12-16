@@ -1,36 +1,12 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.stats
 import seaborn as sns
 import statsmodels.api as sm
-import scipy, matplotlib, utils
-
-def compute_crps(forecasts, obs):
-    fcst = np.sort(forecasts)
-    n = fcst.shape[0]
-
-    # CRPS integral between -inf and +inf of:
-    #    \int_{-inf}^{+inf} { (F(x) - H(x>=y))**2 dx }
-
-    # e.g. y = 2, x = [1, 1]
-    # \int_{-inf}^{1}{0} + \int{1}{2}{1} + \int{2}{inf}{0}
-    # is this equal to one? yes
-
-    # e.g. y = 2, x = [2, 2]
-    # \int_{-inf}^{2}{0} + \int{2}{inf}{0}
-    # is this equal to zero? yes
-
-    # get values for integration domain
-    domain = np.copy(fcst)
-    domain = np.append(fcst, obs)
-    domain = np.sort(domain)
-
-    crps = 0
-    for i in range(domain.shape[0]-1):
-        cdf_fcst = sum(domain[i]>= fcst)/n
-        cdf_obs = 1 if domain[i] >= obs else 0
-        crps += (domain[i+1] - domain[i]) * (cdf_fcst - cdf_obs)**2
-    return crps
+import scipy, matplotlib, utils, os
+import cmcrameri as cm
+import utils
 
 # set figures' parameters
 sns.set_context('talk')
@@ -62,24 +38,26 @@ IC_half_data = pd.read_csv('IC'+input_file+'.csv')
 
 # read params from analysis of piecewise regression
 params_breaks_lexp = pd.read_csv('params_breaks_lexp'+input_file+'.csv')
-breaks_dist = scipy.stats.expon(loc = params_breaks_lexp\
-                                .loc[params_breaks_lexp['Variable'] == 'breaks', 'Loc'].values[0],
-                                scale = params_breaks_lexp\
-                                .loc[params_breaks_lexp['Variable'] == 'breaks', 'Scale'].values[0])
-lexp_dist = scipy.stats.norm(loc = params_breaks_lexp\
-                                .loc[params_breaks_lexp['Variable'] == 'lexp', 'Loc'].values[0],
-                                scale = params_breaks_lexp\
-                                .loc[params_breaks_lexp['Variable'] == 'lexp', 'Scale'].values[0])
+breaks_dist = scipy.stats.expon(
+    loc = params_breaks_lexp.loc[
+        params_breaks_lexp['Variable'] == 'breaks', 'Loc'].values[0],
+    scale = params_breaks_lexp.loc[
+        params_breaks_lexp['Variable'] == 'breaks', 'Scale'].values[0])
+lexp_dist = scipy.stats.norm(
+    loc = params_breaks_lexp.loc[
+        params_breaks_lexp['Variable'] == 'lexp', 'Loc'].values[0],
+    scale = params_breaks_lexp.loc[
+        params_breaks_lexp['Variable'] == 'lexp', 'Scale'].values[0])
 
 # compare piecewise linear experience curves with 
 # first difference wrights law using half of points for all techs
-crps, picps = [], []
+crpss, logs, ttests_crps, ttests_logs = [], [], [], []
 plotFigTech = False
-nsim = 100
+nsim = 1000
 
 # iterate for each technology
 for t in df['Tech'].unique():
-
+    print(t)
     # remove prespecified sector if available
     if remove_sector is not None:
         if utils.sectorsinv[t] == remove_sector:
@@ -96,7 +74,7 @@ for t in df['Tech'].unique():
         plt.yscale('log')
         plt.scatter(x,y, label='Data')
 
-    # LINEAR REGRESSION MODEL
+    # LINEAR REGRESSION MODEL - calibration period
     # use half of the points to compute error of the model
     # using first difference wright's law
 
@@ -123,13 +101,12 @@ for t in df['Tech'].unique():
     for i in range(y_diff_cal.shape[0]):
         noise = ar1_noise * noise + np.random.randn() * noise_std
         y_diff_cal_pred[i] = lexp * x_diff_cal[i] #+ noise
-    y_diff_cal_pred = 10**(np.log10(y[:round(x.shape[0]/2)-1]) + y_diff_cal_pred)
+    y_diff_cal_pred = 10**(np.log10(y[:round(x.shape[0]/2)-1]) 
+                           + y_diff_cal_pred)
     y_diff_cal_pred = np.insert(y_diff_cal_pred,0,y[0])
                            
-    # y_diff_cal_pred = 10**(np.log10(y[0]) + np.insert(np.cumsum(results.predict()),0,0))
-    # plt.scatter(x[:round(x.shape[0]/2)], y_diff_cal_pred, color='red')
 
-    # PIECEWISE REGRESSION MODEL
+    # PIECEWISE REGRESSION MODEL - calibration period
     # use half of the points to compute error of the model
     # using piecewise linear regression
 
@@ -172,76 +149,56 @@ for t in df['Tech'].unique():
 
     noise_pw = np.std(y_cal_pred - y_cal, ddof=1)
 
-    # if plotFigTech:
-    #     plt.scatter(10**x_cal, 10**y_cal_pred, color='blue')
-
-    ## PREDICT
+    ## FORECAST COMPARISON
 
     # use the remaining points for prediction and error comparison
-
     x_val = np.log10(x[round(x.shape[0]/2)-1:])
     y_val = np.log10(y[round(y.shape[0]/2)-1:])
 
-    # LINEAR REGRESSON MODEL
+    # FIRST DIFFERENCE LINEAR REGRESSON MODEL FORECAST
     # forecast using first difference wright's law
     x_diff_val = np.diff(x_val)
 
     y_diff_val_sim = np.zeros((nsim, x_diff_val.shape[0]+1))
     for n in range(nsim):
         y_diff_val_pred = np.array([np.log10(y[round(y.shape[0]/2)-1])])
-        # noise = results.resid[-1]
         noise = 0
         for i in range(x_diff_val.shape[0]):
             noise = 0.19 * noise + np.random.randn() * noise_std
             y_diff_val_pred = np.append(y_diff_val_pred,
-                                    y_diff_val_pred[-1] + \
-                                        lexp * x_diff_val[i] + \
-                                            noise )
+                                        y_diff_val_pred[-1] 
+                                        + lexp * x_diff_val[i] 
+                                        + noise)
         y_diff_val_pred = 10**(y_diff_val_pred)
         y_diff_val_sim[n,:] = y_diff_val_pred
 
-    # compute continuous rank probability score
-    crps_ = np.zeros(y_diff_val_sim.shape[1])
+    # compute continuous rank probability score and log scoring
+    crps_wright_ = np.zeros(y_diff_val_sim.shape[1])
+    logs_wright_ = np.zeros(y_diff_val_sim.shape[1])
     # iterate over observations in the validation period
     for i in range(y_diff_val_sim.shape[1]):
         # get the remaining observations
         obs = y[round(y.shape[0]/2)-1:]
         # get the prediction for the i-th element of the validation period
         preds = y_diff_val_sim[:,i]
-        crps_[i] = compute_crps(preds, obs[i])
-        # # build a cumulative distribution function
-        # preds = np.sort(preds)
-        # diff_preds = np.diff(preds)
-        # diff_preds = np.append(diff_preds, 0.0)
-
-        # for n in range(nsim):
-        #     crps_[i] += diff_preds[n] * (n/nsim - 1.0*(preds[n] >= obs[i]))**2
-
-    crps_wright = np.sum(crps_)
+        crps_wright_[i] = utils.compute_crps(preds, obs[i])
+        logs_wright_[i] = utils.compute_logscore(preds, obs[i])
 
 
-    # compute log scoring
-    picp_ = np.zeros(y_diff_val_sim.shape[1])
-    for i in range(y_diff_val_sim.shape[1]):
-        obs = y[round(y.shape[0]/2)-1:]
-        preds = y_diff_val_sim[:,i]
-        preds_95 = np.percentile(preds, 95)
-        preds_5 = np.percentile(preds, 5)
-        
-        picp_[i] = 1.0*(obs[i] >= preds_5 and obs[i] <= preds_95)
-
-    picp_wright = np.sum(picp_)/y_diff_val_sim.shape[1]
 
     if plotFigTech:
-        plt.plot(x[round(x.shape[0]/2)-1:], np.median(y_diff_val_sim, axis=0), color='red',
+        plt.plot(x[round(x.shape[0]/2)-1:], 
+                 np.median(y_diff_val_sim, axis=0), 
+                 color='red',
                  label='Lafond - median')
-        plt.fill_between(x[round(x.shape[0]/2)-1:], np.percentile(y_diff_val_sim, 95, axis=0), 
-                        np.percentile(y_diff_val_sim, 5, axis=0), alpha=0.2, color='red',
-                        label='Lafond - 5-95%')
+        plt.fill_between(x[round(x.shape[0]/2)-1:], 
+                         np.percentile(y_diff_val_sim, 95, axis=0), 
+                         np.percentile(y_diff_val_sim, 5, axis=0), 
+                         alpha=0.2, color='red',
+                         label='Lafond - 5-95%')
 
 
-    # forecast using piecewise linear regression
-
+    # PIECEWISE LINEAR REGRESSION FORECAST
     y_val_sim = np.zeros((nsim, x_val.shape[0]))
     for n in range(nsim):
         
@@ -258,7 +215,10 @@ for t in df['Tech'].unique():
 
         ## extend breaks and lrs until the end of the dataset
         while breaks[-1] < x_val[-1]:
-            breaks = np.append(breaks, max(x_cal[-1], breaks[-1] + min(np.log10(2), breaks_dist.rvs())))
+            breaks = np.append(breaks, 
+                               max(x_cal[-1], 
+                                   breaks[-1] + min(np.log10(2), 
+                                                    breaks_dist.rvs())))
             lexps = np.append(lexps, lexp_dist.rvs())
 
         # compute prediction for each x_val
@@ -282,35 +242,26 @@ for t in df['Tech'].unique():
         y_val_pred = np.array(y_val_pred)
         y_val_sim[n,:] = 10**y_val_pred
     
-    # compute continuous rank probability score
-    crps_ = np.zeros(y_val_sim.shape[1])
+    # compute continuous rank probability score and log score
+    crps_piecewise_ = np.zeros(y_val_sim.shape[1])
+    logs_piecewise_ = np.zeros(y_val_sim.shape[1])
     for i in range(y_val_sim.shape[1]):
         obs = y[round(y.shape[0]/2)-1:]
         preds = y_val_sim[:,i]
-        crps_[i] = compute_crps(preds, obs[i])
-        # preds = np.sort(preds)
-        # diff_preds = np.diff(preds)
-        # diff_preds = np.append(diff_preds, 0.0)
+        crps_piecewise_[i] = utils.compute_crps(preds, obs[i])
+        logs_piecewise_[i] = utils.compute_logscore(preds, obs[i])
 
-        # for n in range(nsim):
-        #     crps_[i] += diff_preds[n] * (n/nsim - 1.0*(preds[n] >= obs[i]))**2
 
-    crps_piecewise = np.sum(crps_)
+    # perform t test to check significance of difference on average
+    ttests_crps.append(scipy.stats.ttest_rel(crps_wright_, 
+                                             crps_piecewise_)[1])
+    ttests_logs.append(scipy.stats.ttest_rel(logs_wright_, 
+                                             logs_piecewise_)[1])
 
-    # compute log scoring
-    picp_ = np.zeros(y_val_sim.shape[1])
-    for i in range(y_val_sim.shape[1]):
-        obs = y[round(y.shape[0]/2)-1:]
-        preds = y_val_sim[:,i]
-        preds_95 = np.percentile(preds, 95)
-        preds_5 = np.percentile(preds, 5)
-        
-        picp_[i] = 1.0*(obs[i] >= preds_5 and obs[i] <= preds_95)
-
-    picp_piecewise = np.sum(picp_)/y_val_sim.shape[1]
-
-    crps.append([crps_wright, crps_piecewise])
-    picps.append([picp_wright, picp_piecewise])
+    # store results
+    crps_piecewise = np.mean(crps_piecewise_)
+    crps_wright = np.mean(crps_wright_)
+    crpss.append([crps_wright, crps_piecewise])
 
     if plotFigTech:
         plt.plot(10**x_val, np.median(y_val_sim, axis=0), color='blue',
@@ -326,82 +277,78 @@ for t in df['Tech'].unique():
         plt.savefig('/Users/angelocarlino/Desktop/Techs_comparison/'+t+'.png')
         plt.close('all')
 
-plt.figure()
-plt.bar([0,1], [np.sum(np.array(crps)[:,0] < np.array(crps)[:,1]), 
-         np.sum(np.array(crps)[:,0] > np.array(crps)[:,1])])
-plt.title('Continuous Ranked Probability Score')
-plt.ylabel('Number of technologies scoring better')
-plt.xticks([0,1],['Lafond', 'Piecewise'])
+# save results to dataframe
+result = pd.DataFrame(np.concatenate([crpss, 
+                                      np.array(ttests_crps).reshape(-1,1), 
+                                      ],
+                                      axis=1),
+                      columns=['CRPS - Constant',
+                               'CRPS - Variable',
+                               'CRPS - p-value',
+                               ])
 
-print('CRPS:')
-print(crps)
-print('\n\n\n\nPICP:')
-print(picps)
+# print the results
+print('Piecewise is better in CRPS:')
+print(result.loc[(result['CRPS - p-value']<0.05) & \
+                 (result['CRPS - Constant']>result['CRPS - Variable'])
+                 ].count()[0])
+print('No difference:')
+print(result.loc[(result['CRPS - p-value']>0.05)].count()[0])
 
-plt.figure()
-plt.bar([0,1], [np.sum(np.array(picps)[:,0] > np.array(picps)[:,1]), 
-         np.sum(np.array(picps)[:,0] < np.array(picps)[:,1])])
-plt.title('Prediction Interval Coverage Probability')
-plt.ylabel('Number of technologies scoring better')
-plt.xticks([0,1],['Lafond', 'Piecewise'])
+# report results when difference is significiant
+result['Tech'] = df['Tech'].unique()
+result['Sector'] = [utils.sectorsinv[s] 
+                    for s in result['Tech'].values]
+result['CRPS - Piecewise'] = [1.0*(x[0] < x[1])*(x[2] < 0.05) 
+                              + 0.5*(x[2]>0.05) 
+                              for x in result[
+                                  ['CRPS - Variable',
+                                   'CRPS - Constant',
+                                   'CRPS - p-value']].values]
+result['CRPS - Linear'] = [x[0] > x[1] 
+                           for x in result[
+                               ['CRPS - Variable',
+                                'CRPS - Constant']].values]
 
-picps = np.array(picps)
-for i in range(picps.shape[0]):
-    if picps[i,0] < picps[i,1]:
-        picps[i,0] = 0
-        picps[i,1] = 1
-    elif picps[i,0] > picps[i,1]:
-        picps[i,0] = 1
-        picps[i,1] = 0
-    else:
-        picps[i,0] = 0.5
-        picps[i,1] = 0.5
+## plotting the results
 
+for sec in result['Sector'].unique():
+    sel = result.loc[result['Sector']==sec]
+    fig, ax = plt.subplots(figsize=(16,8))
+    im = ax.imshow(np.transpose(sel[['CRPS - Piecewise']].values), 
+              cmap=cm.cm.batlow, 
+              norm=matplotlib.colors.Normalize(-0.1,1.4),
+              alpha=.8,
+              aspect=2
+            ) 
+    ax.scatter(range(sel.shape[0]), np.zeros(sel.shape[0]),
+               s=50.0*(sel['CRPS - p-value']<0.05), color='k', marker='d')
+    ax.axhline(.5, lw=.5, color='k')
+    [ax.axvline(x+.5, lw=.5, color='k') for x in range(sel.shape[0])]
+    ax.set_xticks([x for x in range(sel.shape[0])],
+                    [s.replace('_',' ') for s in sel['Tech'].values], 
+                    rotation=90) 
+    ax.set_yticks([])
+    ax.set_position([0.1, 0.7, sel.shape[0]/50*0.8, 0.3])
+    plt.title(sec)
+    plt.savefig('figs' + os.path.sep + sec + '_CRPS.pdf')
 
-plt.figure(figsize=(16,8))
-sns.heatmap(np.array(picps).transpose(), cmap=palette,
-            cbar_kws={'label':'Prediction Interval Coverage Probability',
-                      'shrink':0.5})
-plt.xticks([x+0.5 for x in range(87)], [x.replace('_',' ') for x in df['Tech'].unique()], rotation=90)
-plt.yticks([0.5,1.5],['Lafond', 'Piecewise'])
-plt.tight_layout()
+# prepare the legend for the mulitple panels
+fig, ax = plt.subplots(figsize=(16,8))
+im = ax.imshow([[0],[1],[0.5]], 
+            cmap=cm.cm.batlow, 
+            norm=matplotlib.colors.Normalize(-0.1,1.4),
+            alpha=.8,
+            aspect=2
+        ) 
+ax.scatter([0,0],[0,1], s=50.0, color='k', marker='d')
+ax.axhline(.5, lw=.5, color='k')
+ax.set_xticks([])
+ax.yaxis.tick_right()
+ax.set_yticks([0,1,2],
+              ['First difference Wright\'s law has significantly lower error',
+               'Piecewise experience curve has significantly lower error',
+               'No significant difference in error between the forecasts'])
+ax.set_position([0.1, 0.7, 1/50*0.8, 0.3])
 
-# crps_max = np.max(crps, axis=1)
-# crps = np.array(crps)
-# crps[:,0] = crps[:,0] / crps_max
-# crps[:,1] = crps[:,1] / crps_max
-
-crps = np.array(crps)
-for i in range(crps.shape[0]):
-    if crps[i,0] < crps[i,1]:
-        crps[i,0] = 1
-        crps[i,1] = 0
-    elif crps[i,0] > crps[i,1]:
-        crps[i,0] = 0
-        crps[i,1] = 1
-    else:
-        crps[i,0] = 0.5
-        crps[i,1] = 0.5
-
-
-plt.figure()
-sns.heatmap(np.array(crps).transpose(), cmap=palette, 
-            # norm = matplotlib.colors.LogNorm(),
-            cbar_kws={'label':'Continuous Ranked Probability Score'})
-plt.xticks([x+0.5 for x in range(87)], df['Tech'].unique(), rotation=90)
-plt.yticks([0.5,1.5],['Lafond', 'Piecewise'])
-
-
-# plt.plot(np.array(mapes)[:,0], np.array(mapes)[:,1], 'o')
 plt.show()
-
-
-
-
-
-
-
-
-
-
-

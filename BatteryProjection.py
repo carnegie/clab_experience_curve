@@ -208,6 +208,9 @@ axes.annotate('Median', xy=(1.5,0.5), xycoords='data',
 
 axes.plot([1.1,2.1,2.1,1.1], [0,0,1,1], color='k', lw=.2)
 
+if not os.path.exists('figs'):
+    os.makedirs('figs')
+
 plt.gcf().savefig('figs' + os.path.sep + 
                   'BatteryProjection' + 
                   '_val' * validation + '.png')

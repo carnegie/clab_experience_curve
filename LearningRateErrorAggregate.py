@@ -146,6 +146,8 @@ ax[1][1].plot(xtime, np.array(statstime)[:,2], color='#57B8FF')
 ax[1][1].set_xlabel('Years from first observation')
 ax[1][1].set_ylabel('Learning exponent error')
 
+if not os.path.exists('figs' + os.path.sep + 'SupplementaryFigures'):
+    os.makedirs('figs' + os.path.sep + 'SupplementaryFigures')
 
 plt.savefig('figs' + os.path.sep + 'SupplementaryFigures'
             + os.path.sep + 'LearningExponentError.png')

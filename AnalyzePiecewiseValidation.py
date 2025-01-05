@@ -165,6 +165,8 @@ plt.gca().set_ylim(-2, 2)
 plt.tight_layout()
 plt.subplots_adjust(top=1, bottom=0.1, right=1)
 if savefig:
+    if not os.path.exists('figs'):
+        os.makedirs('figs')
     plt.savefig('figs' + os.path.sep + 'Breakpoints_vs_LEXP' + '.png')
     plt.savefig('figs' + os.path.sep + 'Breakpoints_vs_LEXP' + '.pdf')
 
@@ -221,9 +223,11 @@ labels.append('Exponential distribution fit')
 plt.legend(handles=handles, labels=labels, loc='best')       
 plt.tight_layout()
 if savefig:
-    plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+    if not os.path.exists('figs' + os.path.sep + 'SupplementaryFigures'):
+        os.makedirs('figs' + os.path.sep + 'SupplementaryFigures')
+    plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + 
                     os.path.sep + 'Breakpoints_fitting' + '.png')
-    plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + \
+    plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' + 
                     os.path.sep + 'Breakpoints_fitting' + '.pdf')
 
 

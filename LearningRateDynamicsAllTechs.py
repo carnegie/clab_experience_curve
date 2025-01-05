@@ -109,6 +109,8 @@ if price is not None:
     ax[2][0].set_aspect('equal', adjustable='datalim')
 
     # save figure
+    if not os.path.exists('figs'):
+        os.makedirs('figs')
     plt.savefig('figs' + os.path.sep + 'learningRateDynamics.png')
     plt.savefig('figs' + os.path.sep + 'learningRateDynamics.pdf')
 

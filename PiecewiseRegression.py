@@ -124,6 +124,9 @@ ax[1].set_title('Bayesian Information Criterion')
 fig.subplots_adjust(bottom=0.125, left=0.05, right=0.95)
 plt.tight_layout()
 
+if not os.path.exists('figs'):
+    os.makedirs('figs')
+
 fig.savefig('figs' + os.path.sep 
             + 'PieSegments' + '.png')
 fig.savefig('figs' + os.path.sep

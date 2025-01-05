@@ -48,11 +48,15 @@ newdata_cost = newdata_cost.iloc[:,:]
 newdata_cost = newdata_cost['Weighted average'].values
 
 # read generation data from Bolinger et al., 2022
-add_prod_data = pd.read_csv(
-    'AdditionalData' + os.path.sep + 
-    'BolingerEtAl2022' + os.path.sep + 
-    'Data_and_Scripts' + os.path.sep + 
-    'Data' + os.path.sep + 'lcoe_learning_data_wind.csv')
+try:
+    add_prod_data = pd.read_csv(
+        'AdditionalData' + os.path.sep + 
+        'BolingerEtAl2022' + os.path.sep + 
+        'Data_and_Scripts' + os.path.sep + 
+        'Data' + os.path.sep + 'lcoe_learning_data_wind.csv')
+except FileNotFoundError:
+    exit('File not found error. Please download the data from '
+          'https://ars.els-cdn.com/content/image/1-s2.0-S2589004222006496-mmc2.zip')
 
 add_prod_data = add_prod_data[['year','wind_global_gwh','raw_lcoe']]
 add_prod_data_1984_1990 = add_prod_data.loc[(add_prod_data['year']<=1990)

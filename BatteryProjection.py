@@ -22,11 +22,15 @@ validation = True
 val_year = 2000
 
 # read original li-ion battery data 
-price = pd.read_excel(
-    '..' + os.path.sep + 
-    'MicahTrancik' + os.path.sep + 
-    'LiIonDataSeries_represonly_withcover.xlsx',
-                   sheet_name='RepreSeries_Price_All_Cells')
+try:
+    price = pd.read_excel(
+        '..' + os.path.sep + 
+        'MicahTrancik' + os.path.sep + 
+        'LiIonDataSeries_represonly_withcover.xlsx',
+                    sheet_name='RepreSeries_Price_All_Cells')
+except FileNotFoundError:
+    exit('File not Found Error: Please download the data at '
+         'https://doi.org/10.7910/DVN/9FEJ7C')
 price = price[['IndependentAxisData','DependentAxisData']]
 price.columns = ['Time (Year)','Unit cost (2018 USD/kWh)']
 prod = pd.read_excel(

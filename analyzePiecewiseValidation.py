@@ -214,7 +214,7 @@ plt.plot(10**np.linspace(-1, 5, 1000),
 
 # add legend and labels
 legend = plt.gca().get_legend()
-handles = legend.legendHandles
+handles = legend.legend_handles
 handles.append(plt.Line2D([0], [0], color='k', lw=2))
 labels = [x.get_text() for x in legend.get_texts()]
 labels.append('Exponential distribution fit')
@@ -269,7 +269,7 @@ plt.plot(np.linspace(-2, 2, 1000),
             lw=2)
 
 legend = plt.gca().get_legend()
-handles = legend.legendHandles
+handles = legend.legend_handles
 handles.append(plt.Line2D([0], [0], color='k', lw=2))
 labels = [x.get_text() for x in legend.get_texts()]
 labels.append('Normal distribution fit')

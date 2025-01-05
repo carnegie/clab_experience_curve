@@ -303,7 +303,7 @@ ax[1].set_title('Bayesian Information Criterion')
 fig.subplots_adjust(bottom=0.3, left=0.05, right=0.95, top=0.95)
 figbic.subplots_adjust(bottom=0.1, left=0.05, right=0.6, top=0.95)
 figbic.savefig('figs'+os.path.sep+'BIC.pdf')
-plt.show()
+
 if not os.path.exists('figs' + os.path.sep + 'SupplementaryFigures'):
     os.makedirs('figs' + os.path.sep + 'SupplementaryFigures')
 fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' 
@@ -342,33 +342,34 @@ for n_break in range(1, max_breakpoints + 1):
                             [sel['LR '+str(i+1)].median(),
                             sel['LR '+str(i+1)].median()],
                             ls='--', color='w', lw=2)
-        ax[n_break-1][0].fill_between(
-            [i-0.2, i+0.2],
-            sel['LR '+str(i+1)].quantile(0.25),
-            sel['LR '+str(i+1)].quantile(0.75),
-            alpha=0.6,
-            lw=0,
-            color=sns.color_palette()[0]
-            )
-        ax[n_break-1][0].fill_between(
-            [i-0.2, i+0.2],
-            sel['LR '+str(i+1)].quantile(0.05),
-            sel['LR '+str(i+1)].quantile(0.95),
-            alpha=0.3,
-            lw=0,
-            color=sns.color_palette()[0],
-            )
+        if sel.shape[0] > 1:
+            ax[n_break-1][0].fill_between(
+                [i-0.2, i+0.2],
+                sel['LR '+str(i+1)].quantile(0.25),
+                sel['LR '+str(i+1)].quantile(0.75),
+                alpha=0.6,
+                lw=0,
+                color=sns.color_palette()[0]
+                )
+            ax[n_break-1][0].fill_between(
+                [i-0.2, i+0.2],
+                sel['LR '+str(i+1)].quantile(0.05),
+                sel['LR '+str(i+1)].quantile(0.95),
+                alpha=0.3,
+                lw=0,
+                color=sns.color_palette()[0],
+                )
         ax[n_break-1][0].scatter(i * np.ones(sel.shape[0]),
                                 sel['LR '+str(i+1)], 
                                 color=sns.color_palette()[0],
                                 alpha=0.5,
                                 s=25)
         if i < n_break:
-            ax[n_break-1][1].bar(i+0.5, np.corrcoef(sel['LR '+str(i+1)],
-                                            sel['LR '+str(i+2)])[0,1],
-                                            color=sns.color_palette()[0])
+            if sel.shape[0] > 1:
+                ax[n_break-1][1].bar(i+0.5, np.corrcoef(sel['LR '+str(i+1)],
+                                                sel['LR '+str(i+2)])[0,1],
+                                                color=sns.color_palette()[0])
             
-        
     for t in sel['Tech'].unique():
         ax[n_break-1][0].plot([x for x in range(n_break +1)], 
                                 sel[sel['Tech'] == t][['LR '+str(i+1) 
@@ -396,7 +397,7 @@ ax[0][0].annotate('Correlation coefficient',
                     ha='center', va='center',
                     rotation=90)
 
-plt.subplots_adjust(hspace=0.3, bottom=0.025, 
+fig.subplots_adjust(hspace=0.3, bottom=0.025, 
                     left=0.1, right=0.95, top=0.95)
 
 plt.show()

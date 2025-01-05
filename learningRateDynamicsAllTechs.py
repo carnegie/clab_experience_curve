@@ -63,45 +63,54 @@ tech = 'Li-ion battery'
 filename = ('..' + os.path.sep
             + 'MicahTrancik' + os.path.sep
             + 'LiIonDataSeries_represonly_withcover.xlsx')
-price = pd.read_excel(filename,
-    sheet_name='RepreSeries_Price_All_Cells')
-price = price[['IndependentAxisData','DependentAxisData']]
-price.columns = ['Time (Year)','Unit cost (2018 USD/kWh)']
-prod = pd.read_excel(filename, 
-                     sheet_name='RepreSeries_MarketSize_All_MWh')
-prod = prod[['IndependentAxisData','DependentAxisData']]
-prod.columns = ['Time (Year)','Cumulative production (MWh)']
-prod = prod[['Time (Year)','Cumulative production (MWh)']]
+try: 
+    price = pd.read_excel(filename,
+        sheet_name='RepreSeries_Price_All_Cells')
+except FileNotFoundError:
+    print('File not found. Please download the Lihium-ion battery data from '
+          'the Harvard Dataverse repository at '
+          'https://doi.org/10.7910/DVN/9FEJ7C')
+    price = None
+if price is not None:
+    price = price[['IndependentAxisData','DependentAxisData']]
+    price.columns = ['Time (Year)','Unit cost (2018 USD/kWh)']
+    prod = pd.read_excel(filename, 
+                        sheet_name='RepreSeries_MarketSize_All_MWh')
+    prod = prod[['IndependentAxisData','DependentAxisData']]
+    prod.columns = ['Time (Year)','Cumulative production (MWh)']
+    prod = prod[['Time (Year)','Cumulative production (MWh)']]
 
-df = pd.merge(price, prod, on='Time (Year)').reset_index(drop=True)
-df['Production (MWh)'] = df['Cumulative production (MWh)'].diff()
-df = df[['Unit cost (2018 USD/kWh)', 'Time (Year)', 
-         'Production (MWh)','Cumulative production (MWh)']]
+    df = pd.merge(price, prod, on='Time (Year)').reset_index(drop=True)
+    df['Production (MWh)'] = df['Cumulative production (MWh)'].diff()
+    df = df[['Unit cost (2018 USD/kWh)', 'Time (Year)', 
+            'Production (MWh)','Cumulative production (MWh)']]
 
-# plot data
-utils.plot_cost_prod_learning_dynamics(df=df, tech=tech, fig=fig, 
-                                       ax=ax[2,:],
-                                       time_range=[1977,2022], 
-                                       cmap=cmap,
-                                       savefig=False)
+    # plot data
+    utils.plot_cost_prod_learning_dynamics(df=df, tech=tech, fig=fig, 
+                                        ax=ax[2,:],
+                                        time_range=[1977,2022], 
+                                        cmap=cmap,
+                                        savefig=False)
 
-# adjust figure spacing
-fig.subplots_adjust(left=0.1, right=0.95,
-                    top=0.925, bottom=0.1,
-                    hspace=0.65, wspace=0.1)
+    # adjust figure spacing
+    fig.subplots_adjust(left=0.1, right=0.95,
+                        top=0.925, bottom=0.1,
+                        hspace=0.65, wspace=0.1)
 
-# adjust ticks colorbar
-fig.axes[-1]._colorbar.set_ticks([1977,1980,1990,2000,2010,2020,2022])
-fig.axes[-1]._colorbar.set_ticklabels([1977,1980,1990,2000,2010,2020,2022])
+    # adjust ticks colorbar
+    fig.axes[-1]._colorbar.set_ticks([1977,1980,1990,2000,
+                                      2010,2020,2022])
+    fig.axes[-1]._colorbar.set_ticklabels([1977,1980,1990,2000,
+                                           2010,2020,2022])
 
-# set equal aspect maintaining box size
-ax[0][0].set_aspect('equal', adjustable='datalim')
-ax[1][0].set_aspect('equal', adjustable='datalim')
-ax[2][0].set_aspect('equal', adjustable='datalim')
+    # set equal aspect maintaining box size
+    ax[0][0].set_aspect('equal', adjustable='datalim')
+    ax[1][0].set_aspect('equal', adjustable='datalim')
+    ax[2][0].set_aspect('equal', adjustable='datalim')
 
-# save figure
-plt.savefig('figs' + os.path.sep + 'learningRateDynamics.png')
-plt.savefig('figs' + os.path.sep + 'learningRateDynamics.pdf')
+    # save figure
+    plt.savefig('figs' + os.path.sep + 'learningRateDynamics.png')
+    plt.savefig('figs' + os.path.sep + 'learningRateDynamics.pdf')
 
 plt.show()
 

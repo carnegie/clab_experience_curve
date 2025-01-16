@@ -42,7 +42,7 @@ newdata_prod = newdata_prod['Wind'].values
 # read LCOE data from IEA
 newdata_cost = pd.read_excel(
     'AdditionalData' + os.path.sep + 
-    'IRENA_Costs_in_2022_rawdatafile.xlsx',
+    'IRENA_RenewablePowerGenerationCosts_2022.xlsx',
                              sheet_name='Fig 2.11', header=3)
 newdata_cost = newdata_cost.iloc[:,:]
 newdata_cost = newdata_cost['Weighted average'].values

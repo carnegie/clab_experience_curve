@@ -50,7 +50,7 @@ newdata_prod = (df.loc[df['Year']==1990,
 # read cost data
 newdata_cost = pd.read_excel(
         'AdditionalData' + os.path.sep + 
-        'IRENA_Costs_in_2022_rawdatafile.xlsx',
+        'IRENA_RenewablePowerGenerationCosts_2022.xlsx',
                              sheet_name='Fig 3.1', header=22, index_col=1)
 # get average LCOE
 newdata_cost = newdata_cost.loc['Weighted average'].values[1:]

@@ -23,8 +23,8 @@ conda env create -f expCurveEnv.yml
 
 Run the scripts:
 - `CreateDataset.py` (Fig. 1a, S1-2)
-- `LearningRateanalysis.py` (Fig. 1b)
-- `LearningRateDyamicsAllTechs.py` (Fig. 2)
+- `LearningRateAnalysis.py` (Fig. 1b)
+- `LearningRateDynamicsAllTechs.py` (Fig. 2)
 - `LearningRateErrorAggregate.py` (Fig. S3)
 - `PiecewiseRegression.py` (Fig. 3a, S4)
 - `AnalyzePiecewise.py` (Fig. S5, S6, S7)

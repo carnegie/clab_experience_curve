@@ -44,9 +44,11 @@ for data, techs, remove_sector in zip([True, False, True],
 
     half_data = data
     half_techs = techs
-    output_file = "_half_data"*(half_data) + "_half_techs"*(half_techs)
+    output_file = ("IC_half_data"*(half_data) 
+                   + "_half_techs"*(half_techs))
     if remove_sector is not None:
-        output_file += "_no"+remove_sector
+        output_file += "_no" + remove_sector
+    output_file += ".csv"
 
     
     # perform continuous piecewise regression 

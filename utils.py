@@ -611,9 +611,6 @@ def build_piecewise_regression_dataset(df,
                     slopes.append(np.nan)
                     breaks.append(np.nan)
 
-                if plot_fig_tech:
-                    plt.plot(x, res.predict(sm.add_constant(x)))
-
                 # define parameters for information criteria computation
                 n = x.shape[0]
                 k = 1
@@ -642,6 +639,9 @@ def build_piecewise_regression_dataset(df,
                 for i in range(n_breaks + 1, max_breakpoints + 1):
                     slopes.append(np.nan)
                     breaks.append(np.nan)
+
+                if plot_fig_tech:
+                    plt.plot(x, res.predict(sm.add_constant(x)))
 
             
             # handle case with one or more breakpoints
@@ -769,7 +769,10 @@ def build_piecewise_regression_dataset(df,
                                     'LR 5', 'LR 6', 'LR 7', 
                                     'Number of observations'])
 
-    IC.to_csv('IC' + output_file + '.csv', index=False)
+    if output_file is None:
+        output_file = "IC.csv"
+
+    IC.to_csv(output_file, index=False)
     
     return IC
 

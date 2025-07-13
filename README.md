@@ -25,14 +25,18 @@ Run the scripts:
 - `CreateDataset.py` (Fig. 1a, S1-2)
 - `LearningRateAnalysis.py` (Fig. 1b)
 - `LearningRateDynamicsAllTechs.py` (Fig. 2)
-- `LearningRateErrorAggregate.py` (Fig. S3)
-- `PiecewiseRegression.py` (Fig. 3a, S4)
-- `AnalyzePiecewise.py` (Fig. S5, S6, S7)
+- `LearningRateErrorAggregate.py` (Fig. S6)
+- `PiecewiseRegression.py` (Fig. 3a, S7)
+- `AnalyzePiecewise.py` (Fig. S3, S4, S5, Tables S1, S2)
+- `PiecewiseRobustness.py` (Fig. S8, S9)
 - `AnalyzePiecewiseValidation.py` (Fig. 3b)
 - `SolarProjection.py` (Fig. 4a)
 - `WindProjection.py` (Fig. 4b)
 - `BatteryProjection.py` (Fig. 4c)
 
+# Summary table
+To obtain the summary table run the script:
+- `TechInfo.py` (Table 1)
 
 # Material
 

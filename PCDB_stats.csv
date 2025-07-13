@@ -1,0 +1,88 @@
+Technology,Sector,Years,Data points
+AcrylicFiber,Chemicals,1960-1972,13
+Acrylonitrile,Chemicals,1959-1972,14
+Aluminum,Chemicals,1956-1972,17
+Ammonia,Chemicals,1960-1972,13
+Aniline,Chemicals,1961-1972,12
+Benzene,Chemicals,1953-1968,16
+BisphenolA,Chemicals,1959-1972,14
+Caprolactam,Chemicals,1962-1972,11
+CarbonBlack,Chemicals,1964-1972,9
+CarbonDisulfide,Chemicals,1963-1972,10
+Cyclohexane,Chemicals,1956-1972,17
+Ethanol (Brazil),Chemicals,1981-2004,24
+Ethanol 2,Chemicals,1978-1994,17
+Ethanolamine,Chemicals,1955-1972,18
+EthylAlcohol,Chemicals,1958-1972,15
+Ethylene,Chemicals,1954-1968,15
+Ethylene 2,Chemicals,1960-1972,13
+EthyleneGlycol,Chemicals,1960-1972,13
+Formaldehyde,Chemicals,1962-1972,11
+HydrofluoricAcid,Chemicals,1962-1972,11
+IsopropylAlcohol,Chemicals,1964-1972,9
+Low Density Polyethylene,Chemicals,1953-1968,16
+Magnesium,Chemicals,1954-1972,19
+MaleicAnhydride,Chemicals,1959-1972,14
+Methanol,Chemicals,1957-1972,16
+Motor Gasoline,Chemicals,1947-1968,22
+NeopreneRubber,Chemicals,1960-1972,13
+Paraxylene,Chemicals,1958-1968,11
+Pentaerythritol,Chemicals,1952-1972,21
+Phenol,Chemicals,1959-1972,14
+PhthalicAnhydride,Chemicals,1955-1972,18
+PolyesterFiber,Chemicals,1960-1972,13
+PolyethyleneHD,Chemicals,1958-1972,15
+PolyethyleneLD,Chemicals,1958-1972,15
+Polypropylene,Chemicals,1960-1968,9
+Polystyrene,Chemicals,1944-1968,25
+Polyvinylchloride,Chemicals,1947-1968,22
+Primary Aluminum,Chemicals,1930-1968,39
+Primary Magnesium,Chemicals,1930-1968,39
+Sodium,Chemicals,1957-1972,16
+SodiumChlorate,Chemicals,1958-1972,15
+SodiumHydrosulfite,Chemicals,1964-1972,9
+Sorbitol,Chemicals,1965-1972,8
+Styrene,Chemicals,1958-1972,15
+Titanium Sponge,Chemicals,1951-1968,18
+TitaniumDioxide,Chemicals,1964-1972,9
+Trichloroethane,Chemicals,1966-1972,7
+Urea,Chemicals,1961-1972,12
+VinylAcetate,Chemicals,1960-1972,13
+VinylChloride,Chemicals,1962-1972,11
+Automotive (US),Consumer goods,1975-2005,23
+Electric Range,Consumer goods,1947-1967,21
+Ford Model-T,Consumer goods,1910-1921,8
+Free Standing Gas Range,Consumer goods,1947-1967,21
+Monochrome Television,Consumer goods,1948-1968,21
+CCGT Electricity,Energy,1982-1996,13
+CCGT Power,Energy,1982-1996,13
+Crude Oil,Energy,1947-1968,22
+Electric Power,Energy,1940-1968,29
+Fotovoltaica,Energy,1958-2007,50
+Geothermal Electricity,Energy,1980-2005,26
+Nuclear Electricity,Energy,1970-1989,20
+Nuclear Power (OECD),Energy,1976-1993,18
+Offshore Gas Pipeline,Energy,1985-1995,11
+Onshore Gas Pipeline,Energy,1980-1992,13
+Photovoltaics,Energy,1976-2003,28
+Photovoltaics 2,Energy,1977-2009,33
+Photovoltaics 4,Energy,1975-2002,28
+SCGT,Energy,1957-1962,6
+Solar Thermal,Energy,1984-2007,9
+Solar Thermal Electricity,Energy,1986-1991,6
+Solar Water Heaters,Energy,1974-2002,10
+Wind Electricity,Energy,1984-2005,22
+Wind Power,Energy,1981-2001,18
+Wind Turbine (Denmark),Energy,1982-2000,19
+Wind Turbine 2 (Germany),Energy,1988-2000,13
+Beer (Japan),Food,1952-1968,17
+Corn (US),Food,1976-2008,33
+Milk (US),Food,1931-2008,78
+Refined Cane Sugar,Food,1936-1968,33
+Wheat (US),Food,1867-2008,142
+Capillary DNA Sequencing,Genomics,2001-2008,8
+Shotgun Sanger DNA Sequencing,Genomics,2002-2009,25
+DRAM,Hardware,1972-2007,36
+Hard Disk Drive,Hardware,1989-2007,19
+Laser Diode,Hardware,1983-1994,12
+Transistor,Hardware,1969-2005,37

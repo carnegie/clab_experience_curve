@@ -11,13 +11,13 @@ To clone the repository, use the following command in the terminal from the fold
 git clone https://github.com/carnegie/clab_experience_curve.git
 ~~~
 
-To install the required packages, we recommend using [conda](https://www.anaconda.com/). A list of the required packages is available in the YAML file (expCurveEnv.yml).
+To create the python environment, use the following commands in the terminal replacing <<PATHTOENV>> with the name of the folder where you want to place your environment:
 
-To create a virtual environment with the required packages using conda, use the following command in the terminal from the folder where the file is located:
-
-~~~
-conda env create -f expCurveEnv.yml
-~~~
+```bash
+python -m venv <<PATHTOENV>>
+source <<PATHTOENV>>/bin/activate
+pip install -r requirements.txt
+```
 
 # Replicating figures
 
@@ -34,7 +34,7 @@ Run the scripts:
 - `WindProjection.py` (Fig. 4b)
 - `BatteryProjection.py` (Fig. 4c)
 
-# Summary table
+# Data summary table
 To obtain the summary table run the script:
 - `TechInfo.py` (Table 1)
 
@@ -48,11 +48,13 @@ The script `LearningRateAnalysis.py` examines the variability of learning rates 
 
 The script `LearningRateDynamicsAllTechs.py` is used to examine the learning rate variability for solar PV, wind, and lithium-ion batteries among other technologies. This script produce Fig.2 as well as Figures S7-12.
 
-The script `LearningRateErrorAggregate.py` examines the distance between learning rate estimated from all the data and learning rate at a certain time or cumulative production. This produces Fig. S3.
+The script `LearningRateErrorAggregate.py` examines the distance between learning rate estimated from all the data and learning rate at a certain time or cumulative production. This produces Fig. S6.
 
-The piecewise regression fits are computed in the script `PiecewiseRegression.py` using a function inside the scipt `utils.py`. These two scripts produce Figs. 3a, S4.
+The piecewise regression fits are computed in the script `PiecewiseRegression.py` using a function inside the scipt `utils.py`. These two scripts produce Figs. 3a, S7.
 
-The script `AnalyzePiecewise.py` examines the results of piecewise regression to fit probability distributions to data and use them in the forecasting model. This script produces Figs. S5, S6, S7.
+The script `AnalyzePiecewise.py` examines the results of piecewise regression to fit probability distributions to data and use them in the forecasting model. This script produces Figs. S3, S4, S5. 
+
+The script `PiecewiseRobustness.py` performs standard non-parametric boostraping to evaluate the stability of breakpoint detection across the technologies in the Performance Curve Database. This script produces the figures S8, S9.
 
 The script `ComparePiecewiseLafondValidation.py`is used to compare the Continuous Ranked Probability Forecast for using half of the data to calibrate models and the remaining half of data for each data series for validation. This scripts uses results obtained from `BuildValidationDataset.py`, analyzed further in `AnalyzePiecewiseValidation.py`.
 

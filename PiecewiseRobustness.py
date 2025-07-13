@@ -122,8 +122,6 @@ def main():
                    + " (" + (IC["Tech"].map(tech_count).astype(str)) 
                    + " points)")
     
-    # IC = IC.sort_values(by="Data points")
-
     # plot uncertainty in number of breaks by tech
     fig, ax = plt.subplots(figsize=(15,8))
     sns.boxplot(data=IC, x="Tech", y="n_breaks", 
@@ -142,6 +140,7 @@ def main():
     fig.savefig("./figs/SupplementaryFigures/BootstrapVsOriginal.pdf")
 
 
+    # build summary comparison dataset
     final_comparison = IC.groupby("Tech").agg(
         {'Median n_breaks': 'first',
          'Original n_breaks': 'first'}
@@ -183,6 +182,7 @@ def main():
               0: "Not detected"})
     )
 
+    # plot the stability of breakpoint detection
     fig, ax = plt.subplots(figsize=(15,8))
     sns.barplot(data=final_comparison,
                 y="Stability score (%)",
@@ -197,6 +197,7 @@ def main():
     plt.tight_layout()
     fig.savefig("./figs/SupplementaryFigures/BreakpointDetection.pdf")
 
+    # plot the stability in the number of breakpoints detected
     fig, ax = plt.subplots(figsize=(15,8))
     sns.barplot(data=final_comparison,
                 y="Stability score (%)",

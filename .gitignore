@@ -7,7 +7,7 @@ energySim/*
 EnergyTransitionCosts.py
 AdditionalData/BolingerEtAl2022/*
 AdditionalData/OurWorldInData/*
-
+robustness/
 
 # Byte-compiled / optimized / DLL files
 */__pycache__/

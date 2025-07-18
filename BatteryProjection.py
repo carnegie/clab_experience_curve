@@ -24,8 +24,8 @@ val_year = 2000
 # read original li-ion battery data 
 try:
     price = pd.read_excel(
-        '..' + os.path.sep + 
-        'MicahTrancik' + os.path.sep + 
+        'AdditionalData' + os.path.sep + 
+        'ZieglerTrancik' + os.path.sep + 
         'LiIonDataSeries_represonly_withcover.xlsx',
                     sheet_name='RepreSeries_Price_All_Cells')
 except FileNotFoundError:
@@ -34,7 +34,7 @@ except FileNotFoundError:
 price = price[['IndependentAxisData','DependentAxisData']]
 price.columns = ['Time (Year)','Unit cost (2018 USD/kWh)']
 prod = pd.read_excel(
-    '../MicahTrancik/LiIonDataSeries_represonly_withcover.xlsx',
+    'AdditionalData/ZieglerTrancik/LiIonDataSeries_represonly_withcover.xlsx',
                    sheet_name='RepreSeries_MarketSize_All_MWh')
 prod = prod[['IndependentAxisData','DependentAxisData']]
 prod.columns = ['Time (Year)','Cumulative production (MWh)']

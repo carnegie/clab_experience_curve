@@ -60,8 +60,8 @@ utils.plot_cost_prod_learning_dynamics(df=df, tech=tech,
 # define technology
 tech = 'Li-ion battery'
 # read original li-ion battery data 
-filename = ('..' + os.path.sep
-            + 'MicahTrancik' + os.path.sep
+filename = ('AdditionalData' + os.path.sep
+            + 'ZieglerTrancik' + os.path.sep
             + 'LiIonDataSeries_represonly_withcover.xlsx')
 try: 
     price = pd.read_excel(filename,

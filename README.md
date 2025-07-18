@@ -38,6 +38,13 @@ Run the scripts:
 To obtain the summary table run the script:
 - `TechInfo.py` (Table 1)
 
+# Additional data
+To run all the scripts additional data is required from previous publications:
+- https://ars.els-cdn.com/content/image/1-s2.0-S2589004222006496-mmc2.zip
+    + (whose content is expected to be placed inside a folder named BolingerEtAl2022 inside the AdditionalData folder)
+- https://doi.org/10.7910/DVN/9FEJ7C
+    + (whose content is expected to be placed in a folder named ZieglerTrancik inside the AdditionalData folder)
+
 # Material
 
 The folder `expCurveData` contains the files for 87 techhnologies as downloaded from the Santa Fe Institute [Performance Curve Database](https://pcdb.santafe.edu/). These are the technologies for which data without missing values is available.

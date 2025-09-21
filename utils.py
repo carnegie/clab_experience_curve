@@ -261,7 +261,8 @@ def compute_BIC(ll, n, k):
 
 def plot_cost_prod_learning_dynamics(df,
                                      tech,
-                                     min_points=20,
+                                     min_points=5,
+                                     min_total_points=20,
                                      lafond=True,
                                      time_range=None,
                                      fig=None,
@@ -283,7 +284,10 @@ def plot_cost_prod_learning_dynamics(df,
         Technology name
 
     min_points : int
-        Minimum number of points to plot data
+        Minimum number of points used to compute learning rate
+
+    min_total_points : int
+        Minimum total number of points to plot data
     
     lafond : bool
         If True, compute learning exponent using first difference
@@ -315,7 +319,7 @@ def plot_cost_prod_learning_dynamics(df,
             'Cumulative production']
 
     # check if there are enough points
-    if df.shape[0] < min_points:
+    if df.shape[0] < min_total_points:
         plt.close(fig)
         print('Not enough points for ' + tech)
         return
@@ -370,7 +374,7 @@ def plot_cost_prod_learning_dynamics(df,
         cal = df[df[df.columns[1]]<=i]
         val = df[df[df.columns[1]]>=i]
 
-        if len(cal) < 5 or len(val) < 5:
+        if len(cal) < min_points or len(val) < min_points:
             continue
 
         if not(lafond):
@@ -771,10 +775,147 @@ def build_piecewise_regression_dataset(df,
 
     if output_file is None:
         output_file = "IC.csv"
+        if min_dist != np.log10(2):
+            output_file = "IC_" + str(10**min_dist) + '.csv'
 
     IC.to_csv(output_file, index=False)
     
     return IC
+
+def add_moore_model_regression_dataset(df, 
+                                       IC,
+                                       max_breakpoints=6,
+                                       plot_fig_tech=False,
+                                       half_data=False,
+                                       half_techs=False,
+                                       remove_sector=None,
+                                       output_file=None
+                                       ):
+    
+    """
+    Build dataset for piecewise regression analysis
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Dataframe containing technology data
+
+    IC : pandas.DataFrame
+        Dataframe containing information criteria on regression experiments
+
+    max_breakpoints : int
+        Maximum number of breakpoints
+
+    plot_fig_tech : bool
+        If True, plot data for each technology
+
+    half_data : bool
+        If True, use only half of the data for each time series
+    
+    half_techs : bool
+        If True, use only a randomly selected half of the technologies 
+
+    remove_sector : str
+        Name of the sector to remove from the dataset
+
+    output_file : str
+        Name of the output file to append to "IC" (Information Criteria)
+
+    Returns
+    -------
+    IC : list
+        List containing information criteria values
+
+    """
+
+    # if half_techs is True, randomly select half of the technologies
+    if half_techs:
+        techs = np.random.choice(df['Tech'].unique(),
+                                 round(df['Tech'].unique().shape[0]/2),
+                                 replace=False)
+        df = df[df['Tech'].isin(techs)]
+
+    # Iterate over the technologies
+    for t in df['Tech'].unique():
+
+        if remove_sector is not None:
+            if sectorsinv[t] == remove_sector:
+                continue
+        
+        # extract log10 of cumulative production and unit cost
+        x = np.log10(df[df['Tech'] == t]
+                        ['Cumulative production'].values)
+        y = np.log10(df[df['Tech'] == t]
+                        ['Unit cost'].values)
+        time = df[df['Tech'] == t]['Year'].values
+        
+        # if half_data is True, use only half of the data
+        if half_data:
+            x = x[:round(x.shape[0]/2)]
+            y = y[:round(y.shape[0]/2)]
+            time = time[:round(time.shape[0]/2)]
+
+        if plot_fig_tech:
+            plt.figure()
+            plt.title(t)
+            plt.plot(time, y, 'o')
+
+        slopes = []
+        breaks = []
+
+        # fit linear regression after differencing
+        res = sm.OLS(np.diff(y), np.ones(len(y)-1)).fit()
+
+        # store the sum of squared residuals
+        rss = res.ssr
+
+        # store slope, constant is nan
+        slopes.append(res.params[0])
+        const = np.nan
+
+        # fill in the remaining slots with NaN
+        for i in range(1, max_breakpoints + 1):
+            slopes.append(np.nan)
+            breaks.append(np.nan)
+
+        # define parameters for information criteria computation
+        n = x.shape[0]
+        k = 1
+
+        # compute information criteria
+        aic = compute_AIC(compute_log_likelihood(rss, n-1), k)
+        bic = compute_BIC(compute_log_likelihood(rss, n-1), n-1, k)
+
+        # create df
+        new_df = pd.DataFrame([[t, 0, -1, aic, bic,
+                    np.nan,
+                    x[0], *breaks, x[-1], *slopes, x.shape[0]]],
+                    columns = ['Tech', 'n_breaks', 'First Diff.', 
+                                   'AIC', 'BIC',
+                                    'Intercept',
+                                    'Initial production', 'Breakpoint 1',
+                                    'Breakpoint 2', 'Breakpoint 3', 
+                                    'Breakpoint 4','Breakpoint 5', 
+                                    'Breakpoint 6',
+                                    'Final production',
+                                    'LR 1', 'LR 2', 'LR 3', 'LR 4',
+                                    'LR 5', 'LR 6', 'LR 7', 
+                                    'Number of observations'])
+
+        # append it to previous file
+        IC = pd.concat([IC, new_df])
+    
+        if plot_fig_tech:
+            plt.show()
+
+    if output_file is None:
+        output_file = "IC_moore.csv"
+    
+    IC = IC.reset_index()
+    IC.to_csv(output_file, index=False)
+
+    return IC
+
 
 def fit_probability_dist(data, floc=None):
 

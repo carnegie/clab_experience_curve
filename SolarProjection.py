@@ -14,12 +14,15 @@ plt.rcParams['savefig.dpi'] = 300
 
 color_pw = cm.cm.batlow(180)
 color_l = cm.cm.batlow(50)
+color_m = cm.cm.batlow(140)
 alpha=0.2
 
 boxplot = True
 
 validation = True
 val_year = 2000
+
+include_moore = True
 
 # load data
 df = pd.read_csv('ExpCurves.csv')
@@ -78,6 +81,10 @@ new_solar_series = pd.DataFrame({'Unit cost (2022 USD/MWh)': cost,
 # save combined solar pv data series
 new_solar_series.to_csv('solar_pv_PCDB_IEA_IRENA.csv', index=False)
 
+# split data into calibration and validation
+prod, cost, prod_val, cost_val = utils.split_calibration_validation(
+    new_solar_series, val_year)
+
 # run multiple piecewise regression experiments to find the best model
 nexp = 10 # number of experiments to evaluate best models
 best = utils.repeat_piecewise_model_selection(
@@ -87,9 +94,7 @@ best = utils.repeat_piecewise_model_selection(
 IC = best.loc[best['RSS']==best['RSS'].min(), 
               best.columns[1:]].reset_index(drop=True)
 
-# split data into calibration and validation
-prod, cost, prod_val, cost_val = utils.split_calibration_validation(
-    new_solar_series, val_year)
+IC.to_csv('IC_solar.csv', index=False)
 
 # plot calibration
 fig, ax = utils.plot_calibration_piecewise(
@@ -176,7 +181,7 @@ if validation is False:
     sigma = 0.103
 else:
     ar1 = .19
-    sigma = (np.var(residuals, ddof=1)/(1+ar1**2))**0.5
+    sigma = (np.var(residuals, ddof=1)/(1 + ar1**2))**0.5
 
 ## build projections using linear regression model
 proj = []
@@ -201,13 +206,6 @@ for i in range(proj.shape[1]):
         utils.compute_crps(proj[:,i], np.log10(cost_val[i])))
 crps_wright = np.array(crps_wright)
 
-# print results
-print('CRPS piecewise:', crps_piecewise.mean())
-print('CRPS wright:', crps_wright.mean())
-print('CRPSs piecewise:', crps_piecewise)
-print('CRPSs wright:', crps_wright)
-print('Paired t test:', scipy.stats.ttest_rel(crps_piecewise, crps_wright))    
-
 ax.fill_between(10**fut_prod, 10**np.percentile(proj, 5, axis=0),
                 10**np.percentile(proj, 95, axis=0), 
                 color=color_l, alpha=alpha, zorder=-10, lw=0)
@@ -218,6 +216,58 @@ ax.plot(10**fut_prod, 10**np.percentile(proj, 95, axis=0),
 ax.plot(10**fut_prod, 10**np.median(proj, axis=0), 
         color=color_l, lw=2, zorder=-5,
         label='First difference Wright\'s law')
+
+# print results
+print('CRPS piecewise:', crps_piecewise.mean())
+print('CRPS wright:', crps_wright.mean())
+print('CRPSs piecewise:', crps_piecewise)
+print('CRPSs wright:', crps_wright)
+print('Paired t test:', scipy.stats.ttest_rel(crps_piecewise, crps_wright))    
+
+if include_moore:
+    ### add Moore's law
+    y = np.log10(new_solar_series.loc[new_solar_series["Time (Year)"] < val_year, 
+                                    ["Unit cost (2022 USD/MWh)"]].values.T[0])
+
+    mu = np.mean(y[1:] - y[:-1])
+    sigma = np.std((y[1:] - y[:-1]) - np.mean(y[1:] - y[:-1]))
+
+    ## build projections using Moore's model
+    proj = []
+
+    for s in range(nsim):
+        y_val = []
+        for _ in new_solar_series['Time (Year)'].tolist():
+            if _ >= val_year:
+                if len(y_val) == 0:
+                    previous = y[-1]
+                else:
+                    previous = y_val[-1]
+                y_val.append(previous + mu + sigma * np.random.randn())
+        proj.append(y_val)
+
+    proj = np.array(proj)
+
+    # compute crps
+    crps_moore = []
+    for i in range(proj.shape[1]):
+        crps_moore.append(
+            utils.compute_crps(proj[:,i], np.log10(cost_val[i])))
+    crps_moore = np.array(crps_moore)
+
+    print('CRPS moore:', crps_moore.mean())
+    print('CRPSs moore:', crps_moore)
+
+    ax.fill_between(10**fut_prod, 10**np.percentile(proj, 5, axis=0),
+                    10**np.percentile(proj, 95, axis=0), 
+                    color=color_m, alpha=alpha, zorder=-10, lw=0)
+    ax.plot(10**fut_prod, 10**np.percentile(proj, 5, axis=0), 
+            color=color_m, ls=':', zorder=-8,lw=1)
+    ax.plot(10**fut_prod, 10**np.percentile(proj, 95, axis=0), 
+            color=color_m, ls=':', zorder=-8, lw=1)
+    ax.plot(10**fut_prod, 10**np.median(proj, axis=0), 
+            color=color_m, lw=2, zorder=-5,
+            label='Moore\'s law')
 
 ax.minorticks_off()
 plt.legend(loc='lower left')
@@ -238,14 +288,24 @@ axes.annotate('Median', xy=(1.5,0.5), xycoords='data',
 
 axes.plot([1.1,2.1,2.1,1.1], [0,0,1,1], color='k', lw=.2)
 
-if not os.path.exists('figs'):
-    os.makedirs('figs')
+os.makedirs('figs', exist_ok=True)
 
-plt.gcf().savefig('figs' + os.path.sep + 
-                    'SolarPVProjection' + 
-                    '_val' * validation + '.png')
-plt.gcf().savefig('figs' + os.path.sep + 
-                    'SolarPVProjection' + 
-                    '_val' * validation + '.pdf')
+if include_moore:
+    os.makedirs('figs/SupplementaryFigures', exist_ok=True)
+    plt.gcf().savefig('figs' + os.path.sep +
+                      'SupplementaryFigures' + os.path.sep +
+                        'SolarPVProjection' + 
+                        '_val' * validation + '_moore.png')
+    plt.gcf().savefig('figs' + os.path.sep + 
+                      'SupplementaryFigures' + os.path.sep +
+                        'SolarPVProjection' + 
+                        '_val' * validation + '_moore.pdf')
+else:
+    plt.gcf().savefig('figs' + os.path.sep + 
+                        'SolarPVProjection' + 
+                        '_val' * validation + '.png')
+    plt.gcf().savefig('figs' + os.path.sep + 
+                        'SolarPVProjection' + 
+                        '_val' * validation + '.pdf')
 
 plt.show()

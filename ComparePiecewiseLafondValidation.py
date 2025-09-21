@@ -66,6 +66,7 @@ for t in df['Tech'].unique():
     # get cost and production data for technology
     x = df[df['Tech'] == t]['Cumulative production'].values
     y = df[df['Tech'] == t]['Unit cost'].values
+    time = df[df['Tech'] == t]['Year'].values
 
     # plot data
     if plotFigTech:
@@ -104,7 +105,22 @@ for t in df['Tech'].unique():
     y_diff_cal_pred = 10**(np.log10(y[:round(x.shape[0]/2)-1]) 
                            + y_diff_cal_pred)
     y_diff_cal_pred = np.insert(y_diff_cal_pred,0,y[0])
-                           
+
+
+    ## MOORE'S MODEL
+    y_cal = np.log10(y[:round(y.shape[0]/2)])
+    time_cal = time[:round(y.shape[0]/2)]
+
+    # build linear regression model, fit it, and save progress exponent
+    if all(np.diff(time_cal)) == 1:
+        moore_lexp = np.mean(y_cal[1:] - y_cal[:-1])
+        moore_noise = np.std( y_cal[1:] - y_cal[:-1]
+                             - moore_lexp )
+    else:
+        time_diff = np.diff(time_cal)
+        moore_lexp = np.mean((y_cal[1:] - y_cal[:-1]) / time_diff)
+        moore_noise = np.std( (y_cal[1:] - y_cal[:-1]) / time_diff
+                             - moore_lexp )
 
     # PIECEWISE REGRESSION MODEL - calibration period
     # use half of the points to compute error of the model
@@ -154,12 +170,13 @@ for t in df['Tech'].unique():
     # use the remaining points for prediction and error comparison
     x_val = np.log10(x[round(x.shape[0]/2)-1:])
     y_val = np.log10(y[round(y.shape[0]/2)-1:])
+    time_val = time[round(y.shape[0]/2)-1:]
 
     # FIRST DIFFERENCE LINEAR REGRESSON MODEL FORECAST
     # forecast using first difference wright's law
     x_diff_val = np.diff(x_val)
 
-    y_diff_val_sim = np.zeros((nsim, x_diff_val.shape[0]+1))
+    y_diff_val_sim = np.zeros((nsim, x_diff_val.shape[0] + 1))
     for n in range(nsim):
         y_diff_val_pred = np.array([np.log10(y[round(y.shape[0]/2)-1])])
         noise = 0
@@ -197,6 +214,30 @@ for t in df['Tech'].unique():
                          alpha=0.2, color='red',
                          label='Lafond - 5-95%')
 
+
+    # MOORE'S MODEL FORECAST
+    time_diff_val = np.diff(time_val)
+
+    y_moore_val_sim = np.zeros((nsim, time_diff_val.shape[0] + 1))
+    for n in range(nsim):
+        y_moore_val_pred = np.array([np.log10(y[round(y.shape[0]/2)-1])])
+        for i in range(time_diff_val.shape[0]):
+            noise = np.random.randn() * moore_noise
+            y_moore_val_pred = np.append(y_moore_val_pred,
+                                        y_moore_val_pred[-1] 
+                                        + moore_lexp
+                                        + noise)
+        y_moore_val_pred = 10**(y_moore_val_pred)
+        y_moore_val_sim[n,:] = y_moore_val_pred    
+
+    # compute continuous rank probability score and log score
+    crps_moore_ = np.zeros(y_moore_val_sim.shape[1])
+    logs_moore_ = np.zeros(y_moore_val_sim.shape[1])
+    for i in range(y_moore_val_sim.shape[1]):
+        obs = y[round(y.shape[0]/2)-1:]
+        preds = y_moore_val_sim[:,i]
+        crps_moore_[i] = utils.compute_crps(preds, obs[i])
+        logs_moore_[i] = utils.compute_logscore(preds, obs[i])
 
     # PIECEWISE LINEAR REGRESSION FORECAST
     y_val_sim = np.zeros((nsim, x_val.shape[0]))
@@ -261,7 +302,8 @@ for t in df['Tech'].unique():
     # store results
     crps_piecewise = np.mean(crps_piecewise_)
     crps_wright = np.mean(crps_wright_)
-    crpss.append([crps_wright, crps_piecewise])
+    crps_moore = np.mean(crps_moore_)
+    crpss.append([crps_wright, crps_moore, crps_piecewise])
 
     if plotFigTech:
         plt.plot(10**x_val, np.median(y_val_sim, axis=0), color='blue',
@@ -274,7 +316,9 @@ for t in df['Tech'].unique():
         plt.ylabel('Unit cost')
         plt.legend()
         plt.tight_layout()
-        plt.savefig('/Users/angelocarlino/Desktop/Techs_comparison/'+t+'.png')
+        os.makedirs('figs/SupplementaryFigures/Techs_comparison/', 
+                    exist_ok=True)
+        plt.savefig('figs/SupplementaryFigures/Techs_comparison/'+t+'.png')
         plt.close('all')
 
 # save results to dataframe
@@ -283,9 +327,22 @@ result = pd.DataFrame(np.concatenate([crpss,
                                       ],
                                       axis=1),
                       columns=['CRPS - Constant',
+                               'CRPS - Moore',
                                'CRPS - Variable',
                                'CRPS - p-value',
                                ])
+
+print("Number of data series for which piecewise is better:")
+print(result.loc[(result["CRPS - Variable"] < result['CRPS - Constant'])
+                 & (result["CRPS - Variable"] < result['CRPS - Moore'])].shape)
+print("Number of data series for which Wright's model is better:")
+print(result.loc[(result["CRPS - Constant"] < result['CRPS - Variable'])
+                 & (result["CRPS - Constant"] < result['CRPS - Moore'])].shape)
+print("Number of data series for which Moore's model is better:")
+print(result.loc[(result["CRPS - Moore"] < result['CRPS - Variable'])
+                 & (result["CRPS - Moore"] < result['CRPS - Constant'])].shape)
+print("Number of data series for which Piecewise is better than Moore's model:")
+print(result.loc[(result["CRPS - Variable"] < result['CRPS - Moore'])].shape)
 
 # print the results
 print('Piecewise is better in CRPS:')
@@ -311,7 +368,6 @@ result['CRPS - Linear'] = [x[0] > x[1]
                                 'CRPS - Constant']].values]
 
 ## plotting the results
-
 for sec in result['Sector'].unique():
     sel = result.loc[result['Sector']==sec]
     fig, ax = plt.subplots(figsize=(16,8))
@@ -351,4 +407,64 @@ ax.set_yticks([0,1,2],
                'No significant difference in error between the forecasts'])
 ax.set_position([0.1, 0.7, 1/50*0.8, 0.3])
 
+### plot best, second best and worst
+models = ['Constant', 'Moore', 'Variable']
+modelmapping = {'Constant': "First difference Wright's Law",
+                'Variable': 'Piecewise linear experience curve',
+                'Moore': "Moore's law",
+                }
+best = pd.DataFrame()
+for model in models:
+    others = [m for m in models if not(m==model)]
+    b = result.loc[
+        (result['CRPS - ' + model] < result['CRPS - ' + others[0]])
+        & (result['CRPS - ' + model] < result['CRPS - ' + others[1]])
+    ].shape[0]
+    w = result.loc[
+        (result['CRPS - ' + model] > result['CRPS - ' + others[0]])
+        & (result['CRPS - ' + model] > result['CRPS - ' + others[1]])
+    ].shape[0]
+    new_row = pd.DataFrame([[modelmapping[model], 
+                                b, 
+                                result['Tech'].nunique() - b - w,
+                                w]],
+                                columns = ['Model',
+                                        'Best',
+                                        'Second best',
+                                        'Third best'])
+    best = pd.concat([best, new_row])
+
+df_melted = best.melt(id_vars='Model', 
+                    value_vars=['Best', 'Second best', 'Third best'],
+                    var_name='Rank', value_name='Number of technologies')
+
+
+custom_palette = {
+    model: color
+    for model, color in zip(df_melted['Model'].unique(), [
+        cm.cm.batlow(30),
+        cm.cm.batlow(140),
+        cm.cm.batlow(180),
+        # Add more if needed depending on number of models
+    ])
+}
+
+fig, ax = plt.subplots(figsize=(9,7))
+
+sns.barplot(df_melted, 
+            x='Rank',
+            y='Number of technologies',
+            hue = 'Model',
+            palette=custom_palette)
+ax.set_xlabel('')
+
+plt.subplots_adjust(bottom=0.35, top=0.975)
+
+
+ax.legend(title='Model',
+          bbox_to_anchor=(0.5, -0.125),  # Centered below the plot
+          loc='upper center',)
+
+
+# plt.tight_layout()
 plt.show()

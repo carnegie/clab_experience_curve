@@ -15,6 +15,9 @@ cmap = cmcrameri.cm.hawaii
 # select techs to be plotted
 df = pd.read_csv('ExpCurves.csv')
 
+# define min number of points to compute learning rate
+min_points = 5
+
 # iterate over selected techs
 for tech in df['Tech'].unique():
 
@@ -44,7 +47,8 @@ utils.plot_cost_prod_learning_dynamics(df=df, tech=tech,
                                  cmap=cmap,
                                  cbar_kws = {'loc':[0.9, 0.25, 0.01, 0.5],
                                              'orientation': 'vertical'},
-                                 savefig=False)
+                                 savefig=False,
+                                 min_points=2)
 
 # define technology
 tech = 'Wind power'
@@ -55,7 +59,8 @@ utils.plot_cost_prod_learning_dynamics(df=df, tech=tech,
                                  fig=fig, ax=ax[1,:],
                                  cmap=cmap,
                                  time_range=[1977,2022],
-                                 savefig=False)
+                                 savefig=False,
+                                 min_points=2)
 
 # define technology
 tech = 'Li-ion battery'
@@ -90,7 +95,8 @@ if price is not None:
                                         ax=ax[2,:],
                                         time_range=[1977,2022], 
                                         cmap=cmap,
-                                        savefig=False)
+                                        savefig=False,
+                                 min_points=2)
 
     # adjust figure spacing
     fig.subplots_adjust(left=0.1, right=0.95,
@@ -111,8 +117,10 @@ if price is not None:
     # save figure
     if not os.path.exists('figs'):
         os.makedirs('figs')
-    plt.savefig('figs' + os.path.sep + 'learningRateDynamics.png')
-    plt.savefig('figs' + os.path.sep + 'learningRateDynamics.pdf')
+    plt.savefig('figs' + os.path.sep + 'learningRateDynamics'
+                + '_' + str(min_points) + '.png')
+    plt.savefig('figs' + os.path.sep + 'learningRateDynamics'
+                + '_' + str(min_points) + '.pdf')
 
 plt.show()
 

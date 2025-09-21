@@ -11,6 +11,8 @@ sns.set_context("talk")
 plt.rcParams['font.sans-serif'] = 'Helvetica'
 plt.rcParams['savefig.dpi'] = 300
 
+overlay_extended_energy_results = False
+
 # read dataset from piecewise regression
 df = pd.read_csv('IC.csv')
 
@@ -142,6 +144,43 @@ breaks_lexp = pd.DataFrame({'Distance between breakpoints':
                                         lexplist,
                                    'Sector': sectors})
 
+if overlay_extended_energy_results == True:
+    extended_energy_IC = pd.DataFrame()
+    for tech in ['solar', 'wind', 'battery']:
+        new_IC = pd.read_csv('IC_' + tech + '.csv')
+        print(new_IC.columns)
+
+        for col in bcols + lexpcols:
+            if col not in new_IC.columns:
+                new_IC[col] = pd.NA
+        breaks = new_IC[bcols]
+        lexps = new_IC[lexpcols]
+        
+        new_breaks = []
+        new_lexplist = []
+        new_sector = []
+
+        for i in range(breaks.shape[0]):
+
+            # store breakpoint distance
+            [new_breaks.append(x)
+                for x in breaks.loc[i,:].dropna().diff().values[1:]]
+
+            #store learning exponents
+            [new_lexplist.append(x)
+                for x in lexps.loc[i,:].dropna().values]
+            
+            [new_sector.append('Extended energy data series')
+                for x in lexps.loc[i,:].dropna().values]
+        
+        extended_energy_IC = pd.concat([extended_energy_IC,
+                                 pd.DataFrame({'Distance between breakpoints': 
+                                        [10**x for x in new_breaks], 
+                                   'Learning exponent': 
+                                        new_lexplist,
+                                   'Sector': new_sector})]
+        )
+
 # create a scatter plot
 sns.jointplot(data=breaks_lexp, 
                 x='Distance between breakpoints',
@@ -150,11 +189,22 @@ sns.jointplot(data=breaks_lexp,
                 hue_order=utils.sectors_colors.keys(),
                 palette=utils.sectors_colors.values(), 
                 alpha=0.5,
-                height=7.25,
+                height=(9 if overlay_extended_energy_results else 7.25),
                 marginal_kws=dict(log_scale=(True,False),
                                   multiple='stack',
                                   lw=.5,),
 )
+
+if overlay_extended_energy_results:
+    sns.scatterplot(data=extended_energy_IC,
+                    x='Distance between breakpoints',
+                    y='Learning exponent',
+                    style='Sector',
+                    markers={'Extended energy data series': '*'},
+                    color=sns.color_palette('dark')[0],
+                    s=200,
+                    ax=plt.gca())
+
 plt.gcf().axes[-1].set_xscale('linear')
 plt.gca().set_ylim(-2, 2)
 plt.tight_layout()
@@ -162,8 +212,17 @@ plt.subplots_adjust(top=1, bottom=0.1, right=1)
 if not os.path.exists('figs'):
     os.makedirs('figs')
 
-plt.savefig('figs' + os.path.sep + 'Breakpoints_vs_LEXP' + '.png')
-plt.savefig('figs' + os.path.sep + 'Breakpoints_vs_LEXP' + '.pdf')
+
+plt.savefig('figs' + os.path.sep + 
+            ('SupplementaryFigures' + os.path.sep 
+             if overlay_extended_energy_results
+             else '') + 'Breakpoints_vs_LEXP' + 
+             ('_ext_energy' if overlay_extended_energy_results else '') + '.png')
+plt.savefig('figs' + os.path.sep + 
+            ('SupplementaryFigures' + os.path.sep 
+             if overlay_extended_energy_results
+             else '') + 'Breakpoints_vs_LEXP' + 
+             ('_ext_energy' if overlay_extended_energy_results else '') + '.pdf')
 
 
 ## fit probability distribution for distance between breakpoints

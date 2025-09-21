@@ -29,12 +29,24 @@ max_breakpoints = 6
 
 # set min distance between breakpoints
 min_dist = np.log10(2)
+# min_dist = np.log10(1.001)
+
+# include Moore's model
+include_moore = False
 
 # set random seed
 np.random.seed(0)
 
 try:
-    IC = pd.read_csv('IC.csv')
+    if min_dist == np.log10(2):
+        IC = pd.read_csv('IC.csv')
+    else:
+        IC = pd.read_csv('IC_' + str(10**min_dist) + '.csv')
+    if include_moore:
+        df = pd.read_csv('ExpCurves.csv')
+        IC = utils.add_moore_model_regression_dataset(
+            df, IC
+        )
 except FileNotFoundError:
     build_pwreg_dataset = True
 
@@ -56,6 +68,10 @@ if build_pwreg_dataset:
                                                     plot_fig_tech,
                                                     half_data,
                                                     half_techs)
+    if include_moore:
+        IC = utils.add_moore_model_regression_dataset(
+            df, IC
+        )
 
 # get the number of technologies belonging to each number of segments
 AIC = (IC.loc[IC.groupby('Tech')['AIC']
@@ -98,7 +114,7 @@ metrics = metrics.drop_duplicates()
 # plot the distribution of technologies over number of segments - pie chart
 fig, ax = plt.subplots(1,2, figsize=(12.5,8))
 
-metrics.loc[metrics['Metric']=='Akaike']\
+pie = metrics.loc[metrics['Metric']=='Akaike']\
     .set_index('Number of segments')\
     .plot.pie(y='Count', autopct='%1.1f%%', 
                 counterclock=False,
@@ -107,13 +123,17 @@ metrics.loc[metrics['Metric']=='Akaike']\
                 label='',
                 colors=sns.color_palette(palette))
 
-metrics.loc[metrics['Metric']=='Bayesian']\
+pie.patches[0].set_facecolor([.4*x for x in pie.patches[0].get_facecolor()])
+
+pie = metrics.loc[metrics['Metric']=='Bayesian']\
     .set_index('Number of segments')\
     .plot.pie(y='Count', autopct='%1.1f%%', 
                 counterclock=False,
                 pctdistance = 1.25, labeldistance=.6,
                 ax=ax[1], legend=False, 
                 label='', colors=sns.color_palette(palette))
+
+pie.patches[0].set_facecolor([.4*x for x in pie.patches[0].get_facecolor()])
 
 fig.legend(metrics['Number of segments'].unique(),
             title='Optimal number of segments',
@@ -128,11 +148,20 @@ if not os.path.exists('figs'):
     os.makedirs('figs')
 
 fig.savefig('figs' + os.path.sep 
-            + 'PieSegments' + '.png')
+            + 'PieSegments'
+            + '_' + str(10**min_dist) 
+            + ('_moore' if include_moore else '') 
+            + '.png')
 fig.savefig('figs' + os.path.sep
-            + 'PieSegments' + '.pdf')
+            + 'PieSegments' 
+            + '_' + str(10**min_dist) + 
+            ('_moore' if include_moore else '') +
+            '.pdf')
 fig.savefig('figs' + os.path.sep 
-            + 'PieSegments' + '.eps')
+            + 'PieSegments' 
+            + '_' + str(10**min_dist) 
+            + ('_moore' if include_moore else '') 
+            + '.eps')
 
 # repeat the same analysis with sectors, 
 # without aggregating the number of segments above 3
@@ -169,7 +198,7 @@ figbic, axbic = plt.subplots(1,1,figsize=(12.5,8))
 
 size = .3
 
-metrics.loc[metrics['Metric']=='Akaike']\
+pie = metrics.loc[metrics['Metric']=='Akaike']\
     .set_index('Number of segments')\
     .plot.pie(y='Count', autopct='%1.1f%%', 
                 counterclock=False,
@@ -177,9 +206,13 @@ metrics.loc[metrics['Metric']=='Akaike']\
                 ax=ax[0], radius = 1,
                 wedgeprops=dict(width=size, edgecolor='w'),
                 legend=False, label='',
-                colors=sns.color_palette(palette))
+                colors=sns.color_palette(palette, 
+                                         n_colors=metrics['Number of segments'].nunique())
+                )
 
-metrics.loc[metrics['Metric']=='Bayesian']\
+pie.patches[0].set_facecolor([.4*x for x in pie.patches[0].get_facecolor()])
+
+pie = metrics.loc[metrics['Metric']=='Bayesian']\
     .set_index('Number of segments')\
     .plot.pie(y='Count', autopct='%1.1f%%', 
                 counterclock=False,
@@ -187,10 +220,13 @@ metrics.loc[metrics['Metric']=='Bayesian']\
                 ax=ax[1], radius = 1,
                 wedgeprops=dict(width=size, edgecolor='w'),
                 legend=False, 
-                label='', colors=sns.color_palette(palette))
+                label='', colors=sns.color_palette(palette,
+                                                   n_colors=metrics['Number of segments'].nunique()))
+
+pie.patches[0].set_facecolor([.4*x for x in pie.patches[0].get_facecolor()])
 
 # use for separate segments plot
-metrics.loc[metrics['Metric']=='Bayesian']\
+pie = metrics.loc[metrics['Metric']=='Bayesian']\
     .set_index('Number of segments')\
     .plot.pie(y='Count', autopct='%1.1f%%', 
                 counterclock=False,
@@ -198,12 +234,20 @@ metrics.loc[metrics['Metric']=='Bayesian']\
                 ax=axbic, radius = 1,
                 wedgeprops=dict(width=size, edgecolor='w'),
                 legend=False, 
-                label='', colors=sns.color_palette(palette))
+                label='', colors=sns.color_palette(palette,
+                                                   n_colors=metrics['Number of segments'].nunique()))
+
+pie.patches[0].set_facecolor([.4*x for x in pie.patches[0].get_facecolor()])
+
 
 fig.legend(metrics['Number of segments'].unique(),
             title='Optimal number of segments',
-            loc='lower center', ncol=6)
+            loc='lower center', ncol=metrics['Number of segments'].nunique())
 
+figbic.legend(handles=axbic.patches[:metrics['Number of segments'].nunique()],
+            labels=metrics['Number of segments'].unique().tolist(),
+            title='Optimal number of segments',
+            loc='upper right', ncol=1)
 
 ## get the number of sectors belonging to each number of segments
 IC['Sector'] = IC['Tech'].apply(lambda x: utils.sectorsinv[x])
@@ -277,25 +321,21 @@ pie = metrics.loc[metrics['Metric']=='Bayesian']\
 
 # separate segments plot
 for i,w in enumerate(pie.patches):
-    if i == 0 or ( i > 5 and i < 12):
+    if min_dist==np.log10(2) and (i == 0 or ( i > 5 and i < 12) ):
         w.set_center((.2,-.2))
 
-pie.patches[0].set_facecolor([.4*x for x in pie.patches[0].get_facecolor()])
 pie.texts[0].set_position([x*1.2 for x in pie.texts[0].get_position()])
 
-fig.legend(handles=ax[0].patches[-6:],
+fig.legend(handles=ax[0].patches[-metrics['Number of segments'].nunique():],
            labels=utils.sectors_colors.keys(),
             title='Sector',
             bbox_to_anchor=[.5,.225], 
             loc='center',
             ncol=3)
 
-figbic.legend(handles=axbic.patches[:6],
-            labels=[x for x in range(1,7)],
-            title='Optimal number of segments',
-            loc='upper right', ncol=1)
 
-legend = figbic.legend(handles=axbic.patches[-6:],
+
+legend = figbic.legend(handles=axbic.patches[-metrics['Number of segments'].nunique():],
             labels=utils.sectors_colors.keys(),
             title='Sector',
             loc='lower right',
@@ -305,14 +345,66 @@ ax[0].set_title('Akaike Information Criterion')
 ax[1].set_title('Bayesian Information Criterion')
 fig.subplots_adjust(bottom=0.3, left=0.05, right=0.95, top=0.95)
 figbic.subplots_adjust(bottom=0.1, left=0.05, right=0.6, top=0.95)
-figbic.savefig('figs'+os.path.sep+'BIC.pdf')
+figbic.savefig('figs'+os.path.sep+'BIC' 
+                + '_' + str(10**min_dist) 
+                + ('_moore' if include_moore else '') 
+                + '.pdf')
 
 if not os.path.exists('figs' + os.path.sep + 'SupplementaryFigures'):
     os.makedirs('figs' + os.path.sep + 'SupplementaryFigures')
 fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' 
-            + os.path.sep + 'PieSegmentsSectors' + '.png')
+            + os.path.sep + 'PieSegmentsSectors' 
+            + '_' + str(10**min_dist) 
+            + ('_moore' if include_moore else '') 
+            + '.png')
 fig.savefig('figs' + os.path.sep + 'SupplementaryFigures' 
-            + os.path.sep + 'PieSegmentsSectors' + '.pdf')
+            + os.path.sep + 'PieSegmentsSectors' 
+            + '_' + str(10**min_dist) 
+            + ('_moore' if include_moore else '') 
+            + '.pdf')
+
+### plot bar by sector
+metrics_by_sector = []
+for sector in metrics["Sector"].unique():
+    for metric in ["Akaike", "Bayesian"]:
+        sel = metrics.loc[(metrics["Sector"]==sector) & (metrics["Metric"]==metric)]
+        metrics_by_sector.append([sector, metric, sel.loc[sel["Number of segments"]>1, "Count"].sum(), sel["Count"].sum()])
+metrics_by_sector = pd.DataFrame(metrics_by_sector,
+                                 columns = ["Sector", "Metric", "Technologies with breakpoints", "Total technologies"])
+metrics_by_sector["Technologies with breakpoints (%)"] = (
+    metrics_by_sector["Technologies with breakpoints"]
+    / metrics_by_sector["Total technologies"] * 100
+)
+print("Sector-weighted percentage of technologies with breakpoints:")
+print(f"AIC: {metrics_by_sector.loc[metrics_by_sector['Metric']=='Akaike', 'Technologies with breakpoints (%)'].mean()} %")
+print(f"BIC: {metrics_by_sector.loc[metrics_by_sector['Metric']=='Bayesian', 'Technologies with breakpoints (%)'].mean()} %")
+sns.catplot(data=metrics_by_sector, 
+            col="Metric",
+            hue="Sector",
+            y="Technologies with breakpoints (%)",
+            kind="bar",
+            palette=utils.sectors_colors.values(),
+            height=7,
+            aspect=0.9)
+plt.ylim(0, 100)
+plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' 
+            + os.path.sep + 'BreakpointsAllSectorWeighted' + '.png')
+plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' 
+            + os.path.sep + 'BreakpointsAllSectorWeighted' + '.pdf')
+
+metrics_by_sector = metrics_by_sector.loc[metrics_by_sector["Metric"]=="Bayesian"]
+sns.catplot(data=metrics_by_sector, 
+            hue="Sector",
+            y="Technologies with breakpoints (%)",
+            kind="bar",
+            palette=utils.sectors_colors.values(),
+            height=7,
+            aspect=1.2)
+plt.ylim(0, 100)
+plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' 
+            + os.path.sep + 'BreakpointsSectorWeighted' + '.png')
+plt.savefig('figs' + os.path.sep + 'SupplementaryFigures' 
+            + os.path.sep + 'BreakpointsSectorWeighted' + '.pdf')
 
 # examine learning rates from piecewise regression
 

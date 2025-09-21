@@ -116,6 +116,26 @@ def main():
 
     IC = IC.sort_values(by="Median n_breaks")
 
+
+    # check percentage of techs per sector above 0 breaks
+    IC['Sector'] = [utils.sectorsinv[x] for x in IC['Tech']]
+    sector_result = IC.groupby('Sector').apply(
+        lambda x: (x['Median n_breaks'] > 0).sum() / len(x) * 100
+    ).reset_index(name='Technologies with breakpoints (%)')
+    print(sector_result[
+              'Technologies with breakpoints (%)'].mean())
+    
+    sns.catplot(data=sector_result, 
+                hue="Sector",
+                y="Technologies with breakpoints (%)",
+                kind="bar",
+                palette=utils.sectors_colors.values(),
+                height=7,
+                aspect=1.2)
+    plt.ylim(0, 100)
+    plt.savefig("./figs/SupplementaryFigures/BootstrapSectorWeighted.pdf")
+
+
     tech_count = df["Tech"].value_counts().to_dict()
     IC["Data points"] = IC["Tech"].map(tech_count)
     IC["Tech"] = (IC["Tech"].str.replace("_"," ")
@@ -138,7 +158,6 @@ def main():
     ax.set_xlabel("Technology")
     plt.tight_layout()
     fig.savefig("./figs/SupplementaryFigures/BootstrapVsOriginal.pdf")
-
 
     # build summary comparison dataset
     final_comparison = IC.groupby("Tech").agg(

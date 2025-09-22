@@ -1,6 +1,6 @@
 # Overview
 
-This repository reports the scripts used to obtain the results and figures reported in the manuscript "Learning rate variability and implications for technology forecasts".
+This repository reports the scripts used to obtain the results and figures reported in the manuscript "Variability of technology learning rates".
 
 
 # Clone the repository and create the environment

@@ -24,15 +24,15 @@ pip install -r requirements.txt
 Run the scripts:
 - `CreateDataset.py` (Fig. 1a, S1-2)
 - `LearningRateAnalysis.py` (Fig. 1b)
-- `LearningRateDynamicsAllTechs.py` (Fig. 2)
+- `LearningRateDynamicsAllTechs.py` (Fig. 2, S7)
 - `LearningRateErrorAggregate.py` (Fig. S6)
-- `PiecewiseRegression.py` (Fig. 3a, S7)
-- `AnalyzePiecewise.py` (Fig. S3, S4, S5, Tables S1, S2)
-- `PiecewiseRobustness.py` (Fig. S8, S9)
-- `AnalyzePiecewiseValidation.py` (Fig. 3b)
-- `SolarProjection.py` (Fig. 4a)
-- `WindProjection.py` (Fig. 4b)
-- `BatteryProjection.py` (Fig. 4c)
+- `PiecewiseRegression.py` (Fig. 3a, S8, S9, S12, S13, S14)
+- `AnalyzePiecewise.py` (Fig. S3, S4, S5, S16, Tables S1, S2)
+- `PiecewiseRobustness.py` (Fig. S10, S11)
+- `AnalyzePiecewiseValidation.py` (Fig. 3b, S15,)
+- `SolarProjection.py` (Fig. 4a, S17a)
+- `WindProjection.py` (Fig. 4b, S17b)
+- `BatteryProjection.py` (Fig. 4c, S17c)
 
 # Data summary table
 To obtain the summary table run the script:
@@ -53,19 +53,19 @@ The script `CreateDataset.py` reads in the CSV files for each technology, prepar
 
 The script `LearningRateAnalysis.py` examines the variability of learning rates dividing each technological data series in two parts with equal data points. This script produces Fig.1b.
 
-The script `LearningRateDynamicsAllTechs.py` is used to examine the learning rate variability for solar PV, wind, and lithium-ion batteries among other technologies. This script produce Fig.2 as well as Figures S7-12.
+The script `LearningRateDynamicsAllTechs.py` is used to examine the learning rate variability for solar PV, wind, and lithium-ion batteries among other technologies. This script produce Fig.2 as well as Figure S7.
 
 The script `LearningRateErrorAggregate.py` examines the distance between learning rate estimated from all the data and learning rate at a certain time or cumulative production. This produces Fig. S6.
 
-The piecewise regression fits are computed in the script `PiecewiseRegression.py` using a function inside the scipt `utils.py`. These two scripts produce Figs. 3a, S7.
+The piecewise regression fits are computed in the script `PiecewiseRegression.py` using a function inside the scipt `utils.py`. These two scripts produce Figs. 3a, S8, S9, S12, S13, S14.
 
-The script `AnalyzePiecewise.py` examines the results of piecewise regression to fit probability distributions to data and use them in the forecasting model. This script produces Figs. S3, S4, S5. 
+The script `AnalyzePiecewise.py` examines the results of piecewise regression to fit probability distributions to data and use them in the forecasting model. This script produces Figs. S3, S4, S5, S16. 
 
-The script `PiecewiseRobustness.py` performs standard non-parametric boostraping to evaluate the stability of breakpoint detection across the technologies in the Performance Curve Database. This script produces the figures S8, S9.
+The script `PiecewiseRobustness.py` performs standard non-parametric boostraping to evaluate the stability of breakpoint detection across the technologies in the Performance Curve Database. This script produces the figures S10, S11.
 
-The script `ComparePiecewiseLafondValidation.py`is used to compare the Continuous Ranked Probability Forecast for using half of the data to calibrate models and the remaining half of data for each data series for validation. This scripts uses results obtained from `BuildValidationDataset.py`, analyzed further in `AnalyzePiecewiseValidation.py`.
+The script `ComparePiecewiseLafondValidation.py`is used to compare the Continuous Ranked Probability Forecast for using half of the data to calibrate models and the remaining half of data for each data series for validation. This scripts uses results obtained from `BuildValidationDataset.py`, analyzed further in `AnalyzePiecewiseValidation.py`. The latter produces Fig. 3b and Fig. S15.
 
-The scripts `SolarProjection.py`, `WindProjection.py`, `BatteryProjection.py` build piecewise regressions for solar photovoltaics, wind power, and lithium-ion batteries. They use the parameters estimated from the Performance Curve Database to produce estimates of future cost until 2050 for the three technologies examined. These scripts are used to produce Fig.4.
+The scripts `SolarProjection.py`, `WindProjection.py`, `BatteryProjection.py` build piecewise regressions for solar photovoltaics, wind power, and lithium-ion batteries. They use the parameters estimated from the Performance Curve Database to produce estimates of future cost until 2050 for the three technologies examined. These scripts are used to produce Fig.4 and Fig. S17.
 
 The scripts `utils.py` contains functions used to analyze data and produce figures.
 
